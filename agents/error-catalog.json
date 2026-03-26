@@ -1,0 +1,82 @@
+[
+  {
+    "code": "VALIDATION_ERROR",
+    "category": "validation",
+    "retryable": false,
+    "retry_after_ms": null,
+    "suggestion": "Inspect the command arguments and re-run with valid values.",
+    "docs_url": null
+  },
+  {
+    "code": "AUTH_REQUIRED",
+    "category": "auth",
+    "retryable": false,
+    "retry_after_ms": null,
+    "suggestion": "Provide the missing credential or wallet before retrying.",
+    "docs_url": null
+  },
+  {
+    "code": "CONFIG_ERROR",
+    "category": "config",
+    "retryable": false,
+    "retry_after_ms": null,
+    "suggestion": "Update ~/.peer/config.json or pass an explicit flag for the missing setting.",
+    "docs_url": null
+  },
+  {
+    "code": "API_ERROR",
+    "category": "api",
+    "retryable": false,
+    "retry_after_ms": null,
+    "suggestion": "Inspect the upstream API response and adjust the request payload.",
+    "docs_url": null
+  },
+  {
+    "code": "NETWORK_ERROR",
+    "category": "network",
+    "retryable": true,
+    "retry_after_ms": null,
+    "suggestion": "Retry the command or switch to a healthier RPC/API endpoint.",
+    "docs_url": null
+  },
+  {
+    "code": "TIMEOUT",
+    "category": "timeout",
+    "retryable": true,
+    "retry_after_ms": null,
+    "suggestion": "Retry with a longer timeout or a less loaded upstream endpoint.",
+    "docs_url": null
+  },
+  {
+    "code": "RATE_LIMITED",
+    "category": "rate_limit",
+    "retryable": true,
+    "retry_after_ms": null,
+    "suggestion": "Wait for the upstream rate limit window to reset before retrying.",
+    "docs_url": null
+  },
+  {
+    "code": "CONTRACT_ERROR",
+    "category": "contract",
+    "retryable": false,
+    "retry_after_ms": null,
+    "suggestion": "Inspect the prepared transaction preview or on-chain state before retrying.",
+    "docs_url": null
+  },
+  {
+    "code": "UNSUPPORTED_OPERATION",
+    "category": "unsupported",
+    "retryable": false,
+    "retry_after_ms": null,
+    "suggestion": "Use the raw params form or a different command that matches the supported surface.",
+    "docs_url": null
+  },
+  {
+    "code": "INTERNAL_ERROR",
+    "category": "internal",
+    "retryable": false,
+    "retry_after_ms": null,
+    "suggestion": "Inspect the stack trace in --debug mode and fix the local command or adapter bug.",
+    "docs_url": null
+  }
+]

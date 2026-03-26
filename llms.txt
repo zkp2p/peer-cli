@@ -1,0 +1,43 @@
+# @peer/cli
+
+`peer-cli` is the JSON-first CLI wrapper for `@zkp2p/sdk` and a stdio MCP server.
+
+## Global flags
+
+`--env <production|staging>`, `--private-key`, `--wallet-path`, `--rpc-url`, `--api-key`, `--indexer-key`, `--indexer-url`, `--market-api-key`, `--pay-api-key`, `--base-api-url`, `--market-base-url`, `--pay-base-url`, `--format <json|table>`, `--yes`, `--execute`, `--debug`, `--params`, `--params-file`
+
+Config precedence: CLI flags > environment variables > `~/.peer/config.json` > defaults.
+
+## Command reference
+
+- `peer quote` - fiat to USDC quotes.
+- `peer payee register` - register payee details with the curator API.
+- `peer payee resolve-hash` - resolve a payee hash from on-chain deposit data.
+
+- `peer deposit ensure-allowance`, `create`, `list`, `show`, `show-many`, `add-funds`, `remove-funds`, `withdraw`, `pause`, `resume`, `set-range`, `set-rate`, `set-retain-on-empty`, `payment-method add/set-active/remove`, `currency add/deactivate/remove`, `prune-intents`, `oracle set/remove/set-batch`, `currency-config update-batch`, `currency deactivate-batch`
+
+- `peer pv deposit show`, `show-many`, `list-owner`
+- `peer indexer deposits list/list-relations/show/by-ids/by-ids-relations/fund-activities`, `makers fund-activities`, `deposits snapshots`, `query`
+- `peer indexer intents by-deposit-ids/by-owner/show/expired/fulfilled-events/fulfillment-amounts/fulfillment-and-payment`
+- `peer indexer delegations by-deposit`
+
+- `peer intent create/list/show/cancel/fulfill/release/fulfill-inputs/cleanup-orphaned`
+- `peer intent-hook pre set/get`, `whitelist set/get`
+
+- `peer vault create/list/show/set-rate/set-rates/set-fee/set-config/delegates/snapshots/manual-rate-updates/oracle-config-updates/manager-fee/effective-rate`
+- `peer oracle supports-inline`, `validate-feeds`
+- `peer delegate set/undelegate/show/set-direct/clear-direct`
+
+- `peer market spreads/compare/volume/leaderboard/protocol-stats`
+- `peer transfer`, `peer balance`
+
+- `peer checkout create/list/show/cancel`
+- `peer config show/set/platforms/currencies`
+- `peer mcp`
+
+## Behavior notes
+
+- Read commands return structured data immediately.
+- Write commands preview transactions first and only broadcast with `--yes` or `--execute`.
+- `peer mcp` is read-only by default; pass `--full` to register write tools or `--read-only` to force the read-only surface.
+- Generated catalogs live in `agents/tool-catalog.json` and `agents/error-catalog.json`.

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.vitest/
+.env
+.env.*
+CONTINUITY.md
+*.log

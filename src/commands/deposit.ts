@@ -1,0 +1,525 @@
+import { parseUnits } from 'viem';
+import { createError } from '../output/errors.js';
+import type { CommandDefinition } from './framework.js';
+import { sdkReadHandler, sdkSeparatePrepareHandler, sdkWriteHandler } from './helpers.js';
+import { ensureAddress, ensureNumber, ensurePositiveNumber, ensureString, parseCsv, parseJsonInput } from '../utils/validation.js';
+
+function asBigInt(value: unknown, field: string): bigint {
+  return BigInt(ensureString(value, field));
+}
+
+function parseJsonObject(value: unknown, field: string): Record<string, unknown> {
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  if (typeof value === 'string') {
+    return parseJsonInput(value, field) ?? {};
+  }
+  throw createError('VALIDATION_ERROR', `${field} must be a JSON object.`);
+}
+
+function parseJsonArray(value: unknown, field: string): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    return JSON.parse(value) as unknown[];
+  }
+  throw createError('VALIDATION_ERROR', `${field} must be a JSON array.`);
+}
+
+function parseConversionRate(value: unknown): string {
+  return parseUnits(ensurePositiveNumber(value, 'rate').toString(), 18).toString();
+}
+
+function parseConversionRates(input: Record<string, unknown>): { currency: string; conversionRate: string }[][] {
+  if (input.conversionRates) {
+    return parseJsonArray(input.conversionRates, 'conversionRates') as { currency: string; conversionRate: string }[][];
+  }
+
+  const processors = parseCsv(input.platforms as string | undefined) ?? [];
+  const currencies = parseCsv(input.currencies as string | undefined) ?? [];
+  if (processors.length === 0 || currencies.length === 0 || input.rate === undefined) {
+    throw createError('VALIDATION_ERROR', 'Provide --conversion-rates JSON or --platforms, --currencies, and --rate.');
+  }
+
+  return processors.map(() => currencies.map((currency) => ({ currency, conversionRate: parseConversionRate(input.rate) })));
+}
+
+async function withUsdcAddress<T>(
+  input: Record<string, unknown>,
+  context: Parameters<NonNullable<CommandDefinition['handler']>>[1],
+  builder: (token: string) => Promise<T> | T,
+): Promise<T> {
+  const { client } = await context.getClient({ requireWallet: true });
+  const token = (input.token as string | undefined) ?? client.getUsdcAddress();
+  if (!token) {
+    throw createError('CONFIG_ERROR', 'USDC address is not available for the current runtime environment.');
+  }
+  return builder(token);
+}
+
+const filterOption = { name: 'filter', flags: '--filter <json>', description: 'JSON filter object.', schema: { type: 'object', description: 'Filter object.' } } as const;
+const paginationOption = { name: 'pagination', flags: '--pagination <json>', description: 'JSON pagination object.', schema: { type: 'object', description: 'Pagination object.' } } as const;
+
+export const depositDefinitions: CommandDefinition[] = [
+  {
+    path: ['deposit', 'ensure-allowance'],
+    description: 'Approve USDC spending if required.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'amount', flags: '--amount <value>', description: 'USDC amount to approve.', schema: { type: 'number', description: 'USDC amount.' } },
+      { name: 'token', flags: '--token <address>', description: 'Token address override.', schema: { type: 'string', description: 'ERC20 token address.' } },
+      { name: 'maxApprove', flags: '--max-approve', description: 'Approve MaxUint256 instead of exact amount.', schema: { type: 'boolean', description: 'Approve max amount.' } },
+    ],
+    handler: async (input, context) => withUsdcAddress(input, context, async (token) => {
+      const { client } = await context.getClient({ requireWallet: true });
+      return client.ensureAllowance({
+        token: ensureAddress(token, 'token'),
+        amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6),
+        maxApprove: Boolean(input.maxApprove),
+      });
+    }),
+  },
+  {
+    path: ['deposit', 'create'],
+    description: 'Create a new deposit.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'amount', flags: '--amount <value>', description: 'USDC amount to deposit.', schema: { type: 'number', description: 'USDC amount.' } },
+      { name: 'min', flags: '--min <value>', description: 'Minimum intent size in USDC.', schema: { type: 'number', description: 'Minimum intent size.' } },
+      { name: 'max', flags: '--max <value>', description: 'Maximum intent size in USDC.', schema: { type: 'number', description: 'Maximum intent size.' } },
+      { name: 'platforms', flags: '--platforms <names>', description: 'Comma-separated payment platforms.', schema: { type: 'string', description: 'Payment platforms.' } },
+      { name: 'currencies', flags: '--currencies <codes>', description: 'Comma-separated fiat currencies.', schema: { type: 'string', description: 'Fiat currencies.' } },
+      { name: 'rate', flags: '--rate <value>', description: 'Default conversion rate if conversionRates JSON is omitted.', schema: { type: 'number', description: 'Conversion rate.' } },
+      { name: 'conversionRates', flags: '--conversion-rates <json>', description: 'JSON matrix of conversion rate entries.', schema: { type: 'array', description: 'Conversion rate matrix.' } },
+      { name: 'depositData', flags: '--deposit-data <json>', description: 'JSON array of payee detail payloads.', schema: { type: 'array', description: 'Deposit data array.' } },
+      { name: 'delegate', flags: '--delegate <address>', description: 'Optional delegate address.', schema: { type: 'string', description: 'Delegate address.' } },
+      { name: 'intentGuardian', flags: '--intent-guardian <address>', description: 'Optional intent guardian address.', schema: { type: 'string', description: 'Intent guardian.' } },
+      { name: 'retainOnEmpty', flags: '--retain-on-empty', description: 'Keep the deposit config active at zero balance.', schema: { type: 'boolean', description: 'Retain deposit on empty.' } },
+      { name: 'token', flags: '--token <address>', description: 'Token address override.', schema: { type: 'string', description: 'ERC20 token address.' } },
+    ],
+    handler: sdkSeparatePrepareHandler(
+      ['prepareCreateDeposit'],
+      ['createDeposit'],
+      async (input, context) => withUsdcAddress(input, context, async (token) => ({
+        token: ensureAddress(token, 'token'),
+        amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6),
+        intentAmountRange: {
+          min: parseUnits(ensurePositiveNumber(input.min, 'min').toString(), 6),
+          max: parseUnits(ensurePositiveNumber(input.max, 'max').toString(), 6),
+        },
+        processorNames: parseCsv(input.platforms as string | undefined) ?? [],
+        depositData: input.depositData ? (parseJsonArray(input.depositData, 'depositData') as Record<string, string>[]) : [],
+        conversionRates: parseConversionRates(input),
+        delegate: input.delegate ? ensureAddress(input.delegate, 'delegate') : undefined,
+        intentGuardian: input.intentGuardian ? ensureAddress(input.intentGuardian, 'intentGuardian') : undefined,
+        retainOnEmpty: Boolean(input.retainOnEmpty),
+      })),
+      {
+        description: () => 'Create a deposit after previewing the transaction calldata.',
+        previewData: (prepared) => (prepared as { depositDetails?: unknown }).depositDetails,
+      },
+    ),
+  },
+  {
+    path: ['deposit', 'list'],
+    description: 'List deposits owned by the configured wallet or explicit owner.',
+    readOnly: true,
+    options: [
+      { name: 'owner', flags: '--owner <address>', description: 'Owner address override.', schema: { type: 'string', description: 'Owner address.' } },
+    ],
+    handler: async (input, context) => {
+      const { client, walletClient } = await context.getClient({ requireWallet: false });
+      const owner = input.owner ? ensureAddress(input.owner, 'owner') : walletClient.account?.address;
+      return owner ? client.getAccountDeposits(owner) : client.getDeposits();
+    },
+  },
+  {
+    path: ['deposit', 'show'],
+    description: 'Show a single deposit by deposit ID.',
+    readOnly: true,
+    args: [{ name: 'depositId', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } }],
+    handler: sdkReadHandler(['getDeposit'], async (input) => [asBigInt(input.depositId, 'depositId')]),
+  },
+  {
+    path: ['deposit', 'show-many'],
+    description: 'Show multiple deposits by ID.',
+    readOnly: true,
+    options: [{ name: 'ids', flags: '--ids <csv>', description: 'Comma-separated deposit IDs.', schema: { type: 'string', description: 'Deposit IDs.' } }],
+    handler: sdkReadHandler(['getDepositsById'], async (input) => [(parseCsv(input.ids as string | undefined) ?? []).map((value) => BigInt(value))]),
+  },
+  {
+    path: ['deposit', 'add-funds'],
+    description: 'Add liquidity to a deposit.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'amount', flags: '--amount <value>', description: 'USDC amount to add.', schema: { type: 'number', description: 'USDC amount.' } },
+    ],
+    handler: sdkWriteHandler(['addFunds'], async (input) => ({ depositId: asBigInt(input.id, 'id'), amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6) })),
+  },
+  {
+    path: ['deposit', 'remove-funds'],
+    description: 'Remove liquidity from a deposit.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'amount', flags: '--amount <value>', description: 'USDC amount to remove.', schema: { type: 'number', description: 'USDC amount.' } },
+    ],
+    handler: sdkWriteHandler(['removeFunds'], async (input) => ({ depositId: asBigInt(input.id, 'id'), amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6) })),
+  },
+  {
+    path: ['deposit', 'withdraw'],
+    description: 'Withdraw and close a deposit.',
+    readOnly: false,
+    requireWallet: true,
+    options: [{ name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } }],
+    handler: sdkWriteHandler(['withdrawDeposit'], async (input) => ({ depositId: asBigInt(input.id, 'id') })),
+  },
+  {
+    path: ['deposit', 'pause'],
+    description: 'Pause new intents on a deposit.',
+    readOnly: false,
+    requireWallet: true,
+    options: [{ name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } }],
+    handler: sdkWriteHandler(['setAcceptingIntents'], async (input) => ({ depositId: asBigInt(input.id, 'id'), accepting: false })),
+  },
+  {
+    path: ['deposit', 'resume'],
+    description: 'Resume new intents on a deposit.',
+    readOnly: false,
+    requireWallet: true,
+    options: [{ name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } }],
+    handler: sdkWriteHandler(['setAcceptingIntents'], async (input) => ({ depositId: asBigInt(input.id, 'id'), accepting: true })),
+  },
+  {
+    path: ['deposit', 'set-range'],
+    description: 'Set a deposit intent range.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'min', flags: '--min <value>', description: 'Minimum intent amount.', schema: { type: 'number', description: 'Minimum intent.' } },
+      { name: 'max', flags: '--max <value>', description: 'Maximum intent amount.', schema: { type: 'number', description: 'Maximum intent.' } },
+    ],
+    handler: sdkWriteHandler(['setIntentRange'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      min: parseUnits(ensurePositiveNumber(input.min, 'min').toString(), 6),
+      max: parseUnits(ensurePositiveNumber(input.max, 'max').toString(), 6),
+    })),
+  },
+  {
+    path: ['deposit', 'set-rate'],
+    description: 'Set the minimum conversion rate for a deposit currency.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethod', flags: '--payment-method <name>', description: 'Payment method name or hash.', schema: { type: 'string', description: 'Payment method.' } },
+      { name: 'currency', flags: '--currency <code>', description: 'Fiat currency code.', schema: { type: 'string', description: 'Fiat currency.' } },
+      { name: 'rate', flags: '--rate <value>', description: 'Conversion rate as human decimal.', schema: { type: 'number', description: 'Conversion rate.' } },
+    ],
+    handler: sdkWriteHandler(['setCurrencyMinRate'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      paymentMethod: ensureString(input.paymentMethod, 'paymentMethod'),
+      fiatCurrency: ensureString(input.currency, 'currency'),
+      minConversionRate: parseConversionRate(input.rate),
+    })),
+  },
+  {
+    path: ['deposit', 'set-retain-on-empty'],
+    description: 'Toggle retainOnEmpty for a deposit.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'retain', flags: '--retain', description: 'Enable retainOnEmpty.', schema: { type: 'boolean', description: 'Retain on empty.' } },
+    ],
+    handler: sdkWriteHandler(['setRetainOnEmpty'], async (input) => ({ depositId: asBigInt(input.id, 'id'), retain: Boolean(input.retain) })),
+  },
+  {
+    path: ['deposit', 'payment-method', 'add'],
+    description: 'Add payment methods to a deposit.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethods', flags: '--payment-methods <csv>', description: 'Comma-separated payment methods.', schema: { type: 'string', description: 'Payment methods.' } },
+      { name: 'paymentMethodData', flags: '--payment-method-data <json>', description: 'JSON array of payment method data.', schema: { type: 'array', description: 'Payment method data.' } },
+      { name: 'currencies', flags: '--currencies <json>', description: 'JSON matrix of currencies per payment method.', schema: { type: 'array', description: 'Currency matrix.' } },
+    ],
+    handler: sdkWriteHandler(['addPaymentMethods'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      paymentMethods: parseCsv(input.paymentMethods as string | undefined) ?? [],
+      paymentMethodData: parseJsonArray(input.paymentMethodData, 'paymentMethodData'),
+      currencies: parseJsonArray(input.currencies, 'currencies'),
+    })),
+  },
+  {
+    path: ['deposit', 'payment-method', 'set-active'],
+    description: 'Set payment method active state.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethod', flags: '--payment-method <name>', description: 'Payment method name or hash.', schema: { type: 'string', description: 'Payment method.' } },
+      { name: 'active', flags: '--active', description: 'Mark the payment method as active.', schema: { type: 'boolean', description: 'Active flag.' } },
+    ],
+    handler: sdkWriteHandler(['setPaymentMethodActive'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      paymentMethod: ensureString(input.paymentMethod, 'paymentMethod'),
+      isActive: Boolean(input.active),
+    })),
+  },
+  {
+    path: ['deposit', 'payment-method', 'remove'],
+    description: 'Remove a payment method from a deposit.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethod', flags: '--payment-method <name>', description: 'Payment method name or hash.', schema: { type: 'string', description: 'Payment method.' } },
+    ],
+    handler: sdkWriteHandler(['removePaymentMethod'], async (input) => ({ depositId: asBigInt(input.id, 'id'), paymentMethod: ensureString(input.paymentMethod, 'paymentMethod') })),
+  },
+  {
+    path: ['deposit', 'currency', 'add'],
+    description: 'Add currencies to a payment method.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethod', flags: '--payment-method <name>', description: 'Payment method name or hash.', schema: { type: 'string', description: 'Payment method.' } },
+      { name: 'currencies', flags: '--currencies <csv>', description: 'Comma-separated currencies.', schema: { type: 'string', description: 'Currencies.' } },
+    ],
+    handler: sdkWriteHandler(['addCurrencies'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      paymentMethod: ensureString(input.paymentMethod, 'paymentMethod'),
+      currencies: parseCsv(input.currencies as string | undefined) ?? [],
+    })),
+  },
+  {
+    path: ['deposit', 'currency', 'deactivate'],
+    description: 'Deactivate a currency on a payment method.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethod', flags: '--payment-method <name>', description: 'Payment method name or hash.', schema: { type: 'string', description: 'Payment method.' } },
+      { name: 'currency', flags: '--currency <code>', description: 'Currency code.', schema: { type: 'string', description: 'Currency code.' } },
+    ],
+    handler: sdkWriteHandler(['deactivateCurrency'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      paymentMethod: ensureString(input.paymentMethod, 'paymentMethod'),
+      currencyCode: ensureString(input.currency, 'currency'),
+    })),
+  },
+  {
+    path: ['deposit', 'currency', 'remove'],
+    description: 'Remove a currency from a payment method.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethod', flags: '--payment-method <name>', description: 'Payment method name or hash.', schema: { type: 'string', description: 'Payment method.' } },
+      { name: 'currency', flags: '--currency <code>', description: 'Currency code.', schema: { type: 'string', description: 'Currency code.' } },
+    ],
+    handler: sdkWriteHandler(['removeCurrency'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      paymentMethod: ensureString(input.paymentMethod, 'paymentMethod'),
+      currencyCode: ensureString(input.currency, 'currency'),
+    })),
+  },
+  {
+    path: ['deposit', 'prune-intents'],
+    description: 'Prune expired intents for a deposit.',
+    readOnly: false,
+    requireWallet: true,
+    options: [{ name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } }],
+    handler: sdkWriteHandler(['pruneExpiredIntents'], async (input) => ({ depositId: asBigInt(input.id, 'id') })),
+  },
+  {
+    path: ['deposit', 'oracle', 'set'],
+    description: 'Set an oracle rate config for a deposit currency.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethodHash', flags: '--payment-method-hash <hash>', description: 'Payment method hash.', schema: { type: 'string', description: 'Payment method hash.' } },
+      { name: 'currencyHash', flags: '--currency-hash <hash>', description: 'Currency hash.', schema: { type: 'string', description: 'Currency hash.' } },
+      { name: 'config', flags: '--config <json>', description: 'Oracle config JSON object.', schema: { type: 'object', description: 'Oracle config.' } },
+    ],
+    handler: sdkWriteHandler(['setOracleRateConfig'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      paymentMethodHash: ensureString(input.paymentMethodHash, 'paymentMethodHash'),
+      currencyHash: ensureString(input.currencyHash, 'currencyHash'),
+      config: parseJsonObject(input.config, 'config'),
+    })),
+  },
+  {
+    path: ['deposit', 'oracle', 'remove'],
+    description: 'Remove an oracle rate config from a deposit currency.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethodHash', flags: '--payment-method-hash <hash>', description: 'Payment method hash.', schema: { type: 'string', description: 'Payment method hash.' } },
+      { name: 'currencyHash', flags: '--currency-hash <hash>', description: 'Currency hash.', schema: { type: 'string', description: 'Currency hash.' } },
+    ],
+    handler: sdkWriteHandler(['removeOracleRateConfig'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      paymentMethodHash: ensureString(input.paymentMethodHash, 'paymentMethodHash'),
+      currencyHash: ensureString(input.currencyHash, 'currencyHash'),
+    })),
+  },
+  {
+    path: ['deposit', 'oracle', 'set-batch'],
+    description: 'Set oracle configs in batch.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethods', flags: '--payment-methods <json>', description: 'JSON array of payment method hashes.', schema: { type: 'array', description: 'Payment method hashes.' } },
+      { name: 'currencies', flags: '--currencies <json>', description: 'JSON matrix of currency hashes.', schema: { type: 'array', description: 'Currency hash matrix.' } },
+      { name: 'configs', flags: '--configs <json>', description: 'JSON matrix of oracle configs.', schema: { type: 'array', description: 'Oracle config matrix.' } },
+    ],
+    handler: sdkWriteHandler(['setOracleRateConfigBatch'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      paymentMethods: parseJsonArray(input.paymentMethods, 'paymentMethods'),
+      currencies: parseJsonArray(input.currencies, 'currencies'),
+      configs: parseJsonArray(input.configs, 'configs'),
+    })),
+  },
+  {
+    path: ['deposit', 'currency-config', 'update-batch'],
+    description: 'Update currency config batch.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethods', flags: '--payment-methods <json>', description: 'JSON array of payment methods.', schema: { type: 'array', description: 'Payment methods.' } },
+      { name: 'updates', flags: '--updates <json>', description: 'JSON matrix of updates.', schema: { type: 'array', description: 'Updates matrix.' } },
+    ],
+    handler: sdkWriteHandler(['updateCurrencyConfigBatch'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      paymentMethods: parseJsonArray(input.paymentMethods, 'paymentMethods'),
+      updates: parseJsonArray(input.updates, 'updates'),
+    })),
+  },
+  {
+    path: ['deposit', 'currency', 'deactivate-batch'],
+    description: 'Deactivate currencies in batch.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'paymentMethods', flags: '--payment-methods <json>', description: 'JSON array of payment methods.', schema: { type: 'array', description: 'Payment methods.' } },
+      { name: 'currencyCodes', flags: '--currency-codes <json>', description: 'JSON matrix of currency codes.', schema: { type: 'array', description: 'Currency code matrix.' } },
+    ],
+    handler: sdkWriteHandler(['deactivateCurrenciesBatch'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      paymentMethods: parseJsonArray(input.paymentMethods, 'paymentMethods'),
+      currencyCodes: parseJsonArray(input.currencyCodes, 'currencyCodes'),
+    })),
+  },
+  {
+    path: ['pv', 'deposit', 'show'],
+    description: 'Fetch a deposit directly from ProtocolViewer.',
+    readOnly: true,
+    args: [{ name: 'depositId', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } }],
+    handler: sdkReadHandler(['getPvDepositById'], async (input) => [ensureString(input.depositId, 'depositId')]),
+  },
+  {
+    path: ['pv', 'deposit', 'show-many'],
+    description: 'Fetch multiple deposits directly from ProtocolViewer.',
+    readOnly: true,
+    options: [{ name: 'ids', flags: '--ids <csv>', description: 'Comma-separated deposit IDs.', schema: { type: 'string', description: 'Deposit IDs.' } }],
+    handler: sdkReadHandler(['getPvDepositsFromIds'], async (input) => [(parseCsv(input.ids as string | undefined) ?? [])]),
+  },
+  {
+    path: ['pv', 'deposit', 'list-owner'],
+    description: 'Fetch deposits for an owner directly from ProtocolViewer.',
+    readOnly: true,
+    options: [{ name: 'owner', flags: '--owner <address>', description: 'Owner address.', schema: { type: 'string', description: 'Owner address.' } }],
+    handler: sdkReadHandler(['getPvAccountDeposits'], async (input) => [ensureAddress(input.owner, 'owner')]),
+  },
+  {
+    path: ['indexer', 'deposits', 'list'],
+    description: 'List deposits via the indexer.',
+    readOnly: true,
+    options: [filterOption, paginationOption],
+    handler: sdkReadHandler(['indexer', 'getDeposits'], async (input) => [input.filter ? parseJsonObject(input.filter, 'filter') : undefined, input.pagination ? parseJsonObject(input.pagination, 'pagination') : undefined]),
+  },
+  {
+    path: ['indexer', 'deposits', 'list-relations'],
+    description: 'List deposits with related entities via the indexer.',
+    readOnly: true,
+    options: [filterOption, paginationOption, { name: 'options', flags: '--options <json>', description: 'JSON options object.', schema: { type: 'object', description: 'Relation options.' } }],
+    handler: sdkReadHandler(['indexer', 'getDepositsWithRelations'], async (input) => [
+      input.filter ? parseJsonObject(input.filter, 'filter') : undefined,
+      input.pagination ? parseJsonObject(input.pagination, 'pagination') : undefined,
+      input.options ? parseJsonObject(input.options, 'options') : undefined,
+    ]),
+  },
+  {
+    path: ['indexer', 'deposits', 'show'],
+    description: 'Fetch a deposit by composite ID via the indexer.',
+    readOnly: true,
+    args: [{ name: 'compositeId', description: 'Composite deposit ID.', schema: { type: 'string', description: 'Composite ID.' } }],
+    options: [{ name: 'options', flags: '--options <json>', description: 'JSON options object.', schema: { type: 'object', description: 'Relation options.' } }],
+    handler: sdkReadHandler(['indexer', 'getDepositById'], async (input) => [ensureString(input.compositeId, 'compositeId'), input.options ? parseJsonObject(input.options, 'options') : undefined]),
+  },
+  {
+    path: ['indexer', 'deposits', 'by-ids'],
+    description: 'Fetch multiple deposits by composite ID.',
+    readOnly: true,
+    options: [{ name: 'ids', flags: '--ids <csv>', description: 'Comma-separated composite IDs.', schema: { type: 'string', description: 'Composite IDs.' } }],
+    handler: sdkReadHandler(['indexer', 'getDepositsByIds'], async (input) => [(parseCsv(input.ids as string | undefined) ?? [])]),
+  },
+  {
+    path: ['indexer', 'deposits', 'by-ids-relations'],
+    description: 'Fetch multiple deposits with relations by composite ID.',
+    readOnly: true,
+    options: [
+      { name: 'ids', flags: '--ids <csv>', description: 'Comma-separated composite IDs.', schema: { type: 'string', description: 'Composite IDs.' } },
+      { name: 'options', flags: '--options <json>', description: 'JSON options object.', schema: { type: 'object', description: 'Relation options.' } },
+    ],
+    handler: sdkReadHandler(['indexer', 'getDepositsByIdsWithRelations'], async (input) => [(parseCsv(input.ids as string | undefined) ?? []), input.options ? parseJsonObject(input.options, 'options') : undefined]),
+  },
+  {
+    path: ['indexer', 'deposits', 'fund-activities'],
+    description: 'Fetch fund activities for a deposit.',
+    readOnly: true,
+    args: [{ name: 'depositId', description: 'Composite deposit ID.', schema: { type: 'string', description: 'Composite deposit ID.' } }],
+    handler: sdkReadHandler(['indexer', 'getDepositFundActivities'], async (input) => [ensureString(input.depositId, 'depositId')]),
+  },
+  {
+    path: ['indexer', 'makers', 'fund-activities'],
+    description: 'Fetch maker-level fund activities.',
+    readOnly: true,
+    args: [{ name: 'maker', description: 'Maker address.', schema: { type: 'string', description: 'Maker address.' } }],
+    options: [{ name: 'limit', flags: '--limit <count>', description: 'Maximum activities.', schema: { type: 'number', description: 'Activity limit.' } }],
+    handler: sdkReadHandler(['indexer', 'getMakerFundActivities'], async (input) => [ensureAddress(input.maker, 'maker'), input.limit ? ensureNumber(input.limit, 'limit') : undefined]),
+  },
+  {
+    path: ['indexer', 'deposits', 'snapshots'],
+    description: 'Fetch deposit daily snapshots.',
+    readOnly: true,
+    args: [{ name: 'depositId', description: 'Composite deposit ID.', schema: { type: 'string', description: 'Composite deposit ID.' } }],
+    options: [{ name: 'limit', flags: '--limit <count>', description: 'Maximum snapshot count.', schema: { type: 'number', description: 'Snapshot limit.' } }],
+    handler: sdkReadHandler(['indexer', 'getDepositDailySnapshots'], async (input) => [ensureString(input.depositId, 'depositId'), input.limit ? ensureNumber(input.limit, 'limit') : undefined]),
+  },
+  {
+    path: ['indexer', 'query'],
+    description: 'Perform a raw GraphQL query against the indexer.',
+    readOnly: true,
+    options: [
+      { name: 'query', flags: '--query <graphql>', description: 'GraphQL query string.', schema: { type: 'string', description: 'GraphQL query.' } },
+      { name: 'variables', flags: '--variables <json>', description: 'Variables JSON object.', schema: { type: 'object', description: 'GraphQL variables.' } },
+    ],
+    handler: sdkReadHandler(['indexer', 'query'], async (input) => [{ query: ensureString(input.query, 'query'), variables: input.variables ? parseJsonObject(input.variables, 'variables') : undefined }]),
+  },
+];

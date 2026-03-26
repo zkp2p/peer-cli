@@ -1,0 +1,3021 @@
+[
+  {
+    "name": "peer quote",
+    "path": [
+      "quote"
+    ],
+    "description": "Get fiat-to-USDC exchange quotes.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Fiat currency code."
+        },
+        "to": {
+          "type": "string",
+          "description": "Destination token symbol or address.",
+          "default": "USDC"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount to quote."
+        },
+        "tokenAmount": {
+          "type": "number",
+          "description": "Exact token amount to receive."
+        },
+        "platform": {
+          "type": "string",
+          "description": "Comma-separated payment platforms."
+        },
+        "recipient": {
+          "type": "string",
+          "description": "Destination wallet address."
+        },
+        "user": {
+          "type": "string",
+          "description": "Quote owner address."
+        },
+        "destinationChainId": {
+          "type": "number",
+          "description": "Destination chain ID.",
+          "default": 8453
+        },
+        "quotesToReturn": {
+          "type": "number",
+          "description": "Number of quotes to return.",
+          "default": 5
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer payee register",
+    "path": [
+      "payee",
+      "register"
+    ],
+    "description": "Register payee details with the curator API.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "processors": {
+          "type": "string",
+          "description": "Comma-separated processor names."
+        },
+        "depositData": {
+          "type": "array",
+          "description": "JSON array of deposit detail objects."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer payee resolve-hash",
+    "path": [
+      "payee",
+      "resolve-hash"
+    ],
+    "description": "Resolve a payee hash from on-chain deposit data.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "depositId": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethodHash": {
+          "type": "string",
+          "description": "Payment method hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "depositId",
+        "paymentMethodHash"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer deposit ensure-allowance",
+    "path": [
+      "deposit",
+      "ensure-allowance"
+    ],
+    "description": "Approve USDC spending if required.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "USDC amount to approve."
+        },
+        "token": {
+          "type": "string",
+          "description": "Token address override."
+        },
+        "maxApprove": {
+          "type": "boolean",
+          "description": "Approve MaxUint256 instead of exact amount."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit create",
+    "path": [
+      "deposit",
+      "create"
+    ],
+    "description": "Create a new deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "USDC amount to deposit."
+        },
+        "min": {
+          "type": "number",
+          "description": "Minimum intent size in USDC."
+        },
+        "max": {
+          "type": "number",
+          "description": "Maximum intent size in USDC."
+        },
+        "platforms": {
+          "type": "string",
+          "description": "Comma-separated payment platforms."
+        },
+        "currencies": {
+          "type": "string",
+          "description": "Comma-separated fiat currencies."
+        },
+        "rate": {
+          "type": "number",
+          "description": "Default conversion rate if conversionRates JSON is omitted."
+        },
+        "conversionRates": {
+          "type": "array",
+          "description": "JSON matrix of conversion rate entries."
+        },
+        "depositData": {
+          "type": "array",
+          "description": "JSON array of payee detail payloads."
+        },
+        "delegate": {
+          "type": "string",
+          "description": "Optional delegate address."
+        },
+        "intentGuardian": {
+          "type": "string",
+          "description": "Optional intent guardian address."
+        },
+        "retainOnEmpty": {
+          "type": "boolean",
+          "description": "Keep the deposit config active at zero balance."
+        },
+        "token": {
+          "type": "string",
+          "description": "Token address override."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit list",
+    "path": [
+      "deposit",
+      "list"
+    ],
+    "description": "List deposits owned by the configured wallet or explicit owner.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Owner address override."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer deposit show",
+    "path": [
+      "deposit",
+      "show"
+    ],
+    "description": "Show a single deposit by deposit ID.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "depositId": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "depositId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer deposit show-many",
+    "path": [
+      "deposit",
+      "show-many"
+    ],
+    "description": "Show multiple deposits by ID.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "string",
+          "description": "Comma-separated deposit IDs."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer deposit add-funds",
+    "path": [
+      "deposit",
+      "add-funds"
+    ],
+    "description": "Add liquidity to a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "amount": {
+          "type": "number",
+          "description": "USDC amount to add."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit remove-funds",
+    "path": [
+      "deposit",
+      "remove-funds"
+    ],
+    "description": "Remove liquidity from a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "amount": {
+          "type": "number",
+          "description": "USDC amount to remove."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit withdraw",
+    "path": [
+      "deposit",
+      "withdraw"
+    ],
+    "description": "Withdraw and close a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit pause",
+    "path": [
+      "deposit",
+      "pause"
+    ],
+    "description": "Pause new intents on a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit resume",
+    "path": [
+      "deposit",
+      "resume"
+    ],
+    "description": "Resume new intents on a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit set-range",
+    "path": [
+      "deposit",
+      "set-range"
+    ],
+    "description": "Set a deposit intent range.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "min": {
+          "type": "number",
+          "description": "Minimum intent amount."
+        },
+        "max": {
+          "type": "number",
+          "description": "Maximum intent amount."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit set-rate",
+    "path": [
+      "deposit",
+      "set-rate"
+    ],
+    "description": "Set the minimum conversion rate for a deposit currency.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method name or hash."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Fiat currency code."
+        },
+        "rate": {
+          "type": "number",
+          "description": "Conversion rate as human decimal."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit set-retain-on-empty",
+    "path": [
+      "deposit",
+      "set-retain-on-empty"
+    ],
+    "description": "Toggle retainOnEmpty for a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "retain": {
+          "type": "boolean",
+          "description": "Enable retainOnEmpty."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit payment-method add",
+    "path": [
+      "deposit",
+      "payment-method",
+      "add"
+    ],
+    "description": "Add payment methods to a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethods": {
+          "type": "string",
+          "description": "Comma-separated payment methods."
+        },
+        "paymentMethodData": {
+          "type": "array",
+          "description": "JSON array of payment method data."
+        },
+        "currencies": {
+          "type": "array",
+          "description": "JSON matrix of currencies per payment method."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit payment-method set-active",
+    "path": [
+      "deposit",
+      "payment-method",
+      "set-active"
+    ],
+    "description": "Set payment method active state.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method name or hash."
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Mark the payment method as active."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit payment-method remove",
+    "path": [
+      "deposit",
+      "payment-method",
+      "remove"
+    ],
+    "description": "Remove a payment method from a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method name or hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit currency add",
+    "path": [
+      "deposit",
+      "currency",
+      "add"
+    ],
+    "description": "Add currencies to a payment method.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method name or hash."
+        },
+        "currencies": {
+          "type": "string",
+          "description": "Comma-separated currencies."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit currency deactivate",
+    "path": [
+      "deposit",
+      "currency",
+      "deactivate"
+    ],
+    "description": "Deactivate a currency on a payment method.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method name or hash."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Currency code."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit currency remove",
+    "path": [
+      "deposit",
+      "currency",
+      "remove"
+    ],
+    "description": "Remove a currency from a payment method.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method name or hash."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Currency code."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit prune-intents",
+    "path": [
+      "deposit",
+      "prune-intents"
+    ],
+    "description": "Prune expired intents for a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit oracle set",
+    "path": [
+      "deposit",
+      "oracle",
+      "set"
+    ],
+    "description": "Set an oracle rate config for a deposit currency.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethodHash": {
+          "type": "string",
+          "description": "Payment method hash."
+        },
+        "currencyHash": {
+          "type": "string",
+          "description": "Currency hash."
+        },
+        "config": {
+          "type": "object",
+          "description": "Oracle config JSON object."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit oracle remove",
+    "path": [
+      "deposit",
+      "oracle",
+      "remove"
+    ],
+    "description": "Remove an oracle rate config from a deposit currency.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethodHash": {
+          "type": "string",
+          "description": "Payment method hash."
+        },
+        "currencyHash": {
+          "type": "string",
+          "description": "Currency hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit oracle set-batch",
+    "path": [
+      "deposit",
+      "oracle",
+      "set-batch"
+    ],
+    "description": "Set oracle configs in batch.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethods": {
+          "type": "array",
+          "description": "JSON array of payment method hashes."
+        },
+        "currencies": {
+          "type": "array",
+          "description": "JSON matrix of currency hashes."
+        },
+        "configs": {
+          "type": "array",
+          "description": "JSON matrix of oracle configs."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit currency-config update-batch",
+    "path": [
+      "deposit",
+      "currency-config",
+      "update-batch"
+    ],
+    "description": "Update currency config batch.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethods": {
+          "type": "array",
+          "description": "JSON array of payment methods."
+        },
+        "updates": {
+          "type": "array",
+          "description": "JSON matrix of updates."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit currency deactivate-batch",
+    "path": [
+      "deposit",
+      "currency",
+      "deactivate-batch"
+    ],
+    "description": "Deactivate currencies in batch.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "paymentMethods": {
+          "type": "array",
+          "description": "JSON array of payment methods."
+        },
+        "currencyCodes": {
+          "type": "array",
+          "description": "JSON matrix of currency codes."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer pv deposit show",
+    "path": [
+      "pv",
+      "deposit",
+      "show"
+    ],
+    "description": "Fetch a deposit directly from ProtocolViewer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "depositId": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "depositId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer pv deposit show-many",
+    "path": [
+      "pv",
+      "deposit",
+      "show-many"
+    ],
+    "description": "Fetch multiple deposits directly from ProtocolViewer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "string",
+          "description": "Comma-separated deposit IDs."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer pv deposit list-owner",
+    "path": [
+      "pv",
+      "deposit",
+      "list-owner"
+    ],
+    "description": "Fetch deposits for an owner directly from ProtocolViewer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Owner address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer deposits list",
+    "path": [
+      "indexer",
+      "deposits",
+      "list"
+    ],
+    "description": "List deposits via the indexer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "filter": {
+          "type": "object",
+          "description": "JSON filter object."
+        },
+        "pagination": {
+          "type": "object",
+          "description": "JSON pagination object."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer deposits list-relations",
+    "path": [
+      "indexer",
+      "deposits",
+      "list-relations"
+    ],
+    "description": "List deposits with related entities via the indexer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "filter": {
+          "type": "object",
+          "description": "JSON filter object."
+        },
+        "pagination": {
+          "type": "object",
+          "description": "JSON pagination object."
+        },
+        "options": {
+          "type": "object",
+          "description": "JSON options object."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer deposits show",
+    "path": [
+      "indexer",
+      "deposits",
+      "show"
+    ],
+    "description": "Fetch a deposit by composite ID via the indexer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "compositeId": {
+          "type": "string",
+          "description": "Composite deposit ID."
+        },
+        "options": {
+          "type": "object",
+          "description": "JSON options object."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "compositeId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer deposits by-ids",
+    "path": [
+      "indexer",
+      "deposits",
+      "by-ids"
+    ],
+    "description": "Fetch multiple deposits by composite ID.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "string",
+          "description": "Comma-separated composite IDs."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer deposits by-ids-relations",
+    "path": [
+      "indexer",
+      "deposits",
+      "by-ids-relations"
+    ],
+    "description": "Fetch multiple deposits with relations by composite ID.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "string",
+          "description": "Comma-separated composite IDs."
+        },
+        "options": {
+          "type": "object",
+          "description": "JSON options object."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer deposits fund-activities",
+    "path": [
+      "indexer",
+      "deposits",
+      "fund-activities"
+    ],
+    "description": "Fetch fund activities for a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "depositId": {
+          "type": "string",
+          "description": "Composite deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "depositId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer makers fund-activities",
+    "path": [
+      "indexer",
+      "makers",
+      "fund-activities"
+    ],
+    "description": "Fetch maker-level fund activities.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "maker": {
+          "type": "string",
+          "description": "Maker address."
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum activities."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "maker"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer deposits snapshots",
+    "path": [
+      "indexer",
+      "deposits",
+      "snapshots"
+    ],
+    "description": "Fetch deposit daily snapshots.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "depositId": {
+          "type": "string",
+          "description": "Composite deposit ID."
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum snapshot count."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "depositId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer query",
+    "path": [
+      "indexer",
+      "query"
+    ],
+    "description": "Perform a raw GraphQL query against the indexer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "GraphQL query string."
+        },
+        "variables": {
+          "type": "object",
+          "description": "Variables JSON object."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer intent create",
+    "path": [
+      "intent",
+      "create"
+    ],
+    "description": "Signal a taker intent.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "deposit": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "amount": {
+          "type": "number",
+          "description": "USDC amount."
+        },
+        "platform": {
+          "type": "string",
+          "description": "Processor name."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Fiat currency code."
+        },
+        "to": {
+          "type": "string",
+          "description": "Recipient address."
+        },
+        "rate": {
+          "type": "number",
+          "description": "Conversion rate as human decimal."
+        },
+        "payeeDetails": {
+          "type": "string",
+          "description": "Payee details string or serialized data."
+        },
+        "processorIntentData": {
+          "type": "object",
+          "description": "JSON processor intent data."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer intent list",
+    "path": [
+      "intent",
+      "list"
+    ],
+    "description": "List intents for the configured wallet or explicit owner.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Owner address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer intent show",
+    "path": [
+      "intent",
+      "show"
+    ],
+    "description": "Show a single intent by hash.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "intentHash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "intentHash"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer intent cancel",
+    "path": [
+      "intent",
+      "cancel"
+    ],
+    "description": "Cancel an intent.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "hash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer intent fulfill",
+    "path": [
+      "intent",
+      "fulfill"
+    ],
+    "description": "Fulfill an intent with a proof or precomputed attestation.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "hash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "proof": {
+          "type": "object",
+          "description": "Proof JSON object."
+        },
+        "precomputedAttestation": {
+          "type": "object",
+          "description": "Precomputed attestation JSON object."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer intent release",
+    "path": [
+      "intent",
+      "release"
+    ],
+    "description": "Release funds back to the payer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "hash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer intent fulfill-inputs",
+    "path": [
+      "intent",
+      "fulfill-inputs"
+    ],
+    "description": "Inspect fulfill routing inputs for an intent.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "intentHash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "intentHash"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer intent cleanup-orphaned",
+    "path": [
+      "intent",
+      "cleanup-orphaned"
+    ],
+    "description": "Clean up orphaned intents in batch.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "hashes": {
+          "type": "array",
+          "description": "JSON array of intent hashes."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer intent-hook pre set",
+    "path": [
+      "intent-hook",
+      "pre",
+      "set"
+    ],
+    "description": "Set the pre-intent hook for a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "hook": {
+          "type": "string",
+          "description": "Hook contract address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer intent-hook whitelist set",
+    "path": [
+      "intent-hook",
+      "whitelist",
+      "set"
+    ],
+    "description": "Set the whitelist hook for a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "hook": {
+          "type": "string",
+          "description": "Hook contract address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer intent-hook pre get",
+    "path": [
+      "intent-hook",
+      "pre",
+      "get"
+    ],
+    "description": "Get the pre-intent hook for a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "depositId": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "depositId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer intent-hook whitelist get",
+    "path": [
+      "intent-hook",
+      "whitelist",
+      "get"
+    ],
+    "description": "Get the whitelist hook for a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "depositId": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "depositId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer pv intent list-owner",
+    "path": [
+      "pv",
+      "intent",
+      "list-owner"
+    ],
+    "description": "Fetch intents for an owner directly from ProtocolViewer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Owner address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer pv intent show",
+    "path": [
+      "pv",
+      "intent",
+      "show"
+    ],
+    "description": "Fetch a single intent directly from ProtocolViewer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "intentHash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "intentHash"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer intents by-deposit-ids",
+    "path": [
+      "indexer",
+      "intents",
+      "by-deposit-ids"
+    ],
+    "description": "Fetch intents for multiple deposits via the indexer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "depositIds": {
+          "type": "array",
+          "description": "JSON array of composite deposit IDs."
+        },
+        "statuses": {
+          "type": "array",
+          "description": "JSON array of statuses."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer intents by-owner",
+    "path": [
+      "indexer",
+      "intents",
+      "by-owner"
+    ],
+    "description": "Fetch intents by owner via the indexer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Owner address."
+        },
+        "statuses": {
+          "type": "array",
+          "description": "JSON array of statuses."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "owner"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer intents show",
+    "path": [
+      "indexer",
+      "intents",
+      "show"
+    ],
+    "description": "Fetch a single intent via the indexer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "intentHash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "intentHash"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer intents expired",
+    "path": [
+      "indexer",
+      "intents",
+      "expired"
+    ],
+    "description": "Fetch expired intents via the indexer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "now": {
+          "type": "string",
+          "description": "Current timestamp or bigint string."
+        },
+        "depositIds": {
+          "type": "array",
+          "description": "JSON array of composite deposit IDs."
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum result size."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer intents fulfilled-events",
+    "path": [
+      "indexer",
+      "intents",
+      "fulfilled-events"
+    ],
+    "description": "Fetch fulfillment events for intents.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "hashes": {
+          "type": "array",
+          "description": "JSON array of intent hashes."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer intents fulfillment-amounts",
+    "path": [
+      "indexer",
+      "intents",
+      "fulfillment-amounts"
+    ],
+    "description": "Fetch fulfillment amounts for an intent.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "intentHash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "intentHash"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer indexer intents fulfillment-and-payment",
+    "path": [
+      "indexer",
+      "intents",
+      "fulfillment-and-payment"
+    ],
+    "description": "Fetch fulfillment and payment records for an intent.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "intentHash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "intentHash"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer vault create",
+    "path": [
+      "vault",
+      "create"
+    ],
+    "description": "Create a new rate manager vault.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "manager": {
+          "type": "string",
+          "description": "Vault manager address."
+        },
+        "feeRecipient": {
+          "type": "string",
+          "description": "Fee recipient address."
+        },
+        "fee": {
+          "type": "number",
+          "description": "Current fee percentage."
+        },
+        "maxFee": {
+          "type": "number",
+          "description": "Maximum fee percentage.",
+          "default": 5
+        },
+        "name": {
+          "type": "string",
+          "description": "Vault display name."
+        },
+        "uri": {
+          "type": "string",
+          "description": "Vault metadata URI.",
+          "default": ""
+        },
+        "depositHook": {
+          "type": "string",
+          "description": "Optional deposit hook address."
+        },
+        "minLiquidity": {
+          "type": "number",
+          "description": "Optional minimum liquidity in USDC."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer vault list",
+    "path": [
+      "vault",
+      "list"
+    ],
+    "description": "List vaults via the indexer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "pagination": {
+          "type": "object",
+          "description": "JSON pagination object."
+        },
+        "filter": {
+          "type": "object",
+          "description": "JSON filter object."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer vault show",
+    "path": [
+      "vault",
+      "show"
+    ],
+    "description": "Show vault details via the indexer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "rateManagerId": {
+          "type": "string",
+          "description": "Vault rateManagerId."
+        },
+        "options": {
+          "type": "object",
+          "description": "JSON detail options."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "rateManagerId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer vault set-rate",
+    "path": [
+      "vault",
+      "set-rate"
+    ],
+    "description": "Set a minimum rate for one payment method/currency pair.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Vault rateManagerId."
+        },
+        "platform": {
+          "type": "string",
+          "description": "Payment method name or hash."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Fiat currency code or hash."
+        },
+        "rate": {
+          "type": "number",
+          "description": "Human-readable conversion rate."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer vault set-rates",
+    "path": [
+      "vault",
+      "set-rates"
+    ],
+    "description": "Set rates in batch.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Vault rateManagerId."
+        },
+        "paymentMethods": {
+          "type": "array",
+          "description": "JSON array of payment method hashes."
+        },
+        "currencies": {
+          "type": "array",
+          "description": "JSON matrix of currency hashes."
+        },
+        "rates": {
+          "type": "array",
+          "description": "JSON matrix of 18-decimal bigint strings or numbers."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer vault set-fee",
+    "path": [
+      "vault",
+      "set-fee"
+    ],
+    "description": "Update the vault fee percentage.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Vault rateManagerId."
+        },
+        "fee": {
+          "type": "number",
+          "description": "New fee percentage."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer vault set-config",
+    "path": [
+      "vault",
+      "set-config"
+    ],
+    "description": "Update vault metadata and manager addresses.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Vault rateManagerId."
+        },
+        "manager": {
+          "type": "string",
+          "description": "New manager address."
+        },
+        "feeRecipient": {
+          "type": "string",
+          "description": "New fee recipient address."
+        },
+        "hook": {
+          "type": "string",
+          "description": "Optional new hook address."
+        },
+        "name": {
+          "type": "string",
+          "description": "New vault name."
+        },
+        "uri": {
+          "type": "string",
+          "description": "New vault URI."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer vault delegates",
+    "path": [
+      "vault",
+      "delegates"
+    ],
+    "description": "List delegated deposits for a vault.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "rateManagerId": {
+          "type": "string",
+          "description": "Vault rateManagerId."
+        },
+        "pagination": {
+          "type": "object",
+          "description": "JSON pagination object."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "rateManagerId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer vault snapshots",
+    "path": [
+      "vault",
+      "snapshots"
+    ],
+    "description": "Fetch daily snapshots for a vault.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "rateManagerId": {
+          "type": "string",
+          "description": "Vault rateManagerId."
+        },
+        "options": {
+          "type": "object",
+          "description": "JSON snapshot options."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "rateManagerId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer vault manual-rate-updates",
+    "path": [
+      "vault",
+      "manual-rate-updates"
+    ],
+    "description": "Fetch manual rate updates for a vault.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "rateManagerId": {
+          "type": "string",
+          "description": "Vault rateManagerId."
+        },
+        "options": {
+          "type": "object",
+          "description": "JSON query options."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "rateManagerId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer vault oracle-config-updates",
+    "path": [
+      "vault",
+      "oracle-config-updates"
+    ],
+    "description": "Fetch oracle config updates for a vault.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "rateManagerId": {
+          "type": "string",
+          "description": "Vault rateManagerId."
+        },
+        "options": {
+          "type": "object",
+          "description": "JSON query options."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "rateManagerId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer vault manager-fee",
+    "path": [
+      "vault",
+      "manager-fee"
+    ],
+    "description": "Read the effective manager fee for a delegated deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "escrow": {
+          "type": "string",
+          "description": "Escrow address."
+        },
+        "depositId": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer vault effective-rate",
+    "path": [
+      "vault",
+      "effective-rate"
+    ],
+    "description": "Read the effective rate for a delegated deposit pair.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "escrow": {
+          "type": "string",
+          "description": "Escrow address."
+        },
+        "depositId": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "platform": {
+          "type": "string",
+          "description": "Payment method name or hash."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Fiat currency code or hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer oracle supports-inline",
+    "path": [
+      "oracle",
+      "supports-inline"
+    ],
+    "description": "Check whether the current escrow deployment supports inline oracle configs.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "escrowAddress": {
+          "type": "string",
+          "description": "Optional escrow address override."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer oracle validate-feeds",
+    "path": [
+      "oracle",
+      "validate-feeds"
+    ],
+    "description": "Validate bundled oracle feeds on-chain.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer delegate set",
+    "path": [
+      "delegate",
+      "set"
+    ],
+    "description": "Delegate a deposit to a vault via the controller flow.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "deposit": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "vault": {
+          "type": "string",
+          "description": "Vault rateManagerId."
+        },
+        "escrow": {
+          "type": "string",
+          "description": "Escrow address override."
+        },
+        "registry": {
+          "type": "string",
+          "description": "Registry address override."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer undelegate",
+    "path": [
+      "undelegate"
+    ],
+    "description": "Remove controller-based vault delegation from a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "deposit": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "escrow": {
+          "type": "string",
+          "description": "Escrow address override."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer delegate show",
+    "path": [
+      "delegate",
+      "show"
+    ],
+    "description": "Show current controller-based delegation for a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "deposit": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "escrow": {
+          "type": "string",
+          "description": "Escrow address override."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer delegate set-direct",
+    "path": [
+      "delegate",
+      "set-direct"
+    ],
+    "description": "Delegate a deposit directly on EscrowV2 without the controller helper.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "deposit": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "rateManagerAddress": {
+          "type": "string",
+          "description": "Rate manager contract address."
+        },
+        "vault": {
+          "type": "string",
+          "description": "Vault rateManagerId."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer delegate clear-direct",
+    "path": [
+      "delegate",
+      "clear-direct"
+    ],
+    "description": "Clear direct EscrowV2 delegation from a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "deposit": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer indexer delegations by-deposit",
+    "path": [
+      "indexer",
+      "delegations",
+      "by-deposit"
+    ],
+    "description": "Fetch the delegation record for a composite deposit ID via the indexer.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "depositId": {
+          "type": "string",
+          "description": "Composite deposit ID."
+        },
+        "options": {
+          "type": "object",
+          "description": "JSON options object."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "depositId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market spreads",
+    "path": [
+      "market",
+      "spreads"
+    ],
+    "description": "Fetch current market spreads from Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "platform": {
+          "type": "string",
+          "description": "Comma-separated payment platforms."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Comma-separated fiat currencies."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market compare",
+    "path": [
+      "market",
+      "compare"
+    ],
+    "description": "Compare live quote availability across platforms using the published SDK quote route.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Fiat currency code."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Quote amount."
+        },
+        "platform": {
+          "type": "string",
+          "description": "Comma-separated payment platforms."
+        },
+        "recipient": {
+          "type": "string",
+          "description": "Recipient wallet address."
+        },
+        "quotesToReturn": {
+          "type": "number",
+          "description": "Number of quotes to request.",
+          "default": 10
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market volume",
+    "path": [
+      "market",
+      "volume"
+    ],
+    "description": "Fetch Peerlytics protocol volume metrics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "platform": {
+          "type": "string",
+          "description": "Comma-separated payment platforms."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Fiat currency code."
+        },
+        "period": {
+          "type": "string",
+          "description": "Volume lookback window: 24h, 7d, 30d, 90d.",
+          "default": "24h"
+        },
+        "granularity": {
+          "type": "string",
+          "description": "Aggregation granularity.",
+          "default": "daily"
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market leaderboard",
+    "path": [
+      "market",
+      "leaderboard"
+    ],
+    "description": "Fetch maker leaderboard data from Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "string",
+          "description": "Leaderboard lookback window.",
+          "default": "7d"
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum number of makers to return.",
+          "default": 10
+        },
+        "sortBy": {
+          "type": "string",
+          "description": "Sort order: volume, fillRate, txCount.",
+          "default": "volume"
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market protocol-stats",
+    "path": [
+      "market",
+      "protocol-stats"
+    ],
+    "description": "Fetch aggregate Peerlytics protocol statistics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer transfer",
+    "path": [
+      "transfer"
+    ],
+    "description": "Transfer USDC directly from the configured wallet.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "to": {
+          "type": "string",
+          "description": "Recipient address."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Token amount in human units."
+        },
+        "token": {
+          "type": "string",
+          "description": "Token address override."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer balance",
+    "path": [
+      "balance"
+    ],
+    "description": "Read the current USDC balance for an address.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "Address to inspect."
+        },
+        "token": {
+          "type": "string",
+          "description": "Token address override."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer checkout create",
+    "path": [
+      "checkout",
+      "create"
+    ],
+    "description": "Create a hosted Pay checkout session and cache the response locally.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "USDC amount to collect."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Fiat currency restriction.",
+          "default": "USD"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable order description."
+        },
+        "merchantId": {
+          "type": "string",
+          "description": "Merchant identifier override."
+        },
+        "recipient": {
+          "type": "string",
+          "description": "Recipient wallet address."
+        },
+        "platforms": {
+          "type": "string",
+          "description": "Comma-separated allowed payment platforms."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Metadata object as JSON."
+        },
+        "callbackUrl": {
+          "type": "string",
+          "description": "Optional redirect URL after completion."
+        },
+        "token": {
+          "type": "string",
+          "description": "Destination token override."
+        },
+        "chainId": {
+          "type": "number",
+          "description": "Destination chain ID.",
+          "default": 8453
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer checkout list",
+    "path": [
+      "checkout",
+      "list"
+    ],
+    "description": "List checkout sessions from the Pay API, with a local cache fallback.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Status filter."
+        },
+        "page": {
+          "type": "number",
+          "description": "Page number.",
+          "default": 1
+        },
+        "pageSize": {
+          "type": "number",
+          "description": "Page size.",
+          "default": 25
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer checkout show",
+    "path": [
+      "checkout",
+      "show"
+    ],
+    "description": "Show a single checkout session or poll its latest status.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "description": "Checkout session / order ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "sessionId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer checkout cancel",
+    "path": [
+      "checkout",
+      "cancel"
+    ],
+    "description": "Cancel an active checkout session.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "description": "Checkout session / order ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "sessionId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer config show",
+    "path": [
+      "config",
+      "show"
+    ],
+    "description": "Show the stored Peer CLI config merged with current global flags.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer config set",
+    "path": [
+      "config",
+      "set"
+    ],
+    "description": "Persist a config value to ~/.peer/config.json.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Config key to update."
+        },
+        "value": {
+          "type": "string",
+          "description": "New config value."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "key",
+        "value"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer config platforms",
+    "path": [
+      "config",
+      "platforms"
+    ],
+    "description": "List supported payment platforms.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer config currencies",
+    "path": [
+      "config",
+      "currencies"
+    ],
+    "description": "List supported fiat currencies.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer mcp",
+    "path": [
+      "mcp"
+    ],
+    "description": "Start the peer-cli MCP server over stdio.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "full": {
+          "type": "boolean",
+          "description": "Expose write-capable tools as well as read-only tools."
+        },
+        "readOnly": {
+          "type": "boolean",
+          "description": "Force read-only tool registration."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  }
+]

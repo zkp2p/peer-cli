@@ -96,13 +96,24 @@ describe('registry-backed command handlers', () => {
       paymentMethodHash: '0xabc',
     }, {}, runtime.deps);
     expect(resolved).toMatchObject({ ok: true, data: { path: 'resolvePayeeHash' } });
+
+    const takerTier = await executeDefinition(definition(['taker', 'tier']), {
+      address: '0x1111111111111111111111111111111111111111',
+    }, {}, runtime.deps);
+    expect(takerTier).toMatchObject({ ok: true, data: { responseObject: { tier: 'standard' } } });
   });
 
   it('handles deposit lifecycle commands', async () => {
     const runtime = createMockRuntime({ yes: true });
     await expect(run(['deposit', 'ensure-allowance'], { amount: 10 }, runtime)).resolves.toMatchObject({
       ok: true,
-      data: { ok: true },
+      data: {
+        executed: true,
+        previewData: expect.objectContaining({
+          requiredAmount: '10000000',
+        }),
+        result: { ok: true },
+      },
     });
 
     await expect(run(['deposit', 'create'], {
@@ -271,11 +282,11 @@ describe('registry-backed command handlers', () => {
         data: { raw: '123', formatted: '0.000123' },
       });
 
-      const create = await run(['checkout', 'create'], {
-        amount: 12,
-        description: 'Order',
+    const create = await run(['checkout', 'create'], {
+      amount: 12,
+      description: 'Order',
       }, runtime);
-      expect(create).toMatchObject({ ok: true, data: { orderId: 'order-1' } });
+      expect(create).toMatchObject({ ok: true, data: { executed: true, result: { orderId: 'order-1' } } });
       expect(await readFile(join(home, '.peer', 'checkout-sessions.json'), 'utf8')).toContain('order-1');
 
       const list = await run(['checkout', 'list'], { status: 'pending' }, createMockRuntime({
@@ -292,7 +303,7 @@ describe('registry-backed command handlers', () => {
       expect(show).toMatchObject({ ok: true, data: { source: 'cache', session: { orderId: 'order-1', status: 'created' } } });
 
       const cancel = await run(['checkout', 'cancel'], { sessionId: 'order-1' }, runtime);
-      expect(cancel).toMatchObject({ ok: true, data: { status: 'cancelled' } });
+      expect(cancel).toMatchObject({ ok: true, data: { executed: true, result: { status: 'cancelled' } } });
     });
   });
 

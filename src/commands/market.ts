@@ -3,15 +3,7 @@ import { sdkReadHandler } from './helpers.js';
 import { createError } from '../output/errors.js';
 import { SUPPORTED_MARKET_GRANULARITIES, SUPPORTED_MARKET_PERIODS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
 import { ensureAddress, ensureNumber, ensureOneOf, ensurePositiveNumber, ensureString, parseCsv } from '../utils/validation.js';
-
-function appendSearchParams(url: URL, values: Record<string, string | number | undefined>): URL {
-  for (const [key, value] of Object.entries(values)) {
-    if (value !== undefined && value !== '') {
-      url.searchParams.set(key, String(value));
-    }
-  }
-  return url;
-}
+import { appendSearchParams } from '../utils/http.js';
 
 function marketHeaders(apiKey?: string): Record<string, string> {
   return apiKey ? { 'x-api-key': apiKey } : {};

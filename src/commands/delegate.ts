@@ -2,10 +2,8 @@ import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler, sdkWriteHandler } from './helpers.js';
 import { ensureAddress, ensureString } from '../utils/validation.js';
 import { DEFAULT_CHAIN_ID } from '../utils/constants.js';
-
-function asBigInt(value: unknown, field: string): bigint {
-  return BigInt(ensureString(value, field));
-}
+import { asBigInt } from '../utils/parsing.js';
+import type { PeerEnv } from '../sdk/config.js';
 
 async function getDefaultEscrow(context: Parameters<NonNullable<CommandDefinition['handler']>>[1]): Promise<`0x${string}`> {
   const { client } = await context.getClient({ requireWallet: false });
@@ -13,7 +11,7 @@ async function getDefaultEscrow(context: Parameters<NonNullable<CommandDefinitio
   return (deployed.escrowV2 ?? deployed.escrow) as `0x${string}`;
 }
 
-async function getDefaultRegistry(env: 'production' | 'staging'): Promise<`0x${string}`> {
+async function getDefaultRegistry(env: PeerEnv): Promise<`0x${string}`> {
   const { getRateManagerContracts } = await import('@zkp2p/sdk');
   return getRateManagerContracts(DEFAULT_CHAIN_ID, env).addresses.registry;
 }

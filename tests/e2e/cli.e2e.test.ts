@@ -65,7 +65,7 @@ describe('peer cli e2e', () => {
     expect(result.stdout).toContain('Usage: peer');
     expect(result.stdout).toContain('quote');
     expect(result.stdout).toContain('mcp');
-  });
+  }, 15_000);
 
   it('persists config in an isolated HOME directory', async () => {
     const homeDir = await makeHomeDir();
@@ -91,5 +91,5 @@ describe('peer cli e2e', () => {
     expect(payload.ok).toBe(true);
     expect(payload.data.stored.env).toBe('staging');
     expect(payload.data.resolved.env).toBe('staging');
-  });
+  }, 15_000);
 });

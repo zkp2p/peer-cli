@@ -3,6 +3,7 @@ import { createError } from '../output/errors.js';
 import { DEFAULT_CHAIN_ID } from '../utils/constants.js';
 import { getCheckoutCachePath } from '../sdk/config.js';
 import { ensureAddress, ensureNumber, ensurePositiveNumber, ensureString, parseCsv, parseJsonInput } from '../utils/validation.js';
+import { appendSearchParams } from '../utils/http.js';
 
 interface CheckoutCacheRecord {
   sessions: Record<string, unknown>;
@@ -10,15 +11,6 @@ interface CheckoutCacheRecord {
 
 function payHeaders(apiKey?: string): Record<string, string> {
   return apiKey ? { 'x-api-key': apiKey } : {};
-}
-
-function appendSearchParams(url: URL, values: Record<string, string | number | undefined>): URL {
-  for (const [key, value] of Object.entries(values)) {
-    if (value !== undefined && value !== '') {
-      url.searchParams.set(key, String(value));
-    }
-  }
-  return url;
 }
 
 async function readCheckoutCache(
@@ -67,6 +59,21 @@ function normalizeCheckoutStatus(value: unknown): string | undefined {
   return aliases[status] ?? status;
 }
 
+function buildApiMutationPreview(endpoint: string, payload: Record<string, unknown>) {
+  return {
+    prepared: {
+      to: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+      data: '0x' as `0x${string}`,
+      value: 0n,
+      chainId: DEFAULT_CHAIN_ID,
+    },
+    previewData: {
+      endpoint,
+      payload,
+    },
+  };
+}
+
 export const checkoutDefinitions: CommandDefinition[] = [
   {
     path: ['checkout', 'create'],
@@ -99,6 +106,7 @@ export const checkoutDefinitions: CommandDefinition[] = [
         ...(input.description ? { description: ensureString(input.description, 'description') } : {}),
       };
 
+      const paymentPlatforms = parseCsv(input.platforms as string | undefined);
       const payload = {
         ...(input.merchantId ? { merchantId: ensureString(input.merchantId, 'merchantId') } : {}),
         amountUsdc: ensurePositiveNumber(input.amount, 'amount').toFixed(2),
@@ -106,22 +114,25 @@ export const checkoutDefinitions: CommandDefinition[] = [
         destinationToken: input.token ? ensureAddress(input.token, 'token') : ensureAddress(client.getUsdcAddress(), 'token'),
         recipientAddress: recipient,
         fiatCurrency: ensureString(input.currency ?? 'USD', 'currency'),
-        ...(parseCsv(input.platforms as string | undefined) ? { paymentPlatforms: parseCsv(input.platforms as string | undefined) } : {}),
+        ...(paymentPlatforms ? { paymentPlatforms } : {}),
         ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
         ...(input.callbackUrl ? { callbackUrl: ensureString(input.callbackUrl, 'callbackUrl') } : {}),
       };
+      const endpoint = new URL('/v1/checkout/session', context.config.payBaseUrl).toString();
 
-      const session = await context.requestJson<Record<string, unknown>>(
-        new URL('/v1/checkout/session', context.config.payBaseUrl).toString(),
-        {
-          method: 'POST',
-          headers: payHeaders(apiKey),
-          body: JSON.stringify(payload),
+      return context.runPrepared({
+        description: `Create a checkout session for ${payload.amountUsdc} ${payload.fiatCurrency}.`,
+        prepare: async () => buildApiMutationPreview(endpoint, payload),
+        execute: async () => {
+          const session = await context.requestJson<Record<string, unknown>>(endpoint, {
+            method: 'POST',
+            headers: payHeaders(apiKey),
+            body: JSON.stringify(payload),
+          });
+          await upsertCheckoutCache(context, session);
+          return session;
         },
-      );
-
-      await upsertCheckoutCache(context, session);
-      return session;
+      });
     },
   },
   {
@@ -129,7 +140,7 @@ export const checkoutDefinitions: CommandDefinition[] = [
     description: 'List checkout sessions from the Pay API, with a local cache fallback.',
     readOnly: true,
     options: [
-      { name: 'status', flags: '--status <value>', description: 'Status filter.', schema: { type: 'string', description: 'Status filter.' } },
+      { name: 'status', flags: '--status <value>', description: 'Status filter. Aliases: pending -> created, completed -> fulfilled.', schema: { type: 'string', description: 'Status filter.' } },
       { name: 'page', flags: '--page <value>', description: 'Page number.', schema: { type: 'number', description: 'Page number.' }, defaultValue: 1 },
       { name: 'pageSize', flags: '--page-size <value>', description: 'Page size.', schema: { type: 'number', description: 'Page size.' }, defaultValue: 25 },
     ],
@@ -194,16 +205,21 @@ export const checkoutDefinitions: CommandDefinition[] = [
     handler: async (input, context) => {
       const sessionId = ensureString(input.sessionId, 'sessionId');
       const apiKey = requirePayApiKey(context.config.payApiKey);
-      const response = await context.requestJson<Record<string, unknown>>(
-        new URL(`/v1/checkout/session/${sessionId}/cancel`, context.config.payBaseUrl).toString(),
-        {
-          method: 'POST',
-          headers: payHeaders(apiKey),
-          body: JSON.stringify({}),
+      const endpoint = new URL(`/v1/checkout/session/${sessionId}/cancel`, context.config.payBaseUrl).toString();
+
+      return context.runPrepared({
+        description: `Cancel checkout session ${sessionId}.`,
+        prepare: async () => buildApiMutationPreview(endpoint, { sessionId }),
+        execute: async () => {
+          const response = await context.requestJson<Record<string, unknown>>(endpoint, {
+            method: 'POST',
+            headers: payHeaders(apiKey),
+            body: JSON.stringify({}),
+          });
+          await upsertCheckoutCache(context, { ...response, orderId: response.orderId ?? sessionId });
+          return response;
         },
-      );
-      await upsertCheckoutCache(context, { ...response, orderId: response.orderId ?? sessionId });
-      return response;
+      });
     },
   },
 ];

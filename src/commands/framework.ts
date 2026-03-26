@@ -1,12 +1,14 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import { Command } from 'commander';
+import type { Command } from 'commander';
 import type { PreparedTransaction } from '@zkp2p/sdk';
 import { buildOutput, renderOutput } from '../output/formatter.js';
 import { createError, normalizeError } from '../output/errors.js';
 import type { CLIOutput, OutputFormat } from '../output/types.js';
-import { createClient as defaultCreateClient, type ClientBundle } from '../sdk/client.js';
-import { resolveConfig as defaultResolveConfig, type GlobalOptions, type ResolvedConfig } from '../sdk/config.js';
+import { createClient as defaultCreateClient } from '../sdk/client.js';
+import type { ClientBundle } from '../sdk/client.js';
+import { resolveConfig as defaultResolveConfig } from '../sdk/config.js';
+import type { GlobalOptions, ResolvedConfig } from '../sdk/config.js';
 import { requestJson as defaultRequestJson } from '../utils/http.js';
 import { setDebugEnabled } from '../utils/logger.js';
 import { parseJsonFile, parseJsonInput } from '../utils/validation.js';
@@ -94,6 +96,7 @@ const DEFAULT_DEPS: RuntimeDeps = {
 
 const GROUP_DESCRIPTIONS: Record<string, string> = {
   quote: 'Quote operations',
+  taker: 'Taker operations',
   deposit: 'Deposit management',
   intent: 'Intent operations',
   vault: 'Vault management',
@@ -268,6 +271,9 @@ function applyDefinition(command: Command, spec: CommandDefinition, deps: Runtim
   command.action(async (...args: unknown[]) => {
     const commandInstance = args.at(-1) as Command;
     const optionBag = args.at(-2) as Record<string, unknown>;
+    const optionInput = Object.fromEntries(
+      Object.entries(optionBag).filter(([key]) => key !== 'params' && key !== 'paramsFile'),
+    );
     const rawPositionals = args.slice(0, Math.max(0, args.length - 2));
     const explicitInput = Object.fromEntries((spec.args ?? []).map((definition, index) => [definition.name, rawPositionals[index]]));
     const paramsInput = await parseJsonFile(optionBag.paramsFile as string | undefined);
@@ -276,7 +282,7 @@ function applyDefinition(command: Command, spec: CommandDefinition, deps: Runtim
     const globalOptions = commandInstance.optsWithGlobals() as GlobalOptions;
     const output = await executeDefinition(
       spec,
-      mergeCommandInput({ ...explicitInput, ...optionBag }, mergedParams),
+      mergeCommandInput({ ...explicitInput, ...optionInput }, mergedParams),
       globalOptions,
       deps,
     );

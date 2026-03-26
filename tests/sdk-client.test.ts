@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type * as ViemNamespace from 'viem';
 
 const mocks = vi.hoisted(() => ({
   setLogLevel: vi.fn(),
@@ -17,7 +18,7 @@ vi.mock('@zkp2p/sdk', () => ({
 }));
 
 vi.mock('viem', async () => {
-  const actual = await vi.importActual<typeof import('viem')>('viem');
+  const actual = await vi.importActual<typeof ViemNamespace>('viem');
   return {
     ...actual,
     createWalletClient: mocks.createWalletClient,

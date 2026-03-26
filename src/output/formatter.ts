@@ -16,7 +16,10 @@ function stringifyJson(value: unknown): string {
 function renderPrimitive(value: unknown): string {
   if (value === null || value === undefined) return '';
   if (typeof value === 'bigint') return value.toString();
-  if (typeof value === 'object') return stringifyJson(value);
+  if (typeof value === 'object') {
+    const rendered = stringifyJson(value);
+    return rendered.length > 120 ? `${rendered.slice(0, 117)}...` : rendered;
+  }
   return String(value);
 }
 

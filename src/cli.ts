@@ -1,25 +1,18 @@
 #!/usr/bin/env node
-import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 import { registerDefinitions, type RuntimeDeps } from './commands/framework.js';
 import { commandDefinitions } from './commands/registry.js';
-
-async function readPackageVersion(): Promise<string> {
-  const raw = await readFile(new URL('../package.json', import.meta.url), 'utf8');
-  const pkg = JSON.parse(raw) as { version?: string };
-  return pkg.version ?? '0.1.0';
-}
+import { readPackageVersion } from './utils/package.js';
 
 function isMainModule(): boolean {
   const entry = process.argv[1];
-  return entry !== undefined && resolve(entry) === fileURLToPath(import.meta.url);
+  return entry !== undefined && /(?:^|[/\\])(?:src[/\\]cli\.ts|dist[/\\]cli\.(?:cjs|js))$/.test(resolve(entry));
 }
 
 export async function createProgram(deps?: RuntimeDeps): Promise<Command> {
   const program = new Command();
-  const version = await readPackageVersion();
+  const version = readPackageVersion();
 
   program
     .name('peer')
@@ -27,8 +20,8 @@ export async function createProgram(deps?: RuntimeDeps): Promise<Command> {
     .version(version)
     .showHelpAfterError();
 
-  program.option('--env <value>', 'Runtime environment (production or staging).');
-  program.option('--private-key <hex>', 'Hex-encoded private key.');
+  program.option('--env <value>', 'Runtime environment (production, preproduction, or staging).');
+  program.option('--private-key <hex>', 'Hex-encoded private key. Warning: visible in process listings. Prefer PEER_PRIVATE_KEY.');
   program.option('--wallet-path <path>', 'Path to a file containing a private key.');
   program.option('--rpc-url <url>', 'Override the Base RPC URL.');
   program.option('--api-key <value>', 'Curator API key for SDK-backed authenticated routes.');

@@ -3,14 +3,12 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: ['src/cli.ts'],
   outDir: 'dist',
-  format: ['esm'],
+  format: ['cjs'],
   dts: true,
   clean: true,
   sourcemap: true,
   splitting: false,
-  target: 'node18',
-  banner: {
-    js: '#!/usr/bin/env node',
-  },
-  external: ['@zkp2p/sdk', 'viem'],
+  target: 'node22',
+  outExtension: () => ({ js: '.cjs' }),
+  noExternal: ['@zkp2p/sdk', '@zkp2p/contracts-v2', '@zkp2p/indexer-schema', 'viem', 'ethers', 'ox'],
 });

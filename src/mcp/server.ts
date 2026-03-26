@@ -4,6 +4,7 @@ import { commandDefinitions } from '../commands/registry.js';
 import type { RuntimeDeps } from '../commands/framework.js';
 import { registerCommandTools } from './tools.js';
 import type { GlobalOptions } from '../sdk/config.js';
+import { readPackageVersion } from '../utils/package.js';
 
 export interface PeerMcpOptions {
   full?: boolean;
@@ -15,7 +16,7 @@ export interface PeerMcpOptions {
 export function createPeerMcpServer(options: PeerMcpOptions = {}): McpServer {
   const server = new McpServer({
     name: 'peer-cli',
-    version: options.version ?? '0.1.0',
+    version: options.version ?? readPackageVersion(),
   });
 
   registerCommandTools(

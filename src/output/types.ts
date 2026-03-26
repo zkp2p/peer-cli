@@ -29,9 +29,16 @@ export interface CLIMeta {
   duration_ms: number;
 }
 
-export interface CLIOutput<T> {
-  ok: boolean;
-  data?: T;
-  error?: CLIErrorBody;
-  meta: CLIMeta;
-}
+export type CLIOutput<T> =
+  | {
+      ok: true;
+      data: T;
+      error?: never;
+      meta: CLIMeta;
+    }
+  | {
+      ok: false;
+      data?: never;
+      error: CLIErrorBody;
+      meta: CLIMeta;
+    };

@@ -1,5 +1,6 @@
 import type { CommandDefinition } from './framework.js';
 import { startPeerMcpServer } from '../mcp/server.js';
+import { readPackageVersion } from '../utils/package.js';
 
 export const mcpDefinitions: CommandDefinition[] = [
   {
@@ -16,8 +17,9 @@ export const mcpDefinitions: CommandDefinition[] = [
         full: Boolean(input.full) && !Boolean(input.readOnly),
         globalOptions: context.globalOptions,
         deps: context.deps,
+        version: readPackageVersion(),
       });
-      return { started: true };
+      return undefined;
     },
   },
 ];

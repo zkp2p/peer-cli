@@ -47,8 +47,8 @@ npm run dev -- quote --from USD --amount 100 --platform wise
 
 | Flag | Purpose |
 | --- | --- |
-| `--env <production|staging>` | Select the runtime environment. |
-| `--private-key <hex>` | Provide a hex private key directly. |
+| `--env <production|preproduction|staging>` | Select the runtime environment. |
+| `--private-key <hex>` | Provide a hex private key directly. Warning: visible in process listings; prefer `PEER_PRIVATE_KEY`. |
 | `--wallet-path <path>` | Read a private key from a file. |
 | `--rpc-url <url>` | Override the Base RPC URL. |
 | `--api-key <value>` | Curator API key for SDK-backed authenticated routes. |
@@ -117,6 +117,7 @@ Commands that need a signer require one of:
 
 ### Quotes and payee helpers
 - `peer quote` - Get fiat-to-USDC exchange quotes.
+- `peer taker tier` - Fetch taker caps and cooldown state.
 - `peer payee register` - Register payee details with the curator API.
 - `peer payee resolve-hash` - Resolve a payee hash from on-chain deposit data.
 
@@ -134,6 +135,8 @@ Commands that need a signer require one of:
 - `peer deposit set-range`
 - `peer deposit set-rate`
 - `peer deposit set-retain-on-empty`
+- `peer deposit set-delegate`
+- `peer deposit remove-delegate`
 - `peer deposit payment-method add`
 - `peer deposit payment-method set-active`
 - `peer deposit payment-method remove`
@@ -159,7 +162,7 @@ Commands that need a signer require one of:
 - `peer indexer deposits fund-activities`
 - `peer indexer makers fund-activities`
 - `peer indexer deposits snapshots`
-- `peer indexer query`
+- `peer indexer query` - Raw GraphQL passthrough; use sparingly.
 - `peer indexer intents by-deposit-ids`
 - `peer indexer intents by-owner`
 - `peer indexer intents show`
@@ -215,10 +218,10 @@ Commands that need a signer require one of:
 - `peer balance`
 
 ### Checkout and config
-- `peer checkout create`
+- `peer checkout create` - Previews the Pay API request and only creates the session with `--yes`.
 - `peer checkout list`
 - `peer checkout show`
-- `peer checkout cancel`
+- `peer checkout cancel` - Previews the cancel action and only executes with `--yes`.
 - `peer config show`
 - `peer config set`
 - `peer config platforms`

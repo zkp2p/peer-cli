@@ -84,21 +84,30 @@ describe('logging utils', () => {
 
 describe('requestJson', () => {
   it('sends json requests and parses responses', async () => {
-    const fetchMock = vi.fn(async () => ({
+    let requestUrl: string | URL | undefined;
+    let requestInit: RequestInit | undefined;
+    const fetchMock = vi.fn(async (input: string | URL, init?: RequestInit) => {
+      requestUrl = input;
+      requestInit = init;
+      return {
       ok: true,
       status: 200,
       text: async () => '{"value":1}',
-    }));
+      };
+    });
     vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     await expect(requestJson<{ value: number }>('https://example.test', { method: 'POST', body: '{}' })).resolves.toEqual({ value: 1 });
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://example.test',
-      expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({ 'content-type': 'application/json' }),
-      }),
-    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith('https://example.test', expect.any(Object));
+    expect(requestUrl).toBe('https://example.test');
+    expect(requestInit).toBeDefined();
+    if (!requestInit) {
+      throw new Error('expected request init to be defined');
+    }
+    expect(requestInit).toMatchObject({ method: 'POST', body: '{}' });
+    expect(requestInit.headers).toBeInstanceOf(Headers);
+    expect((requestInit.headers as Headers).get('content-type')).toBe('application/json');
   });
 
   it('maps failed responses to peer errors', async () => {

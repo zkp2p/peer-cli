@@ -1,30 +1,9 @@
-import { parseUnits } from 'viem';
+import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
 import { createError } from '../output/errors.js';
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler, sdkSeparatePrepareHandler, sdkWriteHandler } from './helpers.js';
-import { ensureAddress, ensureNumber, ensurePositiveNumber, ensureString, parseCsv, parseJsonInput } from '../utils/validation.js';
-
-function asBigInt(value: unknown, field: string): bigint {
-  return BigInt(ensureString(value, field));
-}
-
-function parseJsonObject(value: unknown, field: string): Record<string, unknown> {
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  if (typeof value === 'string') {
-    return parseJsonInput(value, field) ?? {};
-  }
-  throw createError('VALIDATION_ERROR', `${field} must be a JSON object.`);
-}
-
-function parseJsonArray(value: unknown, field: string): unknown[] {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    return JSON.parse(value) as unknown[];
-  }
-  throw createError('VALIDATION_ERROR', `${field} must be a JSON array.`);
-}
+import { ensureAddress, ensureNumber, ensurePositiveNumber, ensureString, parseCsv } from '../utils/validation.js';
+import { asBigInt, parseJsonArray, parseJsonObject } from '../utils/parsing.js';
 
 function parseConversionRate(value: unknown): string {
   return parseUnits(ensurePositiveNumber(value, 'rate').toString(), 18).toString();
@@ -57,6 +36,46 @@ async function withUsdcAddress<T>(
   return builder(token);
 }
 
+async function getAllowancePreview(
+  input: Record<string, unknown>,
+  context: Parameters<NonNullable<CommandDefinition['handler']>>[1],
+): Promise<{
+  token: `0x${string}`;
+  spender: `0x${string}`;
+  amount: bigint;
+  approvalAmount: bigint;
+  currentAllowance: bigint;
+}> {
+  const { client, publicClient, walletClient } = await context.getClient({ requireWallet: true });
+  const account = walletClient.account;
+  if (!account) {
+    throw createError('AUTH_REQUIRED', 'This command requires a signer account.');
+  }
+
+  const token = ensureAddress(
+    ((input.token as string | undefined) ?? client.getUsdcAddress()) as string | undefined,
+    'token',
+  );
+  const amount = parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6);
+  const deployed = client.getDeployedAddresses();
+  const spender = ensureAddress((deployed.escrowV2 ?? deployed.escrow) as `0x${string}`, 'spender');
+  const currentAllowance = await publicClient.readContract({
+    address: token,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: [account.address, spender],
+  });
+  const approvalAmount = Boolean(input.maxApprove) ? (1n << 256n) - 1n : amount;
+
+  return {
+    token,
+    spender,
+    amount,
+    approvalAmount,
+    currentAllowance,
+  };
+}
+
 const filterOption = { name: 'filter', flags: '--filter <json>', description: 'JSON filter object.', schema: { type: 'object', description: 'Filter object.' } } as const;
 const paginationOption = { name: 'pagination', flags: '--pagination <json>', description: 'JSON pagination object.', schema: { type: 'object', description: 'Pagination object.' } } as const;
 
@@ -71,14 +90,52 @@ export const depositDefinitions: CommandDefinition[] = [
       { name: 'token', flags: '--token <address>', description: 'Token address override.', schema: { type: 'string', description: 'ERC20 token address.' } },
       { name: 'maxApprove', flags: '--max-approve', description: 'Approve MaxUint256 instead of exact amount.', schema: { type: 'boolean', description: 'Approve max amount.' } },
     ],
-    handler: async (input, context) => withUsdcAddress(input, context, async (token) => {
-      const { client } = await context.getClient({ requireWallet: true });
-      return client.ensureAllowance({
-        token: ensureAddress(token, 'token'),
-        amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6),
-        maxApprove: Boolean(input.maxApprove),
+    handler: async (input, context) => {
+      const previewData = await getAllowancePreview(input, context);
+      if (previewData.currentAllowance >= previewData.amount) {
+        return {
+          hadAllowance: true,
+          token: previewData.token,
+          spender: previewData.spender,
+          currentAllowance: previewData.currentAllowance.toString(),
+          requiredAmount: previewData.amount.toString(),
+        };
+      }
+
+      const data = encodeFunctionData({
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [previewData.spender, previewData.approvalAmount],
       });
-    }),
+
+      return context.runPrepared({
+        description: `Approve ${previewData.approvalAmount.toString()} units for spender ${previewData.spender}.`,
+        prepare: async () => ({
+          prepared: {
+            to: previewData.token,
+            data,
+            value: 0n,
+            chainId: 8453,
+          },
+          previewData: {
+            token: previewData.token,
+            spender: previewData.spender,
+            currentAllowance: previewData.currentAllowance.toString(),
+            requiredAmount: previewData.amount.toString(),
+            approvalAmount: previewData.approvalAmount.toString(),
+          },
+        }),
+        execute: async () => {
+          const { client } = await context.getClient({ requireWallet: true });
+          return client.ensureAllowance({
+            token: previewData.token,
+            spender: previewData.spender,
+            amount: previewData.amount,
+            maxApprove: Boolean(input.maxApprove),
+          });
+        },
+      });
+    },
   },
   {
     path: ['deposit', 'create'],
@@ -239,6 +296,36 @@ export const depositDefinitions: CommandDefinition[] = [
       { name: 'retain', flags: '--retain', description: 'Enable retainOnEmpty.', schema: { type: 'boolean', description: 'Retain on empty.' } },
     ],
     handler: sdkWriteHandler(['setRetainOnEmpty'], async (input) => ({ depositId: asBigInt(input.id, 'id'), retain: Boolean(input.retain) })),
+  },
+  {
+    path: ['deposit', 'set-delegate'],
+    description: 'Assign a delegate that can manage a deposit on behalf of the owner.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'delegate', flags: '--delegate <address>', description: 'Delegate address.', schema: { type: 'string', description: 'Delegate address.' } },
+      { name: 'escrowAddress', flags: '--escrow-address <address>', description: 'Escrow address override.', schema: { type: 'string', description: 'Escrow address.' } },
+    ],
+    handler: sdkWriteHandler(['setDelegate'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      delegate: ensureAddress(input.delegate, 'delegate'),
+      escrowAddress: input.escrowAddress ? ensureAddress(input.escrowAddress, 'escrowAddress') : undefined,
+    })),
+  },
+  {
+    path: ['deposit', 'remove-delegate'],
+    description: 'Remove the delegate assigned to a deposit.',
+    readOnly: false,
+    requireWallet: true,
+    options: [
+      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'escrowAddress', flags: '--escrow-address <address>', description: 'Escrow address override.', schema: { type: 'string', description: 'Escrow address.' } },
+    ],
+    handler: sdkWriteHandler(['removeDelegate'], async (input) => ({
+      depositId: asBigInt(input.id, 'id'),
+      escrowAddress: input.escrowAddress ? ensureAddress(input.escrowAddress, 'escrowAddress') : undefined,
+    })),
   },
   {
     path: ['deposit', 'payment-method', 'add'],
@@ -514,7 +601,7 @@ export const depositDefinitions: CommandDefinition[] = [
   },
   {
     path: ['indexer', 'query'],
-    description: 'Perform a raw GraphQL query against the indexer.',
+    description: 'Perform a raw GraphQL query against the indexer. Use sparingly; arbitrary queries can be expensive.',
     readOnly: true,
     options: [
       { name: 'query', flags: '--query <graphql>', description: 'GraphQL query string.', schema: { type: 'string', description: 'GraphQL query.' } },

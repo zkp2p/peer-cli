@@ -4,14 +4,7 @@ import { createError } from '../output/errors.js';
 import type { CommandDefinition } from './framework.js';
 import { sdkDirectWriteHandler, sdkReadHandler } from './helpers.js';
 import { SUPPORTED_PLATFORMS } from '../utils/constants.js';
-
-function parseJsonArray(value: unknown, field: string): unknown[] {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    return JSON.parse(value) as unknown[];
-  }
-  throw createError('VALIDATION_ERROR', `${field} must be a JSON array.`);
-}
+import { parseJsonArray } from '../utils/parsing.js';
 
 function resolveDestinationToken(input: unknown, fallback: string | undefined): `0x${string}` {
   if (typeof input === 'string' && input.trim() !== '' && input.toUpperCase() !== 'USDC') {

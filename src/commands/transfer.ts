@@ -14,6 +14,19 @@ function resolveTokenAddress(inputToken: unknown, fallbackToken: string | undefi
   throw createError('CONFIG_ERROR', 'USDC address is not available for the current runtime environment.');
 }
 
+async function readTokenDecimals(
+  publicClient: Awaited<ReturnType<Parameters<CommandDefinition['handler']>[1]['getClient']>>['publicClient'],
+  token: `0x${string}`,
+): Promise<number> {
+  return Number(
+    await publicClient.readContract({
+      address: token,
+      abi: erc20Abi,
+      functionName: 'decimals',
+    }),
+  );
+}
+
 export const transferDefinitions: CommandDefinition[] = [
   {
     path: ['transfer'],
@@ -26,10 +39,11 @@ export const transferDefinitions: CommandDefinition[] = [
       { name: 'token', flags: '--token <address>', description: 'Token address override.', schema: { type: 'string', description: 'ERC20 token address.' } },
     ],
     handler: async (input, context) => {
-      const { client, walletClient } = await context.getClient({ requireWallet: true });
+      const { client, walletClient, publicClient } = await context.getClient({ requireWallet: true });
       const token = resolveTokenAddress(input.token, client.getUsdcAddress());
       const to = ensureAddress(input.to, 'to');
-      const amount = parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6);
+      const decimals = await readTokenDecimals(publicClient, token);
+      const amount = parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), decimals);
       const data = encodeFunctionData({
         abi: erc20Abi,
         functionName: 'transfer',
@@ -80,6 +94,7 @@ export const transferDefinitions: CommandDefinition[] = [
       }
 
       const token = resolveTokenAddress(input.token, client.getUsdcAddress());
+      const decimals = await readTokenDecimals(publicClient, token);
       const balance = await publicClient.readContract({
         address: token,
         abi: erc20Abi,
@@ -90,8 +105,9 @@ export const transferDefinitions: CommandDefinition[] = [
       return {
         token,
         address,
+        decimals,
         raw: balance.toString(),
-        formatted: formatUnits(balance, 6),
+        formatted: formatUnits(balance, decimals),
       };
     },
   },

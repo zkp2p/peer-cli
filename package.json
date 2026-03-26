@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "CLI for AI agents to interact with the Peer (ZKP2P) protocol",
   "bin": {
-    "peer": "./dist/cli.js"
+    "peer": "./dist/cli.cjs"
   },
   "type": "module",
   "files": [
@@ -43,7 +43,7 @@
     "url": "https://github.com/zkp2p/peer-cli"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",

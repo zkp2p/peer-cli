@@ -102,6 +102,7 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): MockRuntime
     getDeployedAddresses: () => ({ escrowV2: DEFAULT_ADDRESS, escrow: DEFAULT_ADDRESS }),
     supportsInlineOracleRateConfig: () => true,
     getQuote: () => [{ route: 'fast', price: '1.23' }],
+    getTakerTier: () => ({ responseObject: { tier: 'standard' } }),
     getAccountDeposits: () => [{ id: '1' }],
     getDeposits: () => [{ id: '1' }],
     getAccountIntents: () => [{ hash: '0x1' }],
@@ -111,7 +112,17 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): MockRuntime
     getPvDepositById: () => ({ id: '1' }),
     getPvDepositsFromIds: () => [{ id: '1' }],
     getPvAccountDeposits: () => [{ id: '1' }],
-    'publicClient.readContract': () => 123n,
+    'publicClient.readContract': (params?: { functionName?: string }) => {
+      switch (params?.functionName) {
+        case 'decimals':
+          return 6;
+        case 'allowance':
+        case 'balanceOf':
+          return 123n;
+        default:
+          return 123n;
+      }
+    },
     'walletClient.sendTransaction': () => '0xsent',
     ensureAllowance: () => ({ ok: true }),
     ...options.behaviors,

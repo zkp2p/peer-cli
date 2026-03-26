@@ -1,30 +1,8 @@
 import { parseUnits } from 'viem';
-import { createError } from '../output/errors.js';
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler, sdkWriteHandler } from './helpers.js';
-import { ensureAddress, ensureNumber, ensurePositiveNumber, ensureString, parseJsonInput } from '../utils/validation.js';
-
-function asBigInt(value: unknown, field: string): bigint {
-  return BigInt(ensureString(value, field));
-}
-
-function parseJsonObject(value: unknown, field: string): Record<string, unknown> {
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  if (typeof value === 'string') {
-    return parseJsonInput(value, field) ?? {};
-  }
-  throw createError('VALIDATION_ERROR', `${field} must be a JSON object.`);
-}
-
-function parseJsonArray(value: unknown, field: string): unknown[] {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    return JSON.parse(value) as unknown[];
-  }
-  throw createError('VALIDATION_ERROR', `${field} must be a JSON array.`);
-}
+import { ensureAddress, ensureNumber, ensurePositiveNumber, ensureString } from '../utils/validation.js';
+import { asBigInt, parseJsonArray, parseJsonObject } from '../utils/parsing.js';
 
 function parseConversionRate(value: unknown): string {
   return parseUnits(ensurePositiveNumber(value, 'conversionRate').toString(), 18).toString();

@@ -2,30 +2,9 @@ import { parseUnits } from 'viem';
 import type { MulticallClient } from '@zkp2p/sdk';
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler, sdkWriteHandler } from './helpers.js';
-import { createError } from '../output/errors.js';
-import { ensureAddress, ensurePositiveNumber, ensureString, parseJsonInput } from '../utils/validation.js';
-
-function asBigInt(value: unknown, field: string): bigint {
-  return BigInt(ensureString(value, field));
-}
-
-function parseJsonObject(value: unknown, field: string): Record<string, unknown> {
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  if (typeof value === 'string') {
-    return parseJsonInput(value, field) ?? {};
-  }
-  throw createError('VALIDATION_ERROR', `${field} must be a JSON object.`);
-}
-
-function parseJsonArray(value: unknown, field: string): unknown[] {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    return JSON.parse(value) as unknown[];
-  }
-  throw createError('VALIDATION_ERROR', `${field} must be a JSON array.`);
-}
+import { ensureAddress, ensurePositiveNumber, ensureString } from '../utils/validation.js';
+import { asBigInt, parseJsonArray, parseJsonObject } from '../utils/parsing.js';
+import type { PeerEnv } from '../sdk/config.js';
 
 function parseRate(value: unknown): bigint {
   return parseUnits(ensurePositiveNumber(value, 'rate').toString(), 18);
@@ -35,7 +14,7 @@ function parseFeePercent(value: unknown): bigint {
   return parseUnits((ensurePositiveNumber(value, 'fee') / 100).toString(), 18);
 }
 
-async function maybeResolvePaymentMethod(input: string, env: 'production' | 'staging'): Promise<`0x${string}`> {
+async function maybeResolvePaymentMethod(input: string, env: PeerEnv): Promise<`0x${string}`> {
   if (input.startsWith('0x')) {
     return input as `0x${string}`;
   }

@@ -118,6 +118,35 @@
     "read_only": true
   },
   {
+    "name": "peer taker tier",
+    "path": [
+      "taker",
+      "tier"
+    ],
+    "description": "Fetch taker caps and cooldown state for an address.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "Taker wallet address."
+        },
+        "chainId": {
+          "type": "number",
+          "description": "Chain ID to evaluate.",
+          "default": 8453
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
     "name": "peer deposit ensure-allowance",
     "path": [
       "deposit",
@@ -505,6 +534,66 @@
         "retain": {
           "type": "boolean",
           "description": "Enable retainOnEmpty."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit set-delegate",
+    "path": [
+      "deposit",
+      "set-delegate"
+    ],
+    "description": "Assign a delegate that can manage a deposit on behalf of the owner.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "delegate": {
+          "type": "string",
+          "description": "Delegate address."
+        },
+        "escrowAddress": {
+          "type": "string",
+          "description": "Escrow address override."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer deposit remove-delegate",
+    "path": [
+      "deposit",
+      "remove-delegate"
+    ],
+    "description": "Remove the delegate assigned to a deposit.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID."
+        },
+        "escrowAddress": {
+          "type": "string",
+          "description": "Escrow address override."
         },
         "params": {
           "type": "object",
@@ -1235,7 +1324,7 @@
       "indexer",
       "query"
     ],
-    "description": "Perform a raw GraphQL query against the indexer.",
+    "description": "Perform a raw GraphQL query against the indexer. Use sparingly; arbitrary queries can be expensive.",
     "parameter_schema": {
       "type": "object",
       "properties": {
@@ -2823,7 +2912,7 @@
       "properties": {
         "status": {
           "type": "string",
-          "description": "Status filter."
+          "description": "Status filter. Aliases: pending -> created, completed -> fulfilled."
         },
         "page": {
           "type": "number",

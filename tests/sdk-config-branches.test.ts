@@ -61,6 +61,10 @@ describe('config precedence branches', () => {
         payBaseUrl: 'https://flag-pay',
         rpcUrl: 'https://env-rpc',
       });
+
+      await expect(resolveConfig({ env: 'preproduction' })).resolves.toMatchObject({
+        env: 'preproduction',
+      });
     });
   });
 

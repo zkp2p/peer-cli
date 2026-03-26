@@ -4,20 +4,21 @@
 
 ## Global flags
 
-`--env <production|staging>`, `--private-key`, `--wallet-path`, `--rpc-url`, `--api-key`, `--indexer-key`, `--indexer-url`, `--market-api-key`, `--pay-api-key`, `--base-api-url`, `--market-base-url`, `--pay-base-url`, `--format <json|table>`, `--yes`, `--execute`, `--debug`, `--params`, `--params-file`
+`--env <production|preproduction|staging>`, `--private-key` (warning: visible in process listings), `--wallet-path`, `--rpc-url`, `--api-key`, `--indexer-key`, `--indexer-url`, `--market-api-key`, `--pay-api-key`, `--base-api-url`, `--market-base-url`, `--pay-base-url`, `--format <json|table>`, `--yes`, `--execute`, `--debug`, `--params`, `--params-file`
 
 Config precedence: CLI flags > environment variables > `~/.peer/config.json` > defaults.
 
 ## Command reference
 
 - `peer quote` - fiat to USDC quotes.
+- `peer taker tier` - taker caps and cooldown state.
 - `peer payee register` - register payee details with the curator API.
 - `peer payee resolve-hash` - resolve a payee hash from on-chain deposit data.
 
-- `peer deposit ensure-allowance`, `create`, `list`, `show`, `show-many`, `add-funds`, `remove-funds`, `withdraw`, `pause`, `resume`, `set-range`, `set-rate`, `set-retain-on-empty`, `payment-method add/set-active/remove`, `currency add/deactivate/remove`, `prune-intents`, `oracle set/remove/set-batch`, `currency-config update-batch`, `currency deactivate-batch`
+- `peer deposit ensure-allowance`, `create`, `list`, `show`, `show-many`, `add-funds`, `remove-funds`, `withdraw`, `pause`, `resume`, `set-range`, `set-rate`, `set-retain-on-empty`, `set-delegate`, `remove-delegate`, `payment-method add/set-active/remove`, `currency add/deactivate/remove`, `prune-intents`, `oracle set/remove/set-batch`, `currency-config update-batch`, `currency deactivate-batch`
 
 - `peer pv deposit show`, `show-many`, `list-owner`
-- `peer indexer deposits list/list-relations/show/by-ids/by-ids-relations/fund-activities`, `makers fund-activities`, `deposits snapshots`, `query`
+- `peer indexer deposits list/list-relations/show/by-ids/by-ids-relations/fund-activities`, `makers fund-activities`, `deposits snapshots`, `query` (raw GraphQL passthrough)
 - `peer indexer intents by-deposit-ids/by-owner/show/expired/fulfilled-events/fulfillment-amounts/fulfillment-and-payment`
 - `peer indexer delegations by-deposit`
 
@@ -31,7 +32,7 @@ Config precedence: CLI flags > environment variables > `~/.peer/config.json` > d
 - `peer market spreads/compare/volume/leaderboard/protocol-stats`
 - `peer transfer`, `peer balance`
 
-- `peer checkout create/list/show/cancel`
+- `peer checkout create/list/show/cancel` (`create` and `cancel` preview first; execute with `--yes`)
 - `peer config show/set/platforms/currencies`
 - `peer mcp`
 

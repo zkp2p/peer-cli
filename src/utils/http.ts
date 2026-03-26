@@ -4,18 +4,30 @@ export interface RequestJsonOptions extends RequestInit {
   timeoutMs?: number;
 }
 
+export function appendSearchParams(url: URL, values: Record<string, string | number | undefined>): URL {
+  for (const [key, value] of Object.entries(values)) {
+    if (value !== undefined && value !== '') {
+      url.searchParams.set(key, String(value));
+    }
+  }
+  return url;
+}
+
 export async function requestJson<T>(url: string, options: RequestJsonOptions = {}): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 15_000);
 
   try {
+    const method = (options.method ?? 'GET').toUpperCase();
+    const headers = new Headers(options.headers);
+    if (['POST', 'PUT', 'PATCH'].includes(method) && !headers.has('content-type')) {
+      headers.set('content-type', 'application/json');
+    }
+
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
-      headers: {
-        'content-type': 'application/json',
-        ...(options.headers ?? {}),
-      },
+      headers,
     });
 
     const text = await response.text();

@@ -1,0 +1,60 @@
+---
+title: Catalogs and Sync
+description: Machine-readable artifacts, their purpose, and how they are regenerated from the command registry.
+---
+
+## Generated Artifacts
+
+`peer-cli` ships two machine-readable artifacts under `agents/`.
+
+### `tool-catalog.json`
+
+Contains per-command entries with:
+
+- name
+- path
+- description
+- parameter schema
+- `auth_required`
+- `dangerous`
+- `read_only`
+
+### `error-catalog.json`
+
+Contains the canonical error taxonomy that agents should use when mapping failures to recovery behavior.
+
+## Why They Matter
+
+These files are a better fit for automation than prose docs because they are generated directly from the command registry and error definitions.
+
+Use them when you need to:
+
+- build tool UIs
+- classify read vs write operations
+- plan auth requirements
+- map failures to retries or user escalation
+
+## Regeneration Path
+
+Do not hand-edit catalog JSON.
+
+The sync path is:
+
+1. update command definitions or error definitions
+2. run the generator
+3. rebuild or otherwise verify the output
+
+Generator:
+
+```bash
+tsx scripts/generate-catalogs.ts
+```
+
+The main repo build already runs this as a prebuild step.
+
+## Best Practice For Agents
+
+- Use docs for workflow context.
+- Use the tool catalog for exact command schemas.
+- Use the error catalog for stable error handling.
+- If prose and catalog disagree, prefer the generated artifact and report the docs mismatch.

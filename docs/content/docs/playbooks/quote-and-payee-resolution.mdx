@@ -1,0 +1,30 @@
+---
+title: Quote and Payee Resolution
+description: Recommended flow when an agent starts from a fiat amount and needs a viable quote plus payee state.
+---
+
+## Goal
+
+Answer: “Can this user route fiat into protocol liquidity right now, and what payee details should the workflow rely on?”
+
+## Flow
+
+1. Fetch quotes.
+2. Narrow by platform and destination token if needed.
+3. Confirm taker capacity when the workflow is taker-driven.
+4. Register or resolve payee details only when the workflow needs a stable payee hash.
+
+## Sequence
+
+```bash
+peer quote --from USD --amount 100 --platform venmo --quotes-to-return 3
+peer taker tier --address 0x1111111111111111111111111111111111111111 --chain-id 8453
+peer payee register --platform venmo --details '{"handle":"alice"}'
+peer payee resolve-hash --deposit 42 --platform venmo
+```
+
+## Decision Notes
+
+- If `quote` returns no liquidity, stop and escalate instead of inventing downstream intent steps.
+- If taker tier is constrained, avoid issuing aggressive follow-up actions that will fail operationally.
+- Only register payee details when there is a real downstream need; otherwise the quote result may already be enough.

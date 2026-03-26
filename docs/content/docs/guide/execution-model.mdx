@@ -1,0 +1,91 @@
+---
+title: Execution Model
+description: Preview-first writes, parameter merging, CLI vs MCP behavior, and safe command construction.
+---
+
+## Parameter Construction
+
+Commands can receive input from three places:
+
+1. `--params-file <json-file>`
+2. `--params '<json-object>'`
+3. Typed flags on the command line
+
+The merge precedence is:
+
+```text
+typed flags > --params > --params-file
+```
+
+That lets agents start from a canonical JSON payload and override a few fields without rebuilding the whole object.
+
+## Preview-First Write Behavior
+
+Most state-changing flows use the same pattern:
+
+1. Resolve and validate inputs.
+2. Build a prepared transaction or side-effect preview.
+3. Return preview data.
+4. Execute only when `--yes` is set.
+
+This applies to on-chain operations and to side-effecting API flows like checkout creation/cancellation.
+
+### Practical consequence
+
+An agent should not assume that a successful write command without `--yes` changed protocol state.
+
+## Read-Only vs Write Families
+
+| Family | Typical mode |
+| --- | --- |
+| `quote`, `market`, `pv`, `indexer`, `balance`, `config show`, `mcp` | Read-only |
+| `deposit`, `intent`, `vault`, `delegate`, `undelegate`, `transfer`, `checkout create/cancel` | Write-capable |
+
+## JSON Is The Contract
+
+Even though table output exists, the stable machine contract is JSON.
+
+Use:
+
+```bash
+peer --format json <command>
+```
+
+Or simply rely on the default `json` mode.
+
+## CLI vs MCP
+
+Both surfaces use the same command registry.
+
+### CLI
+
+- Best for shell automation and local operator workflows
+- Writes success to stdout
+- Writes errors to stderr
+- Returns exit code `1` on failure
+
+### MCP
+
+- Best for tool-driven agents
+- Uses deterministic tool names derived from command paths
+- Returns the same logical envelope in `structuredContent`
+- Defaults to read-only tool registration
+
+## Safe Agent Pattern
+
+A strong default pattern for any write is:
+
+1. Discover current state with read-only commands.
+2. Build the write in preview mode.
+3. Validate target addresses, deposit IDs, rates, and intended side effects.
+4. Re-run with `--yes` only when the preview matches the plan.
+
+## Example: Safe Deposit Mutation
+
+```bash
+peer deposit show --id 42
+peer deposit set-rate --id 42 --platform wise --currency USD --rate 1.01
+peer deposit set-rate --id 42 --platform wise --currency USD --rate 1.01 --yes
+```
+
+The first write command is for inspection. The second is the actual mutation.

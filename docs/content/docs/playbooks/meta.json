@@ -1,0 +1,13 @@
+{
+  "title": "Playbooks",
+  "description": "Goal-oriented workflows for agents and operators.",
+  "root": true,
+  "pages": [
+    "index",
+    "quote-and-payee-resolution",
+    "deposit-lifecycle",
+    "vault-and-delegation",
+    "checkout-and-cache",
+    "troubleshooting"
+  ]
+}

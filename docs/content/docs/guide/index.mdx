@@ -1,0 +1,62 @@
+---
+title: Guide
+description: How agents should reason about peer-cli before they touch any command.
+---
+
+This section explains how `peer-cli` behaves as an operational surface.
+
+It is the minimum context an agent should load before issuing write commands or wiring the CLI into a broader workflow.
+
+## Core Rules
+
+- Prefer JSON output unless a human explicitly asks for table formatting.
+- Assume every write is preview-first unless `--yes` is set.
+- Prefer `peer mcp` in read-only mode unless there is a specific need for write tools.
+- Treat configuration resolution as layered, not implicit.
+- Use the catalogs for machine reasoning and the docs for workflow context.
+
+## Command Shape
+
+Every command follows the same high-level form:
+
+```bash
+peer [global flags] <group> <subcommand> [typed flags]
+```
+
+Examples:
+
+```bash
+peer quote --from USD --amount 100
+peer deposit list --owner 0x1111111111111111111111111111111111111111
+peer --env staging vault list --manager 0x1111111111111111111111111111111111111111
+```
+
+## Global Operator Defaults
+
+The following defaults matter operationally:
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| `env` | `production` | Can be overridden by CLI flag, env var, or stored config. |
+| `format` | `json` | Strongly preferred for automation. |
+| `yes` | `false` | Keeps write flows in preview mode. |
+| `debug` | `false` | Extra stderr logging for investigation. |
+| `chain` | Base / `8453` | Used throughout SDK-backed operations. |
+
+## Read vs Write Discipline
+
+The command surface spans both pure reads and state-changing operations.
+
+| Mode | Default behavior | Agent recommendation |
+| --- | --- | --- |
+| Read-only | Executes immediately | Safe for discovery, search, reconciliation, and MCP default mode |
+| Write | Returns a preview unless `--yes` is set | Review preview, confirm intent, then execute |
+
+Write families include deposits, intents, vault operations, delegation changes, transfers, and checkout mutations.
+
+## What To Read Next
+
+- [Install and Runtime](/docs/guide/install-runtime)
+- [Configuration](/docs/guide/configuration)
+- [Execution Model](/docs/guide/execution-model)
+- [Output and Errors](/docs/guide/output-errors)

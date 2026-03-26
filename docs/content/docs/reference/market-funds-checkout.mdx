@@ -1,0 +1,69 @@
+---
+title: Market, Funds, and Checkout
+description: Analytics endpoints, direct wallet transfers, balance checks, and checkout session lifecycle operations.
+---
+
+## Market Commands
+
+```text
+peer market spreads
+peer market compare
+peer market volume
+peer market leaderboard
+peer market protocol-stats
+```
+
+Use market commands for analytics and venue comparison rather than protocol mutations.
+
+## Transfer and Balance
+
+```text
+peer transfer
+peer balance
+```
+
+### `balance`
+
+Reads current token balance and now resolves token decimals instead of assuming 6.
+
+### `transfer`
+
+Builds a preview-first transfer using token decimals from the live contract.
+
+## Checkout Commands
+
+```text
+peer checkout create
+peer checkout list
+peer checkout show
+peer checkout cancel
+```
+
+Checkout is a hybrid API/cache surface.
+
+### `create` and `cancel`
+
+These are now preview-first operations.
+
+### `list` and `show`
+
+These read from the Pay API when auth is available and use the local cache when that is the only available source.
+
+### Status aliases
+
+The checkout list filters normalize some convenience aliases:
+
+- `pending` maps to `created`
+- `completed` maps to `fulfilled`
+
+Agents should understand that aliasing happens before filtering.
+
+## Local Checkout Cache
+
+Checkout cache lives at `~/.peer/checkout-sessions.json`.
+
+This matters for:
+
+- unauthenticated local inspection
+- reconciliation after partial failures
+- recovering session metadata between runs

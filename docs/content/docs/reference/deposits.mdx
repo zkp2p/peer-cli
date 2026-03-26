@@ -1,0 +1,129 @@
+---
+title: Deposits
+description: Deposit lifecycle, funding, liquidity tuning, payment method management, currencies, oracle config, and delegate binding.
+---
+
+## Deposit Surface Summary
+
+The `deposit` group is the largest write-capable surface in the CLI.
+
+It spans:
+
+- funding and balance mutations
+- listing and inspection
+- payment method and currency configuration
+- rate range and retention toggles
+- delegate/rate-manager association
+- oracle configuration
+- batch configuration updates
+- pruning orphaned intents
+
+## Discovery Commands
+
+```text
+peer deposit list
+peer deposit show
+peer deposit show-many
+```
+
+Use these before any mutation.
+
+## Funding and Balance Commands
+
+```text
+peer deposit ensure-allowance
+peer deposit create
+peer deposit add-funds
+peer deposit remove-funds
+peer deposit withdraw
+```
+
+### `ensure-allowance`
+
+This now follows preview-first semantics.
+
+Behavior:
+
+- reads current allowance first
+- returns a no-op informational result when approval is already sufficient
+- otherwise previews the approval transaction and executes only with `--yes`
+
+## State and Liquidity Tuning
+
+```text
+peer deposit pause
+peer deposit resume
+peer deposit set-range
+peer deposit set-rate
+peer deposit set-retain-on-empty
+```
+
+Use these when managing availability rather than reshaping the whole deposit.
+
+## Delegate and Rate-Manager Attachment
+
+```text
+peer deposit set-delegate
+peer deposit remove-delegate
+```
+
+These are per-deposit delegate helpers and are distinct from the higher-level controller/vault delegation commands.
+
+## Payment Method Management
+
+```text
+peer deposit payment-method add
+peer deposit payment-method set-active
+peer deposit payment-method remove
+```
+
+Use these when a deposit should accept, stop accepting, or explicitly enumerate supported processors.
+
+## Currency Management
+
+```text
+peer deposit currency add
+peer deposit currency deactivate
+peer deposit currency remove
+peer deposit currency-config update-batch
+peer deposit currency deactivate-batch
+```
+
+Batch operations are appropriate when an operator is reconfiguring many currency rows at once.
+
+## Oracle Configuration
+
+```text
+peer deposit oracle set
+peer deposit oracle remove
+peer deposit oracle set-batch
+```
+
+Use these only after validating that the target deployment supports inline oracle configuration where required.
+
+## Intent Cleanup
+
+```text
+peer deposit prune-intents
+```
+
+This is an operator-maintenance tool. Run it only after confirming that the target intents are actually stale or invalid.
+
+## Safe Operator Pattern
+
+A disciplined deposit change sequence is:
+
+1. `deposit show`
+2. Preview the mutation without `--yes`
+3. Inspect the preview payload
+4. Re-run with `--yes`
+5. Re-read with `deposit show`
+
+## Example
+
+```bash
+peer deposit show --id 42
+peer deposit set-rate --id 42 --platform wise --currency USD --rate 1.01
+peer deposit set-rate --id 42 --platform wise --currency USD --rate 1.01 --yes
+peer deposit show --id 42
+```

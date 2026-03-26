@@ -1,0 +1,86 @@
+---
+title: Protocol Reads and Intents
+description: When to use ProtocolViewer, when to use indexer reads, and how intent creation, cancellation, fulfillment, and hooks fit together.
+---
+
+## Read Families
+
+There are two main read surfaces for protocol state.
+
+### `pv`
+
+ProtocolViewer reads are SDK-shaped convenience reads for deposit and intent visibility.
+
+```text
+peer pv deposit show
+peer pv deposit show-many
+peer pv deposit list-owner
+peer pv intent list-owner
+peer pv intent show
+```
+
+### `indexer`
+
+Indexer reads are broader and better for relation-heavy or bulk workflows.
+
+```text
+peer indexer deposits ...
+peer indexer intents ...
+peer indexer delegations by-deposit
+peer indexer query
+```
+
+Use `indexer query` carefully. It is a raw GraphQL passthrough and can be expensive.
+
+## When To Prefer Which
+
+| Use case | Surface |
+| --- | --- |
+| Simple per-owner or per-ID inspection | `pv` |
+| Bulk relation lookups and snapshots | `indexer` |
+| Custom ad hoc GraphQL | `indexer query` |
+
+## Intent Commands
+
+```text
+peer intent create
+peer intent list
+peer intent show
+peer intent cancel
+peer intent fulfill
+peer intent release
+peer intent fulfill-inputs
+peer intent cleanup-orphaned
+```
+
+### Typical lifecycle
+
+1. Discover eligible deposits.
+2. Create the intent in preview mode.
+3. Execute the creation.
+4. Inspect or list the intent.
+5. Fulfill or cancel depending on downstream payment state.
+6. Release when appropriate.
+
+### `fulfill`
+
+`peer intent fulfill` supports proof-driven and precomputed-attestation flows.
+
+### `fulfill-inputs`
+
+Use this when you need the derived fulfillment payload before deciding whether to continue.
+
+### `cleanup-orphaned`
+
+Maintenance command for stale intent sets.
+
+## Hook Commands
+
+```text
+peer intent-hook pre set
+peer intent-hook whitelist set
+peer intent-hook pre get
+peer intent-hook whitelist get
+```
+
+These are deposit-adjacent enforcement hooks and should be treated as governance/operator controls rather than day-to-day user actions.

@@ -1,0 +1,35 @@
+---
+title: Reference
+description: Command-family map and how the surface is divided for operators and agents.
+---
+
+## Surface Map
+
+`peer-cli` exposes 89 commands across read and write domains.
+
+| Domain | Groups | Commands | Read/Write |
+| --- | --- | ---: | --- |
+| Quotes and payees | `quote`, `payee`, `taker` | 4 | 3 read / 1 write-ish helper |
+| Deposits | `deposit` | 27 | mixed |
+| Protocol reads | `pv`, `indexer` | 22 | read-only |
+| Intents and hooks | `intent`, `intent-hook` | 12 | mixed |
+| Vault and delegation | `vault`, `delegate`, `undelegate`, `oracle` | 20 | mixed |
+| Market intelligence | `market` | 5 | read-only |
+| Funds ops | `transfer`, `balance` | 2 | mixed |
+| Checkout | `checkout` | 4 | mixed |
+| Config | `config` | 4 | mostly read |
+| MCP | `mcp` | 1 | server bootstrap |
+
+## How To Navigate The Surface
+
+- Use [Quotes, Payees, and Taker State](/docs/reference/quotes-payees) when the job starts from pricing or user routing.
+- Use [Deposits](/docs/reference/deposits) for liquidity inventory, payment method setup, oracle configuration, and deposit mutations.
+- Use [Protocol Reads and Intents](/docs/reference/protocol-reads-intents) for intent visibility and fulfillment flows.
+- Use [Vaults and Delegation](/docs/reference/vaults-delegation) for operator-controlled pricing and manager-level behavior.
+- Use [Market, Funds, and Checkout](/docs/reference/market-funds-checkout) for analytics, direct transfers, and checkout lifecycle actions.
+- Use [MCP](/docs/reference/mcp) when the caller is a tool-using agent rather than a shell.
+- Use [Catalogs](/docs/reference/catalogs) when you need machine-readable schemas and code lists.
+
+## Source of Truth Reminder
+
+The reference section is descriptive. The command registry and generated catalogs remain authoritative.

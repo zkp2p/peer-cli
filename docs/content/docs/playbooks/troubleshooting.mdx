@@ -1,0 +1,65 @@
+---
+title: Troubleshooting
+description: What to inspect next when a peer-cli workflow fails or produces unexpected output.
+---
+
+## Start With The Error Code
+
+The canonical error code is more useful than the raw upstream message.
+
+| Code | First thing to inspect |
+| --- | --- |
+| `VALIDATION_ERROR` | Missing/invalid flags and data shape |
+| `AUTH_REQUIRED` | Wallet or API-key presence |
+| `CONFIG_ERROR` | Config precedence and stored files |
+| `API_ERROR` | Upstream service status or payload expectations |
+| `NETWORK_ERROR` | RPC/API reachability |
+| `TIMEOUT` | Provider latency or query size |
+| `RATE_LIMITED` | Backoff and retry plan |
+| `CONTRACT_ERROR` | Preview payload, addresses, current on-chain state |
+| `UNSUPPORTED_OPERATION` | Deployment capability mismatch |
+| `INTERNAL_ERROR` | Unexpected local bug or packaging issue |
+
+## Common Investigations
+
+### Missing signer
+
+```bash
+peer config show
+peer --debug transfer --to 0x1111111111111111111111111111111111111111 --amount 1
+```
+
+### Confusing checkout visibility
+
+```bash
+peer checkout list
+peer checkout show --session-id order_123
+cat ~/.peer/checkout-sessions.json
+```
+
+### Intent or deposit mismatch
+
+```bash
+peer deposit show --id 42
+peer pv intent show --hash 0xabc...
+peer indexer intents show --hash 0xabc...
+```
+
+### Delegation uncertainty
+
+```bash
+peer delegate show --deposit 42
+peer indexer delegations by-deposit --deposit-id 42
+```
+
+## Debug Mode
+
+Use `--debug` for local diagnosis, but do not parse debug stderr as the canonical result payload.
+
+## Last Resort
+
+When the docs, catalog, and runtime behavior disagree:
+
+1. trust the registry/catalog over prose
+2. inspect the relevant command definition under `src/commands/`
+3. report the mismatch as a docs defect

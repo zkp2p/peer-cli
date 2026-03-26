@@ -1,0 +1,68 @@
+---
+title: Quotes, Payees, and Taker State
+description: The entry surface for pricing, payee details, hash resolution, and taker capacity checks.
+---
+
+## Command Set
+
+```text
+peer quote
+peer payee register
+peer payee resolve-hash
+peer taker tier
+```
+
+## `peer quote`
+
+Use this to discover fiat-to-USDC liquidity.
+
+Primary flags:
+
+| Flag | Purpose |
+| --- | --- |
+| `--from` | Fiat currency code |
+| `--amount` | Exact fiat amount |
+| `--token-amount` | Exact token amount to receive |
+| `--platform` | Payment platform filter |
+| `--recipient` / `--user` | Wallet context for quote ownership |
+| `--destination-chain-id` | Chain target |
+| `--quotes-to-return` | Limit result set |
+
+Example:
+
+```bash
+peer quote --from USD --amount 100 --platform venmo --quotes-to-return 3
+```
+
+Use `quote` early in a workflow to determine whether liquidity exists before spending time on deposit or intent flows.
+
+## Payee Commands
+
+### `peer payee register`
+
+Registers payee details so later intent construction can reference stable hashed details.
+
+### `peer payee resolve-hash`
+
+Converts a payee hash back into the underlying semantic identity when the SDK/service route supports it.
+
+These commands are useful when an agent needs to reconcile a previously observed payee hash with current operator input.
+
+## `peer taker tier`
+
+Checks taker caps and cooldown state for a wallet.
+
+```bash
+peer taker tier --address 0x1111111111111111111111111111111111111111 --chain-id 8453
+```
+
+Important note:
+
+- The current SDK surface takes `owner` and `chainId`.
+- If you have older notes mentioning a `--platform` flag, treat them as stale until the SDK actually exposes that parameter.
+
+## Agent Guidance
+
+- Start with `quote` when you need opportunity discovery.
+- Use `payee register` only when you are preparing an intent path that requires it.
+- Use `taker tier` before attempting repeated or high-volume taker activity.

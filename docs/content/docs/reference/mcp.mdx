@@ -1,0 +1,67 @@
+---
+title: MCP
+description: How the stdio server is exposed, how tool names are generated, and how agents should reason about read-only vs full mode.
+---
+
+## Start The Server
+
+```bash
+peer mcp --read-only
+peer mcp --full
+```
+
+`peer mcp` runs the stdio server named `peer-cli`.
+
+## Registration Modes
+
+| Mode | Behavior |
+| --- | --- |
+| default / `--read-only` | Registers only read-only tools |
+| `--full` | Registers both read and write tools |
+
+For agent safety, start in read-only mode unless a workflow explicitly needs mutations.
+
+## Tool Naming
+
+Tool names are deterministic:
+
+```text
+peer_<path>
+```
+
+Rules:
+
+- path segments are joined with `_`
+- dashes are converted to `_`
+
+Examples:
+
+- `peer quote` → `peer_quote`
+- `peer deposit ensure-allowance` → `peer_deposit_ensure_allowance`
+- `peer intent-hook whitelist set` → `peer_intent_hook_whitelist_set`
+
+## Tool Input Shape
+
+Each tool schema is derived from the command definition.
+
+That means:
+
+- CLI and MCP use the same parameter schema
+- generated tool catalog should match the live MCP surface
+- command metadata changes should trigger catalog regeneration
+
+## Tool Output Shape
+
+MCP returns:
+
+- `structuredContent`: the normalized CLI envelope
+- `content`: a JSON text rendering of the same envelope
+- `isError`: mapped from CLI success/failure state
+
+That makes MCP suitable for both structured planning and human-visible transcripts.
+
+## Agent Recommendations
+
+- Use MCP for tool-calling agents that already work from structured schemas.
+- Use CLI subprocesses when you need shell-native orchestration or local file piping.
+- Keep write tools disabled by default in shared-agent environments.

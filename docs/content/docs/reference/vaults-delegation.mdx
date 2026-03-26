@@ -1,0 +1,81 @@
+---
+title: Vaults and Delegation
+description: Vault creation and pricing control, manager-level reads, oracle helpers, and both controller-based and direct delegation paths.
+---
+
+## Command Set
+
+```text
+peer vault ...
+peer oracle ...
+peer delegate ...
+peer undelegate
+```
+
+## Vault Commands
+
+The vault family covers creation, pricing, fees, config, delegations, and reporting.
+
+```text
+peer vault create
+peer vault list
+peer vault show
+peer vault set-rate
+peer vault set-rates
+peer vault set-fee
+peer vault set-config
+peer vault delegates
+peer vault snapshots
+peer vault manual-rate-updates
+peer vault oracle-config-updates
+peer vault manager-fee
+peer vault effective-rate
+```
+
+### Operational split
+
+| Goal | Commands |
+| --- | --- |
+| Create and inspect vaults | `create`, `list`, `show` |
+| Adjust pricing | `set-rate`, `set-rates`, `effective-rate` |
+| Adjust fees/config | `set-fee`, `set-config`, `manager-fee` |
+| Observe operator history | `delegates`, `snapshots`, `manual-rate-updates`, `oracle-config-updates` |
+
+## Oracle Helpers
+
+```text
+peer oracle supports-inline
+peer oracle validate-feeds
+```
+
+Use these before configuring oracle-backed rates so you do not submit invalid feed sets against unsupported deployments.
+
+## Delegation Surface
+
+There are two different delegation models exposed in the CLI.
+
+### Controller-style delegation
+
+```text
+peer delegate set
+peer undelegate
+peer delegate show
+```
+
+This is the higher-level operator flow built around vault/regsitry resolution.
+
+### Direct delegation
+
+```text
+peer delegate set-direct
+peer delegate clear-direct
+```
+
+Use direct commands when you already know the exact on-chain addresses and want minimal abstraction.
+
+## Safe Pattern
+
+1. Confirm the deposit and target vault state.
+2. Preview the delegation change.
+3. Execute with `--yes`.
+4. Verify using `delegate show` or the relevant indexer read.

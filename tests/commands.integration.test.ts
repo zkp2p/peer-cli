@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { executeDefinition } from '../src/commands/framework.js';
 import { commandDefinitions } from '../src/commands/registry.js';
+import { writeStoredConfig } from '../src/sdk/config.js';
 import { createMockRuntime } from './helpers/mock-runtime.js';
 
 const sdkMocks = vi.hoisted(() => ({
@@ -489,6 +490,57 @@ describe('registry-backed command handlers', () => {
 
       const currencies = await run(['config', 'currencies'], {}, runtime);
       expect(currencies).toMatchObject({ ok: true, data: expect.arrayContaining(['USD', 'EUR']) });
+    });
+  });
+
+  it('masks secrets in config show output', async () => {
+    await withTempHome(async () => {
+      const rawKey = '0x59c6995e998f97a5a0044966f0945383f0d7d1f5eb53d3d16c23f0a3077ec12e';
+      await writeStoredConfig({
+        apiKey: 'stored-api-key-123',
+        marketApiKey: 'stored-market-key-456',
+        payApiKey: 'stored-pay-key-789',
+      });
+
+      const runtime = createMockRuntime({
+        config: {
+          privateKey: rawKey,
+          apiKey: 'flag-api-key-123',
+          indexerKey: 'flag-indexer-key-456',
+          marketApiKey: 'flag-market-key-789',
+          payApiKey: 'flag-pay-key-000',
+        },
+      });
+
+      const show = await run(['config', 'show'], {}, runtime);
+      expect(show).toMatchObject({
+        ok: true,
+        data: {
+          stored: {
+            apiKey: 'stored-a...',
+            marketApiKey: 'stored-m...',
+            payApiKey: 'stored-p...',
+          },
+          resolved: expect.objectContaining({
+            privateKey: '0x59c6...12e',
+            apiKey: 'flag-api...',
+            indexerKey: 'flag-ind...',
+            marketApiKey: 'flag-mar...',
+            payApiKey: 'flag-pay...',
+            walletAddress: expect.stringMatching(/^0x/),
+          }),
+        },
+      });
+
+      const serialized = JSON.stringify(show);
+      expect(serialized).not.toContain(rawKey);
+      expect(serialized).not.toContain('stored-api-key-123');
+      expect(serialized).not.toContain('stored-market-key-456');
+      expect(serialized).not.toContain('stored-pay-key-789');
+      expect(serialized).not.toContain('flag-api-key-123');
+      expect(serialized).not.toContain('flag-indexer-key-456');
+      expect(serialized).not.toContain('flag-market-key-789');
+      expect(serialized).not.toContain('flag-pay-key-000');
     });
   });
 });

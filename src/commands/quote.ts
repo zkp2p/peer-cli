@@ -11,7 +11,7 @@ import {
 import { createError } from '../output/errors.js';
 import type { CommandDefinition } from './framework.js';
 import { sdkDirectWriteHandler, sdkReadHandler } from './helpers.js';
-import { SUPPORTED_PLATFORMS } from '../utils/constants.js';
+import { DEFAULT_CHAIN_ID, SUPPORTED_PLATFORMS } from '../utils/constants.js';
 import { parseJsonArray } from '../utils/parsing.js';
 
 const FIAT_AMOUNT_DECIMALS = 6;
@@ -66,7 +66,7 @@ export const quoteDefinitions: CommandDefinition[] = [
       { name: 'platform', flags: '--platform <name>', description: 'Comma-separated payment platforms.', schema: { type: 'string', description: 'Payment platform.' } },
       { name: 'recipient', flags: '--recipient <address>', description: 'Destination wallet address.', schema: { type: 'string', description: 'Recipient address.' } },
       { name: 'user', flags: '--user <address>', description: 'Quote owner address.', schema: { type: 'string', description: 'User address.' } },
-      { name: 'destinationChainId', flags: '--destination-chain-id <id>', description: 'Destination chain ID.', schema: { type: 'number', description: 'Destination chain.' }, defaultValue: 8453 },
+      { name: 'destinationChainId', flags: '--destination-chain-id <id>', description: 'Destination chain ID.', schema: { type: 'number', description: 'Destination chain.' }, defaultValue: DEFAULT_CHAIN_ID },
       { name: 'quotesToReturn', flags: '--quotes-to-return <count>', description: 'Number of quotes to return.', schema: { type: 'number', description: 'Quote count.' }, defaultValue: 5 },
     ],
     handler: sdkReadHandler(['getQuote'], async (input, context) => {
@@ -77,12 +77,11 @@ export const quoteDefinitions: CommandDefinition[] = [
       const destinationToken = resolveDestinationToken(input.to, client.getUsdcAddress());
       return [
         {
-          paymentPlatforms: ensureSupportedPlatformList(parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS], 'platform')
-            ?? [...SUPPORTED_PLATFORMS],
+          paymentPlatforms: ensureSupportedPlatformList(parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS], 'platform'),
           fiatCurrency: ensureSupportedCurrency(input.from, 'from'),
           user: input.user ? ensureAddress(input.user, 'user') : walletClient.account?.address ?? zeroAddress,
           recipient: input.recipient ? ensureAddress(input.recipient, 'recipient') : walletClient.account?.address ?? zeroAddress,
-          destinationChainId: ensureNumber(input.destinationChainId ?? 8453, 'destinationChainId'),
+          destinationChainId: ensureNumber(input.destinationChainId ?? DEFAULT_CHAIN_ID, 'destinationChainId'),
           destinationToken,
           quotesToReturn: ensureNumber(input.quotesToReturn ?? 5, 'quotesToReturn'),
           amount: await normalizeQuoteAmount(input, context, destinationToken),

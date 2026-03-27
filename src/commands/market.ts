@@ -1,7 +1,7 @@
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler } from './helpers.js';
 import { createError } from '../output/errors.js';
-import { SUPPORTED_MARKET_PERIODS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
+import { DEFAULT_CHAIN_ID, SUPPORTED_MARKET_PERIODS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
 import {
   amountToUnits,
   ensureAddress,
@@ -62,20 +62,16 @@ export const marketDefinitions: CommandDefinition[] = [
       if (!caller && !input.recipient) {
         throw createError('AUTH_REQUIRED', 'Provide --recipient for market compare when no wallet is configured.');
       }
-      const recipient = input.recipient ? ensureAddress(input.recipient, 'recipient') : caller;
-      if (!recipient) {
-        throw createError('AUTH_REQUIRED', 'Unable to resolve recipient address.');
-      }
+      const recipient = input.recipient ? ensureAddress(input.recipient, 'recipient') : caller!;
 
       return [{
-        paymentPlatforms: ensureSupportedPlatformList(parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS], 'platform')
-          ?? [...SUPPORTED_PLATFORMS],
+        paymentPlatforms: ensureSupportedPlatformList(parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS], 'platform'),
         fiatCurrency: ensureSupportedCurrency(input.from, 'from'),
         amount: amountToUnits(input.amount, 'amount', FIAT_AMOUNT_DECIMALS).toString(),
         isExactFiat: true,
         recipient,
         user: caller ?? recipient,
-        destinationChainId: 8453,
+        destinationChainId: DEFAULT_CHAIN_ID,
         destinationToken: ensureAddress(client.getUsdcAddress(), 'destinationToken'),
         quotesToReturn: ensureNumber(input.quotesToReturn ?? 10, 'quotesToReturn'),
       }];

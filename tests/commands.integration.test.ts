@@ -443,7 +443,13 @@ describe('registry-backed command handlers', () => {
 
       await expect(run(['transfer'], { to: '0x1111111111111111111111111111111111111111', amount: 1 }, runtime)).resolves.toMatchObject({
         ok: true,
-        data: { executed: true, result: '0xsent' },
+        data: {
+          executed: true,
+          preview: {
+            description: 'Transfer 1 USDC to 0x1111111111111111111111111111111111111111.',
+          },
+          result: '0xsent',
+        },
       });
 
       await expect(run(['balance'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({

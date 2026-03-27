@@ -31,7 +31,9 @@ describe('branch coverage quote, market, transfer, and checkout branches', () =>
 
     await expect(lookup(['transfer']).handler({ to: DEFAULT_ADDRESS, amount: 1, token: ALT_TOKEN }, runtime.context)).resolves.toMatchObject({
       executed: false,
-      preview: expect.any(Object),
+      preview: {
+        description: `Transfer 1 ${ALT_TOKEN} to ${DEFAULT_ADDRESS}.`,
+      },
     });
 
     const noUsdc = makeContext({ getUsdcAddress: () => undefined });

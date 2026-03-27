@@ -14,6 +14,13 @@ function resolveTokenAddress(inputToken: unknown, fallbackToken: string | undefi
   throw createError('CONFIG_ERROR', 'USDC address is not available for the current runtime environment.');
 }
 
+function describeToken(token: `0x${string}`, usdcAddress: string | undefined): string {
+  if (usdcAddress && token.toLowerCase() === usdcAddress.toLowerCase()) {
+    return 'USDC';
+  }
+  return token;
+}
+
 async function readTokenDecimals(
   publicClient: Awaited<ReturnType<Parameters<CommandDefinition['handler']>[1]['getClient']>>['publicClient'],
   token: `0x${string}`,
@@ -40,7 +47,9 @@ export const transferDefinitions: CommandDefinition[] = [
     ],
     handler: async (input, context) => {
       const { client, walletClient, publicClient } = await context.getClient({ requireWallet: true });
-      const token = resolveTokenAddress(input.token, client.getUsdcAddress());
+      const usdcAddress = client.getUsdcAddress();
+      const token = resolveTokenAddress(input.token, usdcAddress);
+      const tokenLabel = describeToken(token, usdcAddress);
       const to = ensureAddress(input.to, 'to');
       const decimals = await readTokenDecimals(publicClient, token);
       const amount = parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), decimals);
@@ -56,7 +65,7 @@ export const transferDefinitions: CommandDefinition[] = [
       }
 
       return context.runPrepared({
-        description: `Transfer ${input.amount} tokens to ${to}.`,
+        description: `Transfer ${input.amount} ${tokenLabel} to ${to}.`,
         prepare: async () => ({
           prepared: {
             to: token,

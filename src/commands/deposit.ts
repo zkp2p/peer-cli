@@ -2,13 +2,13 @@ import { encodeFunctionData, erc20Abi, formatUnits, keccak256, parseUnits, strin
 import { createError } from '../output/errors.js';
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler, sdkSeparatePrepareHandler, sdkWriteHandler } from './helpers.js';
+import { parsePayeeDepositData, parseProcessorNames } from './payee-data.js';
 import {
   ensureAddress,
   ensureNumber,
   ensurePositiveNumber,
   ensureSupportedCurrency,
   ensureSupportedCurrencyList,
-  ensureSupportedPlatformList,
   ensureString,
   parseCsv,
 } from '../utils/validation.js';
@@ -103,9 +103,7 @@ function parseConversionRate(value: unknown): string {
   return parseUnits(ensurePositiveNumber(value, 'rate').toString(), 18).toString();
 }
 
-function parseSupportedPlatforms(value: unknown, fieldName: string): string[] {
-  return ensureSupportedPlatformList(parseCsv(value as string | undefined), fieldName) ?? [];
-}
+const parseSupportedPlatforms = parseProcessorNames;
 
 function parseSupportedCurrencies(value: unknown, fieldName: string): string[] {
   return ensureSupportedCurrencyList(parseCsv(value as string | undefined), fieldName) ?? [];
@@ -131,51 +129,16 @@ function parseConversionRates(input: Record<string, unknown>): { currency: strin
 
 function parseDepositDataEntries(input: Record<string, unknown>, processorNames: string[]): Record<string, unknown>[] {
   if (processorNames.length === 0) {
-    return input.depositData ? (parseJsonArray(input.depositData, 'depositData') as Record<string, unknown>[]) : [];
+    return parsePayeeDepositData(input.depositData, processorNames);
   }
-
-  if (!input.depositData) {
-    throw createError(
-      'VALIDATION_ERROR',
-      'Provide --deposit-data as a JSON array with one platform-specific detail object per entry in --platforms.',
-      {
-        details: {
-          platforms: processorNames,
-          example: "--platforms wise,venmo --deposit-data '[{...wiseDetails},{...venmoDetails}]'",
-          note: 'Use the same processor-specific detail objects accepted by payee register.',
-        },
-      },
-    );
-  }
-
-  const depositData = parseJsonArray(input.depositData, 'depositData');
-  if (depositData.length !== processorNames.length) {
-    throw createError(
-      'VALIDATION_ERROR',
-      `--deposit-data must contain exactly one object per platform in --platforms (${processorNames.length} platform(s), ${depositData.length} entr${depositData.length === 1 ? 'y' : 'ies'} provided).`,
-      {
-        details: {
-          platforms: processorNames,
-          expectedLength: processorNames.length,
-          actualLength: depositData.length,
-        },
-      },
-    );
-  }
-
-  for (const [index, entry] of depositData.entries()) {
-    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
-      throw createError('VALIDATION_ERROR', `depositData[${index}] must be a JSON object.`, {
-        details: {
-          platforms: processorNames,
-          index,
-          value: entry,
-        },
-      });
-    }
-  }
-
-  return depositData as Record<string, unknown>[];
+  return parsePayeeDepositData(input.depositData, processorNames, {
+    requiredMessage: 'Provide --deposit-data as a JSON array with one platform-specific detail object per entry in --platforms.',
+    missingDetails: {
+      platforms: processorNames,
+      example: "--platforms wise,venmo --deposit-data '[{...wiseDetails},{...venmoDetails}]'",
+      note: 'Use the same processor-specific detail objects accepted by payee register.',
+    },
+  });
 }
 
 async function withUsdcAddress<T>(

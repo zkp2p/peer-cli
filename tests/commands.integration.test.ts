@@ -93,7 +93,7 @@ describe('registry-backed command handlers', () => {
 
     const payee = await executeDefinition(definition(['payee', 'register']), {
       processors: 'wise,venmo',
-      depositData: '[{"name":"one"}]',
+      depositData: '[{"email":"one@example.com"},{"handle":"maker"}]',
     }, {}, runtime.deps);
     expect(payee).toMatchObject({ ok: true, data: { path: 'registerPayeeDetails' } });
 
@@ -107,6 +107,35 @@ describe('registry-backed command handlers', () => {
       address: '0x1111111111111111111111111111111111111111',
     }, {}, runtime.deps);
     expect(takerTier).toMatchObject({ ok: true, data: { responseObject: { tier: 'standard' } } });
+  });
+
+  it('normalizes common platform-prefixed payee detail aliases before SDK calls', async () => {
+    const payeeRuntime = createMockRuntime();
+    const payee = await executeDefinition(definition(['payee', 'register']), {
+      processors: 'wise,venmo',
+      depositData: '[{"wiseEmail":"maker@example.com"},{"venmoHandle":"alice"}]',
+    }, {}, payeeRuntime.deps);
+    expect(payee).toMatchObject({ ok: true, data: { path: 'registerPayeeDetails' } });
+    expect(payeeRuntime.calls.find((entry) => entry.path === 'registerPayeeDetails')?.args[0]).toMatchObject({
+      processorNames: ['wise', 'venmo'],
+      depositData: [{ email: 'maker@example.com' }, { handle: 'alice' }],
+    });
+
+    const depositRuntime = createMockRuntime();
+    const deposit = await executeDefinition(definition(['deposit', 'create']), {
+      amount: 100,
+      min: 10,
+      max: 20,
+      platforms: 'wise',
+      currencies: 'USD',
+      rate: 1.2,
+      depositData: '[{"wiseEmail":"maker@example.com"}]',
+    }, {}, depositRuntime.deps);
+    expect(deposit).toMatchObject({ ok: true });
+    expect(depositRuntime.calls.find((entry) => entry.path === 'prepareCreateDeposit')?.args[0]).toMatchObject({
+      processorNames: ['wise'],
+      depositData: [{ email: 'maker@example.com' }],
+    });
   });
 
   it('auto-resolves taker tier address from the configured wallet when omitted', async () => {

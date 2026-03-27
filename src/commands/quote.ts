@@ -11,8 +11,8 @@ import {
 import { createError } from '../output/errors.js';
 import type { CommandDefinition } from './framework.js';
 import { sdkDirectWriteHandler, sdkReadHandler } from './helpers.js';
+import { parsePayeeDepositData, parseProcessorNames } from './payee-data.js';
 import { DEFAULT_CHAIN_ID, SUPPORTED_PLATFORMS } from '../utils/constants.js';
-import { parseJsonArray } from '../utils/parsing.js';
 
 const FIAT_AMOUNT_DECIMALS = 6;
 
@@ -99,12 +99,13 @@ export const quoteDefinitions: CommandDefinition[] = [
       { name: 'processors', flags: '--processors <names>', description: 'Comma-separated processor names.', schema: { type: 'string', description: 'Processor names.' } },
       { name: 'depositData', flags: '--deposit-data <json>', description: 'JSON array of deposit detail objects.', schema: { type: 'array', description: 'Deposit details array.' } },
     ],
-    handler: sdkDirectWriteHandler(['registerPayeeDetails'], async (input) => [
-      {
-        processorNames: parseCsv(input.processors as string | undefined) ?? [],
-        depositData: parseJsonArray(input.depositData, 'depositData'),
-      },
-    ]),
+    handler: sdkDirectWriteHandler(['registerPayeeDetails'], async (input) => {
+      const processorNames = parseProcessorNames(input.processors, 'processors');
+      return [{
+        processorNames,
+        depositData: parsePayeeDepositData(input.depositData, processorNames),
+      }];
+    }),
   },
   {
     path: ['payee', 'resolve-hash'],

@@ -172,7 +172,7 @@ Commands that need a signer require one of:
 - `peer indexer deposits fund-activities`
 - `peer indexer makers fund-activities`
 - `peer indexer deposits snapshots`
-- `peer indexer query` - Raw GraphQL passthrough; use sparingly.
+- `peer indexer query` - Raw GraphQL passthrough; use sparingly. Use PascalCase root fields like `Deposit` / `Intent`, or introspect with `__schema`.
 - `peer indexer intents by-deposit-ids`
 - `peer indexer intents by-owner`
 - `peer indexer intents show`

@@ -62,10 +62,16 @@ peer indexer delegations by-deposit <composite-deposit-id>
 #### Raw GraphQL
 
 ```text
-peer indexer query --query '{ deposits { id } }'
+peer indexer query --query '{ Deposit(limit: 2) { id } }'
+peer indexer query --query '{ Intent(limit: 2) { intentHash } }'
+peer indexer query --query '{ __schema { queryType { fields { name } } } }'
 ```
 
 Use `indexer query` carefully. It is a raw GraphQL passthrough and can be expensive.
+
+The live indexer schema uses PascalCase root fields such as `Deposit`, `Intent`, `RateManager`, and `TakerStats`. Lowercase plural roots like `deposits` do not exist and will fail with a GraphQL validation error.
+
+If you are unsure which root fields are available, start with the `__schema` introspection query above and inspect `queryType.fields`.
 
 ## When To Prefer Which
 

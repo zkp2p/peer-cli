@@ -128,6 +128,35 @@ describe('in-process cli runner', () => {
     expect(failed.stdout).toBe('');
   });
 
+  it('sets a non-zero exit code for normalized API failures', async () => {
+    const runtime = createMockRuntime({
+      behaviors: {
+        getQuote: async () => {
+          throw {
+            name: 'APIError',
+            code: 'API',
+            message: 'No quotes found',
+            status: 404,
+            details: {
+              url: 'https://api.zkp2p.xyz/v2/quote/exact-fiat',
+            },
+          };
+        },
+      },
+    });
+
+    const failed = await runCliInProcess(
+      ['node', 'peer', 'quote', '--from', 'USD', '--amount', '10'],
+      runtime.deps,
+    );
+
+    expect(failed.exitCode).toBe(1);
+    expect(failed.stdout).toBe('');
+    expect(failed.stderr).toContain('"ok": false');
+    expect(failed.stderr).toContain('"code": "API_ERROR"');
+    expect(failed.stderr).toContain('"message": "No quotes found"');
+  });
+
   it('wraps invalid global env values in the json error envelope', async () => {
     const failed = await runCliInProcess(
       ['node', 'peer', '--env', 'fake', 'quote', '--from', 'USD', '--amount', '10'],

@@ -41,6 +41,13 @@ peer vault effective-rate
 | Adjust fees/config | `set-fee`, `set-config`, `manager-fee` |
 | Observe operator history | `delegates`, `snapshots`, `manual-rate-updates`, `oracle-config-updates` |
 
+Example reads:
+
+```bash
+peer vault list --filter '{"manager":"0x1111111111111111111111111111111111111111"}'
+peer vault show vault-1
+```
+
 ## Oracle Helpers
 
 ```text
@@ -59,7 +66,7 @@ There are two different delegation models exposed in the CLI.
 ```text
 peer delegate set
 peer undelegate
-peer delegate show
+peer delegate show --deposit <depositId>
 ```
 
 This is the higher-level operator flow built around vault/regsitry resolution.
@@ -72,6 +79,12 @@ peer delegate clear-direct
 ```
 
 Use direct commands when you already know the exact on-chain addresses and want minimal abstraction.
+
+Indexer verification example:
+
+```bash
+peer indexer delegations by-deposit <composite-deposit-id>
+```
 
 ## Safe Pattern
 

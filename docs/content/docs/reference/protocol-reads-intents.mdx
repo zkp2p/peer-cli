@@ -12,11 +12,11 @@ There are two main read surfaces for protocol state.
 ProtocolViewer reads are SDK-shaped convenience reads for deposit and intent visibility.
 
 ```text
-peer pv deposit show
-peer pv deposit show-many
-peer pv deposit list-owner
-peer pv intent list-owner
-peer pv intent show
+peer pv deposit show <depositId>
+peer pv deposit show-many --ids <csv>
+peer pv deposit list-owner --owner <address>
+peer pv intent list-owner --owner <address>
+peer pv intent show <intentHash>
 ```
 
 ### `indexer`
@@ -24,10 +24,10 @@ peer pv intent show
 Indexer reads are broader and better for relation-heavy or bulk workflows.
 
 ```text
-peer indexer deposits ...
-peer indexer intents ...
-peer indexer delegations by-deposit
-peer indexer query
+peer indexer deposits show <composite-deposit-id>
+peer indexer intents by-owner <owner>
+peer indexer delegations by-deposit <composite-deposit-id>
+peer indexer query --query '{ deposits { id } }'
 ```
 
 Use `indexer query` carefully. It is a raw GraphQL passthrough and can be expensive.

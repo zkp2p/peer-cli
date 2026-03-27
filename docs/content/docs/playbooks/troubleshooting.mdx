@@ -40,16 +40,16 @@ cat ~/.peer/checkout-sessions.json
 ### Intent or deposit mismatch
 
 ```bash
-peer deposit show --id 42
-peer pv intent show --hash 0xabc...
-peer indexer intents show --hash 0xabc...
+peer deposit show 42
+peer pv intent show 0xabc...
+peer indexer intents show 0xabc...
 ```
 
 ### Delegation uncertainty
 
 ```bash
 peer delegate show --deposit 42
-peer indexer delegations by-deposit --deposit-id 42
+peer indexer delegations by-deposit <composite-deposit-id>
 ```
 
 ## Debug Mode

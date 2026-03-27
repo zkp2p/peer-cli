@@ -19,8 +19,8 @@ Answer: “Can this user route fiat into protocol liquidity right now, and what 
 ```bash
 peer quote --from USD --amount 100 --platform venmo --quotes-to-return 3
 peer taker tier --address 0x1111111111111111111111111111111111111111 --chain-id 8453
-peer payee register --platform venmo --details '{"handle":"alice"}'
-peer payee resolve-hash --deposit 42 --platform venmo
+peer payee register --processors venmo --deposit-data '[{"handle":"alice"}]'
+peer payee resolve-hash 42 <payment-method-hash>
 ```
 
 ## Decision Notes

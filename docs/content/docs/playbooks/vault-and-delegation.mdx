@@ -12,8 +12,8 @@ Operate a manager-controlled pricing path without losing track of delegation sta
 ### 1. Inspect current state
 
 ```bash
-peer vault list --manager 0x1111111111111111111111111111111111111111
-peer vault show --id vault-1
+peer vault list --filter '{"manager":"0x1111111111111111111111111111111111111111"}'
+peer vault show vault-1
 peer delegate show --deposit 42
 ```
 
@@ -21,7 +21,7 @@ peer delegate show --deposit 42
 
 ```bash
 peer oracle supports-inline --escrow-address 0x1111111111111111111111111111111111111111
-peer oracle validate-feeds --feeds-file feeds.json
+peer oracle validate-feeds
 ```
 
 ### 3. Preview the pricing or delegation change
@@ -42,6 +42,6 @@ peer delegate set --deposit 42 --vault vault-1 --yes
 
 ```bash
 peer delegate show --deposit 42
-peer vault effective-rate --id vault-1 --platform wise --currency USD
-peer indexer delegations by-deposit --deposit-id 42
+peer vault effective-rate --escrow 0x1111111111111111111111111111111111111111 --deposit-id 42 --platform wise --currency USD
+peer indexer delegations by-deposit <composite-deposit-id>
 ```

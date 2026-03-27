@@ -22,8 +22,8 @@ It spans:
 
 ```text
 peer deposit list
-peer deposit show
-peer deposit show-many
+peer deposit show <depositId>
+peer deposit show-many --ids <csv>
 ```
 
 Use these before any mutation.
@@ -122,8 +122,8 @@ A disciplined deposit change sequence is:
 ## Example
 
 ```bash
-peer deposit show --id 42
+peer deposit show 42
 peer deposit set-rate --id 42 --platform wise --currency USD --rate 1.01
 peer deposit set-rate --id 42 --platform wise --currency USD --rate 1.01 --yes
-peer deposit show --id 42
+peer deposit show 42
 ```

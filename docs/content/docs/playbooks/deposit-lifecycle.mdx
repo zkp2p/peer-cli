@@ -19,15 +19,15 @@ peer deposit ensure-allowance --amount 1000 --token 0x833589fCD6eDb6E08f4c7C32D4
 ### 2. Create the deposit
 
 ```bash
-peer deposit create --amount 1000 --payment-method wise --currency USD
-peer deposit create --amount 1000 --payment-method wise --currency USD --yes
+peer deposit create --amount 1000 --min 100 --max 1000 --platforms wise --currencies USD --rate 1
+peer deposit create --amount 1000 --min 100 --max 1000 --platforms wise --currencies USD --rate 1 --yes
 ```
 
 ### 3. Verify state
 
 ```bash
 peer deposit list --owner 0x1111111111111111111111111111111111111111
-peer deposit show --id 42
+peer deposit show 42
 ```
 
 ### 4. Tune liquidity and availability

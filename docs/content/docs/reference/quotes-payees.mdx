@@ -42,9 +42,17 @@ Use `quote` early in a workflow to determine whether liquidity exists before spe
 
 Registers payee details so later intent construction can reference stable hashed details.
 
+```bash
+peer payee register --processors venmo --deposit-data '[{"handle":"alice"}]'
+```
+
 ### `peer payee resolve-hash`
 
 Converts a payee hash back into the underlying semantic identity when the SDK/service route supports it.
+
+```bash
+peer payee resolve-hash 42 <payment-method-hash>
+```
 
 These commands are useful when an agent needs to reconcile a previously observed payee hash with current operator input.
 

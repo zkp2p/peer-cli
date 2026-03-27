@@ -15,6 +15,7 @@ import {
 } from '../utils/constants.js';
 import { ensureOneOf } from '../utils/validation.js';
 import type { OutputFormat } from '../output/types.js';
+import { logDebug } from '../utils/logger.js';
 
 function ensureTrailingSlash(url: string): string {
   return url.endsWith('/') ? url : `${url}/`;
@@ -96,6 +97,14 @@ export async function writeStoredConfig(patch: Partial<StoredConfig>): Promise<S
 
 export async function resolveConfig(globalOptions: GlobalOptions = {}): Promise<ResolvedConfig> {
   const stored = await readStoredConfig();
+  logDebug('Loaded stored config', {
+    hasWalletPath: Boolean(stored.walletPath),
+    hasApiKey: Boolean(stored.apiKey),
+    hasIndexerKey: Boolean(stored.indexerKey),
+    hasMarketApiKey: Boolean(stored.marketApiKey),
+    hasPayApiKey: Boolean(stored.payApiKey),
+    env: stored.env,
+  });
   const env = ensureOneOf(
     globalOptions.env ?? process.env.PEER_ENV ?? stored.env ?? 'production',
     'env',
@@ -103,7 +112,7 @@ export async function resolveConfig(globalOptions: GlobalOptions = {}): Promise<
   );
   const format = ensureOneOf(globalOptions.format ?? 'json', 'format', SUPPORTED_FORMATS);
 
-  return {
+  const resolved = {
     env,
     format,
     yes: Boolean(globalOptions.yes ?? globalOptions.execute),
@@ -122,4 +131,18 @@ export async function resolveConfig(globalOptions: GlobalOptions = {}): Promise<
     ),
     payBaseUrl: globalOptions.payBaseUrl ?? process.env.PEER_PAY_BASE_URL ?? stored.payBaseUrl ?? DEFAULT_PAY_API_URL,
   };
+  logDebug('Resolved runtime config', {
+    env: resolved.env,
+    format: resolved.format,
+    yes: resolved.yes,
+    debug: resolved.debug,
+    rpcUrl: resolved.rpcUrl,
+    walletPath: resolved.walletPath,
+    hasPrivateKey: Boolean(resolved.privateKey),
+    hasApiKey: Boolean(resolved.apiKey),
+    hasIndexerKey: Boolean(resolved.indexerKey),
+    hasMarketApiKey: Boolean(resolved.marketApiKey),
+    hasPayApiKey: Boolean(resolved.payApiKey),
+  });
+  return resolved;
 }

@@ -25,6 +25,25 @@ describe('in-process cli runner', () => {
     expect(result.stdout).toContain('"route": "fast"');
   });
 
+  it('emits debug logs to stderr when --debug is enabled', async () => {
+    const runtime = createMockRuntime({
+      behaviors: {
+        getQuote: vi.fn(async () => [{ route: 'fast', price: '1.23' }]),
+      },
+    });
+
+    const result = await runCliInProcess(
+      ['node', 'peer', '--debug', 'quote', '--from', 'USD', '--amount', '10'],
+      runtime.deps,
+    );
+
+    expect(result.exitCode).toBeUndefined();
+    expect(result.stdout).toContain('"ok": true');
+    expect(result.stderr).toContain('[peer-cli] Resolved config');
+    expect(result.stderr).toContain('[peer-cli] SDK read call');
+    expect(result.stderr).toContain('"method":"getQuote"');
+  });
+
   it('supports dry-run and execute flows for write commands', async () => {
     const addFunds = vi.fn(async () => ({ hash: '0xsent' })) as MockPreparedMethod;
     addFunds.prepare = vi.fn(async () => ({

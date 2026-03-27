@@ -10,7 +10,7 @@ import type { ClientBundle } from '../sdk/client.js';
 import { resolveConfig as defaultResolveConfig } from '../sdk/config.js';
 import type { GlobalOptions, ResolvedConfig } from '../sdk/config.js';
 import { requestJson as defaultRequestJson } from '../utils/http.js';
-import { setDebugEnabled } from '../utils/logger.js';
+import { logDebug, setDebugEnabled } from '../utils/logger.js';
 import { parseJsonFile, parseJsonInput } from '../utils/validation.js';
 
 export type SchemaType = 'string' | 'number' | 'boolean' | 'object' | 'array';
@@ -173,9 +173,30 @@ export async function executeDefinition(
   deps: RuntimeDeps = DEFAULT_DEPS,
 ): Promise<CLIOutput<unknown>> {
   const startedAt = Date.now();
+  const command = commandString(spec.path);
+  setDebugEnabled(Boolean(globalOptions.debug));
+  logDebug('Resolving command config', { command, globalOptions });
   const config = await deps.resolveConfig(globalOptions);
   setDebugEnabled(config.debug);
-  const command = commandString(spec.path);
+  logDebug('Resolved config', {
+    command,
+    env: config.env,
+    format: config.format,
+    yes: config.yes,
+    debug: config.debug,
+    rpcUrl: config.rpcUrl,
+    walletPath: config.walletPath,
+    indexerUrl: config.indexerUrl,
+    baseApiUrl: config.baseApiUrl,
+    marketBaseUrl: config.marketBaseUrl,
+    payBaseUrl: config.payBaseUrl,
+    hasPrivateKey: Boolean(config.privateKey),
+    hasApiKey: Boolean(config.apiKey),
+    hasIndexerKey: Boolean(config.indexerKey),
+    hasMarketApiKey: Boolean(config.marketApiKey),
+    hasPayApiKey: Boolean(config.payApiKey),
+  });
+  logDebug('Command input', { command, input });
 
   const context: CommandExecutionContext = {
     spec,
@@ -192,6 +213,7 @@ export async function executeDefinition(
       await writeFile(path, JSON.stringify(value, null, 2));
     },
     runPrepared: async (plan) => {
+      logDebug('Preparing write operation', { command, description: plan.description });
       const { prepared, previewData } = await plan.prepare();
       const preview = {
         to: prepared.to,
@@ -200,8 +222,10 @@ export async function executeDefinition(
         chainId: prepared.chainId,
         description: plan.description,
       };
+      logDebug('Prepared write operation', { command, preview, previewData });
 
       if (!config.yes) {
+        logDebug('Write execution skipped because --yes/--execute was not set', { command });
         return {
           executed: false,
           preview,
@@ -209,7 +233,9 @@ export async function executeDefinition(
         };
       }
 
+      logDebug('Executing prepared write operation', { command });
       const result = await plan.execute();
+      logDebug('Executed prepared write operation', { command, result });
       return {
         executed: true,
         preview,
@@ -221,6 +247,7 @@ export async function executeDefinition(
 
   try {
     const data = await spec.handler(input, context);
+    logDebug('Command completed', { command, durationMs: Date.now() - startedAt });
     return buildOutput(
       { ok: true, data },
       {
@@ -232,6 +259,7 @@ export async function executeDefinition(
       },
     );
   } catch (error) {
+    logDebug('Command failed', { command, durationMs: Date.now() - startedAt, error });
     return buildOutput(
       { ok: false, error: normalizeError(error) },
       {

@@ -1,6 +1,7 @@
 import { createError } from '../output/errors.js';
 import type { PreparedTransaction } from '@zkp2p/sdk';
 import type { CommandExecutionContext } from './framework.js';
+import { logDebug } from '../utils/logger.js';
 
 type AsyncCallable = (...args: unknown[]) => Promise<unknown>;
 type PrepareableCallable = AsyncCallable & {
@@ -49,7 +50,18 @@ export function sdkReadHandler(
   return async (input: Record<string, unknown>, context: CommandExecutionContext): Promise<unknown> => {
     const { client } = await context.getClient({ requireWallet: options.requireWallet });
     const { parent, method } = resolveMethod(client, path);
-    return Reflect.apply(asCallable(method, path), parent, await buildArgs(input, context));
+    const args = await buildArgs(input, context);
+    const methodName = path.join('.');
+    const startedAt = Date.now();
+    logDebug('SDK read call', { command: context.command, method: methodName, args });
+    try {
+      const result = await Reflect.apply(asCallable(method, path), parent, args);
+      logDebug('SDK read completed', { command: context.command, method: methodName, durationMs: Date.now() - startedAt });
+      return result;
+    } catch (error) {
+      logDebug('SDK read failed', { command: context.command, method: methodName, durationMs: Date.now() - startedAt, error });
+      throw error;
+    }
   };
 }
 
@@ -64,12 +76,33 @@ export function sdkWriteHandler(
     const prepareable = asPrepareable(method, path);
 
     const params = await buildParams(input, context);
+    const methodName = path.join('.');
     return context.runPrepared({
       description: options.description?.(input),
-      prepare: async () => ({
-        prepared: unwrapPreparedTransaction(await prepareable.prepare(params)),
-      }),
-      execute: async () => Reflect.apply(prepareable, parent, [params]),
+      prepare: async () => {
+        const startedAt = Date.now();
+        logDebug('SDK write prepare', { command: context.command, method: methodName, params });
+        try {
+          const prepared = unwrapPreparedTransaction(await prepareable.prepare(params));
+          logDebug('SDK write prepared', { command: context.command, method: methodName, durationMs: Date.now() - startedAt });
+          return { prepared };
+        } catch (error) {
+          logDebug('SDK write prepare failed', { command: context.command, method: methodName, durationMs: Date.now() - startedAt, error });
+          throw error;
+        }
+      },
+      execute: async () => {
+        const startedAt = Date.now();
+        logDebug('SDK write execute', { command: context.command, method: methodName, params });
+        try {
+          const result = await Reflect.apply(prepareable, parent, [params]);
+          logDebug('SDK write completed', { command: context.command, method: methodName, durationMs: Date.now() - startedAt });
+          return result;
+        } catch (error) {
+          logDebug('SDK write failed', { command: context.command, method: methodName, durationMs: Date.now() - startedAt, error });
+          throw error;
+        }
+      },
     });
   };
 }
@@ -82,7 +115,18 @@ export function sdkDirectWriteHandler(
   return async (input: Record<string, unknown>, context: CommandExecutionContext): Promise<unknown> => {
     const { client } = await context.getClient({ requireWallet: options.requireWallet ?? true });
     const { parent, method } = resolveMethod(client, path);
-    return Reflect.apply(asCallable(method, path), parent, await buildArgs(input, context));
+    const args = await buildArgs(input, context);
+    const methodName = path.join('.');
+    const startedAt = Date.now();
+    logDebug('SDK direct write call', { command: context.command, method: methodName, args });
+    try {
+      const result = await Reflect.apply(asCallable(method, path), parent, args);
+      logDebug('SDK direct write completed', { command: context.command, method: methodName, durationMs: Date.now() - startedAt });
+      return result;
+    } catch (error) {
+      logDebug('SDK direct write failed', { command: context.command, method: methodName, durationMs: Date.now() - startedAt, error });
+      throw error;
+    }
   };
 }
 
@@ -104,16 +148,37 @@ export function sdkSeparatePrepareHandler(
     const executeMethod = asCallable(executeResolved.method, executePath);
 
     const params = await buildParams(input, context);
+    const prepareMethodName = preparePath.join('.');
+    const executeMethodName = executePath.join('.');
     return context.runPrepared({
       description: options.description?.(input),
       prepare: async () => {
-        const preparedResult = await Reflect.apply(prepareMethod, prepareResolved.parent, [params]);
-        return {
-          prepared: unwrapPreparedTransaction(preparedResult as PreparedTransaction | { prepared: PreparedTransaction }),
-          previewData: options.previewData?.(preparedResult),
-        };
+        const startedAt = Date.now();
+        logDebug('SDK separate prepare call', { command: context.command, method: prepareMethodName, params });
+        try {
+          const preparedResult = await Reflect.apply(prepareMethod, prepareResolved.parent, [params]);
+          logDebug('SDK separate prepare completed', { command: context.command, method: prepareMethodName, durationMs: Date.now() - startedAt });
+          return {
+            prepared: unwrapPreparedTransaction(preparedResult as PreparedTransaction | { prepared: PreparedTransaction }),
+            previewData: options.previewData?.(preparedResult),
+          };
+        } catch (error) {
+          logDebug('SDK separate prepare failed', { command: context.command, method: prepareMethodName, durationMs: Date.now() - startedAt, error });
+          throw error;
+        }
       },
-      execute: async () => Reflect.apply(executeMethod, executeResolved.parent, [params]),
+      execute: async () => {
+        const startedAt = Date.now();
+        logDebug('SDK separate execute call', { command: context.command, method: executeMethodName, params });
+        try {
+          const result = await Reflect.apply(executeMethod, executeResolved.parent, [params]);
+          logDebug('SDK separate execute completed', { command: context.command, method: executeMethodName, durationMs: Date.now() - startedAt });
+          return result;
+        } catch (error) {
+          logDebug('SDK separate execute failed', { command: context.command, method: executeMethodName, durationMs: Date.now() - startedAt, error });
+          throw error;
+        }
+      },
     });
   };
 }

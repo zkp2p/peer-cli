@@ -110,6 +110,31 @@ describe('requestJson', () => {
     expect((requestInit.headers as Headers).get('content-type')).toBe('application/json');
   });
 
+  it('logs http request and response details in debug mode', async () => {
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () => '{"value":1}',
+    }));
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    setDebugEnabled(true);
+
+    await expect(
+      requestJson<{ value: number }>('https://example.test', {
+        method: 'POST',
+        headers: { authorization: 'Bearer secret-token' },
+        body: '{"hello":"world"}',
+      }),
+    ).resolves.toEqual({ value: 1 });
+
+    const combined = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(combined).toContain('[peer-cli] HTTP request');
+    expect(combined).toContain('[peer-cli] HTTP response');
+    expect(combined).toContain('"status":200');
+    expect(combined).not.toContain('secret-token');
+  });
+
   it('maps failed responses to peer errors', async () => {
     const fetchMock = vi.fn(async () => ({
       ok: false,

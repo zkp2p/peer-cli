@@ -37,6 +37,74 @@ describe('branch coverage vault, intent, and delegate branches', () => {
     expect(resolvePaymentMethodHash).toHaveBeenCalled();
     expect(resolveFiatCurrencyBytes32).toHaveBeenCalled();
 
+    // vault list flattens output
+    const vaultList = await lookup(['vault', 'list']).handler({}, runtime.context);
+    expect(vaultList).toEqual([
+      expect.objectContaining({
+        name: 'Test Vault',
+        rateManagerId: '0xabc123',
+        manager: DEFAULT_ADDRESS,
+        feePercent: '0.10%',
+        maxFeePercent: '2.00%',
+        delegatedDeposits: 2,
+        volumeUsdc: 5,
+        fulfilledIntents: 5,
+      }),
+    ]);
+
+    // vault list with manager filter
+    const filteredList = await lookup(['vault', 'list']).handler({ manager: DEFAULT_ADDRESS }, runtime.context);
+    expect(filteredList).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'Test Vault' })]));
+
+    // vault show falls back to list when detail returns null
+    const vaultShow = await lookup(['vault', 'show']).handler({ rateManagerId: '0xabc123' }, runtime.context);
+    expect(vaultShow).toMatchObject({ name: 'Test Vault', rateManagerId: '0xabc123' });
+
+    // vault show with unknown ID throws
+    await expect(lookup(['vault', 'show']).handler({ rateManagerId: '0xdeadbeef' }, runtime.context)).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+    });
+
+    // vault list with raw pagination/filter JSON
+    const rawList = await lookup(['vault', 'list']).handler({ pagination: '{"limit":5}', filter: '{"hasHook":true}' }, runtime.context);
+    expect(rawList).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'Test Vault' })]));
+
+    // vault delegates with typed flags
+    await expect(lookup(['vault', 'delegates']).handler({ rateManagerId: '0xabc123', limit: 10 }, runtime.context)).resolves.toMatchObject({
+      path: 'getRateManagerDelegations',
+    });
+    // vault delegates with raw pagination JSON
+    await expect(lookup(['vault', 'delegates']).handler({ rateManagerId: '0xabc123', pagination: '{"limit":5}' }, runtime.context)).resolves.toMatchObject({
+      path: 'getRateManagerDelegations',
+    });
+
+    // vault snapshots with typed limit
+    await expect(lookup(['vault', 'snapshots']).handler({ rateManagerId: '0xabc123', limit: 7 }, runtime.context)).resolves.toMatchObject({
+      path: 'getManagerDailySnapshots',
+    });
+    // vault snapshots with raw options JSON
+    await expect(lookup(['vault', 'snapshots']).handler({ rateManagerId: '0xabc123', options: '{"limit":3}' }, runtime.context)).resolves.toMatchObject({
+      path: 'getManagerDailySnapshots',
+    });
+
+    // vault manual-rate-updates with typed limit
+    await expect(lookup(['vault', 'manual-rate-updates']).handler({ rateManagerId: '0xabc123', limit: 10 }, runtime.context)).resolves.toMatchObject({
+      path: 'getManualRateUpdates',
+    });
+    // vault manual-rate-updates with raw options
+    await expect(lookup(['vault', 'manual-rate-updates']).handler({ rateManagerId: '0xabc123', options: '{"limit":3}' }, runtime.context)).resolves.toMatchObject({
+      path: 'getManualRateUpdates',
+    });
+
+    // vault oracle-config-updates with typed limit
+    await expect(lookup(['vault', 'oracle-config-updates']).handler({ rateManagerId: '0xabc123', limit: 10 }, runtime.context)).resolves.toMatchObject({
+      path: 'getOracleConfigUpdates',
+    });
+    // vault oracle-config-updates with raw options
+    await expect(lookup(['vault', 'oracle-config-updates']).handler({ rateManagerId: '0xabc123', options: '{"limit":3}' }, runtime.context)).resolves.toMatchObject({
+      path: 'getOracleConfigUpdates',
+    });
+
     await expect(lookup(['oracle', 'supports-inline']).handler({ escrowAddress: DEFAULT_ADDRESS }, runtime.context)).resolves.toBe(true);
     await expect(lookup(['oracle', 'validate-feeds']).handler({}, runtime.context)).resolves.toEqual(['feed-ok']);
 

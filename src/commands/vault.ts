@@ -1,10 +1,11 @@
-import { parseUnits } from 'viem';
+import { formatUnits, parseUnits } from 'viem';
 import type { MulticallClient } from '@zkp2p/sdk';
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler, sdkWriteHandler } from './helpers.js';
-import { ensureAddress, ensurePositiveNumber, ensureString } from '../utils/validation.js';
+import { ensureAddress, ensureNumber, ensurePositiveNumber, ensureString } from '../utils/validation.js';
 import { asBigInt, parseJsonArray, parseJsonObject } from '../utils/parsing.js';
 import type { PeerEnv } from '../sdk/config.js';
+import { createError } from '../output/errors.js';
 
 function parseRate(value: unknown): bigint {
   return parseUnits(ensurePositiveNumber(value, 'rate').toString(), 18);
@@ -28,6 +29,36 @@ async function maybeResolveCurrency(input: string): Promise<`0x${string}`> {
   }
   const { resolveFiatCurrencyBytes32 } = await import('@zkp2p/sdk');
   return resolveFiatCurrencyBytes32(input);
+}
+
+interface VaultManagerEntry {
+  manager: Record<string, unknown>;
+  aggregate: Record<string, unknown>;
+}
+
+function flattenVaultEntry(entry: VaultManagerEntry): Record<string, unknown> {
+  const mgr = entry.manager;
+  const agg = entry.aggregate;
+  const fee = typeof mgr.fee === 'string' ? Number(formatUnits(BigInt(mgr.fee), 18)) * 100 : undefined;
+  const maxFee = typeof mgr.maxFee === 'string' ? Number(formatUnits(BigInt(mgr.maxFee), 18)) * 100 : undefined;
+  const volume = typeof agg.totalFilledVolume === 'string' ? Number(agg.totalFilledVolume) / 1e6 : undefined;
+  const pnl = typeof agg.totalPnlUsdCents === 'string' ? Number(agg.totalPnlUsdCents) / 100 : undefined;
+  const delegatedBalance = typeof agg.currentDelegatedBalance === 'string' ? Number(agg.currentDelegatedBalance) / 1e6 : undefined;
+  return {
+    name: mgr.name,
+    rateManagerId: mgr.rateManagerId,
+    manager: mgr.manager,
+    feePercent: fee !== undefined ? `${fee.toFixed(2)}%` : undefined,
+    maxFeePercent: maxFee !== undefined ? `${maxFee.toFixed(2)}%` : undefined,
+    feeRecipient: mgr.feeRecipient,
+    delegatedDeposits: agg.currentDelegatedDeposits,
+    delegatedBalanceUsdc: delegatedBalance,
+    volumeUsdc: volume,
+    pnlUsd: pnl,
+    fulfilledIntents: agg.fulfilledIntents,
+    uri: mgr.uri || undefined,
+    createdAt: mgr.createdAt,
+  };
 }
 
 export const vaultDefinitions: CommandDefinition[] = [
@@ -64,18 +95,51 @@ export const vaultDefinitions: CommandDefinition[] = [
     description: 'List vaults via the indexer.',
     readOnly: true,
     options: [
-      { name: 'pagination', flags: '--pagination <json>', description: 'JSON pagination object.', schema: { type: 'object', description: 'Pagination options.' } },
-      { name: 'filter', flags: '--filter <json>', description: 'JSON filter object.', schema: { type: 'object', description: 'Filter options.' } },
+      { name: 'manager', flags: '--manager <address>', description: 'Filter by manager address.', schema: { type: 'string', description: 'Manager address.' } },
+      { name: 'limit', flags: '--limit <value>', description: 'Maximum vaults to return.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 50 },
+      { name: 'offset', flags: '--offset <value>', description: 'Pagination offset.', schema: { type: 'number', description: 'Offset.' }, defaultValue: 0 },
+      { name: 'pagination', flags: '--pagination <json>', description: 'Raw JSON pagination object (advanced).', schema: { type: 'object', description: 'Pagination options.' } },
+      { name: 'filter', flags: '--filter <json>', description: 'Raw JSON filter object (advanced).', schema: { type: 'object', description: 'Filter options.' } },
     ],
-    handler: sdkReadHandler(['indexer', 'getRateManagers'], async (input) => [input.pagination ? parseJsonObject(input.pagination, 'pagination') : undefined, input.filter ? parseJsonObject(input.filter, 'filter') : undefined]),
+    handler: async (input, context) => {
+      const { client } = await context.getClient({ requireWallet: false });
+      const pagination = input.pagination
+        ? parseJsonObject(input.pagination, 'pagination')
+        : { limit: ensureNumber(input.limit ?? 50, 'limit'), offset: ensureNumber(input.offset ?? 0, 'offset') };
+      const filter = input.filter
+        ? parseJsonObject(input.filter, 'filter')
+        : input.manager
+          ? { manager: ensureAddress(input.manager, 'manager') }
+          : undefined;
+      const results = await client.indexer.getRateManagers(pagination, filter) as unknown as VaultManagerEntry[];
+      return results.map(flattenVaultEntry);
+    },
   },
   {
     path: ['vault', 'show'],
-    description: 'Show vault details via the indexer.',
+    description: 'Show vault details by rateManagerId.',
     readOnly: true,
-    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' } }],
-    options: [{ name: 'options', flags: '--options <json>', description: 'JSON detail options.', schema: { type: 'object', description: 'Detail options.' } }],
-    handler: sdkReadHandler(['indexer', 'getRateManagerDetail'], async (input) => [ensureString(input.rateManagerId, 'rateManagerId'), input.options ? parseJsonObject(input.options, 'options') : undefined]),
+    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId (bytes32 hash).', schema: { type: 'string', description: 'Vault identifier.' } }],
+    handler: async (input, context) => {
+      const id = ensureString(input.rateManagerId, 'rateManagerId');
+      const { client } = await context.getClient({ requireWallet: false });
+
+      // Try the detail endpoint first
+      const detail = await client.indexer.getRateManagerDetail(id);
+      if (detail) return detail;
+
+      // Fall back to filtering from the list (the detail endpoint has known SDK issues)
+      const allVaults = await client.indexer.getRateManagers() as unknown as VaultManagerEntry[];
+      const match = allVaults.find((v) =>
+        (v.manager as { rateManagerId?: string }).rateManagerId?.toLowerCase() === id.toLowerCase(),
+      );
+      if (!match) {
+        throw createError('VALIDATION_ERROR', `Vault not found: ${id}`, {
+          suggestion: 'Run peer vault list to see available vault IDs.',
+        });
+      }
+      return flattenVaultEntry(match);
+    },
   },
   {
     path: ['vault', 'set-rate'],
@@ -151,32 +215,65 @@ export const vaultDefinitions: CommandDefinition[] = [
     description: 'List delegated deposits for a vault.',
     readOnly: true,
     args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' } }],
-    options: [{ name: 'pagination', flags: '--pagination <json>', description: 'JSON pagination object.', schema: { type: 'object', description: 'Pagination.' } }],
-    handler: sdkReadHandler(['indexer', 'getRateManagerDelegations'], async (input) => [ensureString(input.rateManagerId, 'rateManagerId'), input.pagination ? parseJsonObject(input.pagination, 'pagination') : undefined]),
+    options: [
+      { name: 'limit', flags: '--limit <value>', description: 'Maximum delegations.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 50 },
+      { name: 'offset', flags: '--offset <value>', description: 'Pagination offset.', schema: { type: 'number', description: 'Offset.' }, defaultValue: 0 },
+      { name: 'pagination', flags: '--pagination <json>', description: 'Raw JSON pagination object (advanced).', schema: { type: 'object', description: 'Pagination options.' } },
+    ],
+    handler: sdkReadHandler(['indexer', 'getRateManagerDelegations'], async (input) => {
+      const pagination = input.pagination
+        ? parseJsonObject(input.pagination, 'pagination')
+        : { limit: ensureNumber(input.limit ?? 50, 'limit'), offset: ensureNumber(input.offset ?? 0, 'offset') };
+      return [ensureString(input.rateManagerId, 'rateManagerId'), pagination];
+    }),
   },
   {
     path: ['vault', 'snapshots'],
     description: 'Fetch daily snapshots for a vault.',
     readOnly: true,
     args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' } }],
-    options: [{ name: 'options', flags: '--options <json>', description: 'JSON snapshot options.', schema: { type: 'object', description: 'Snapshot options.' } }],
-    handler: sdkReadHandler(['indexer', 'getManagerDailySnapshots'], async (input) => [ensureString(input.rateManagerId, 'rateManagerId'), input.options ? parseJsonObject(input.options, 'options') : undefined]),
+    options: [
+      { name: 'limit', flags: '--limit <value>', description: 'Maximum snapshots.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 30 },
+      { name: 'options', flags: '--options <json>', description: 'Raw JSON snapshot options (advanced).', schema: { type: 'object', description: 'Snapshot options.' } },
+    ],
+    handler: sdkReadHandler(['indexer', 'getManagerDailySnapshots'], async (input) => {
+      const options = input.options
+        ? parseJsonObject(input.options, 'options')
+        : { limit: ensureNumber(input.limit ?? 30, 'limit') };
+      return [ensureString(input.rateManagerId, 'rateManagerId'), options];
+    }),
   },
   {
     path: ['vault', 'manual-rate-updates'],
     description: 'Fetch manual rate updates for a vault.',
     readOnly: true,
     args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' } }],
-    options: [{ name: 'options', flags: '--options <json>', description: 'JSON query options.', schema: { type: 'object', description: 'Query options.' } }],
-    handler: sdkReadHandler(['indexer', 'getManualRateUpdates'], async (input) => [ensureString(input.rateManagerId, 'rateManagerId'), input.options ? parseJsonObject(input.options, 'options') : undefined]),
+    options: [
+      { name: 'limit', flags: '--limit <value>', description: 'Maximum entries.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 50 },
+      { name: 'options', flags: '--options <json>', description: 'Raw JSON query options (advanced).', schema: { type: 'object', description: 'Query options.' } },
+    ],
+    handler: sdkReadHandler(['indexer', 'getManualRateUpdates'], async (input) => {
+      const options = input.options
+        ? parseJsonObject(input.options, 'options')
+        : { limit: ensureNumber(input.limit ?? 50, 'limit') };
+      return [ensureString(input.rateManagerId, 'rateManagerId'), options];
+    }),
   },
   {
     path: ['vault', 'oracle-config-updates'],
     description: 'Fetch oracle config updates for a vault.',
     readOnly: true,
     args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' } }],
-    options: [{ name: 'options', flags: '--options <json>', description: 'JSON query options.', schema: { type: 'object', description: 'Query options.' } }],
-    handler: sdkReadHandler(['indexer', 'getOracleConfigUpdates'], async (input) => [ensureString(input.rateManagerId, 'rateManagerId'), input.options ? parseJsonObject(input.options, 'options') : undefined]),
+    options: [
+      { name: 'limit', flags: '--limit <value>', description: 'Maximum entries.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 50 },
+      { name: 'options', flags: '--options <json>', description: 'Raw JSON query options (advanced).', schema: { type: 'object', description: 'Query options.' } },
+    ],
+    handler: sdkReadHandler(['indexer', 'getOracleConfigUpdates'], async (input) => {
+      const options = input.options
+        ? parseJsonObject(input.options, 'options')
+        : { limit: ensureNumber(input.limit ?? 50, 'limit') };
+      return [ensureString(input.rateManagerId, 'rateManagerId'), options];
+    }),
   },
   {
     path: ['vault', 'manager-fee'],

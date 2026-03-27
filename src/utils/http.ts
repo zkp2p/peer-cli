@@ -5,6 +5,25 @@ export interface RequestJsonOptions extends RequestInit {
   timeoutMs?: number;
 }
 
+function parseJsonResponse(text: string, url: string, status: number, retryable: boolean): unknown {
+  if (!text) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch (error) {
+    throw createError('API_ERROR', `Invalid JSON response from ${url}`, {
+      retryable,
+      details: {
+        status,
+        parseError: error instanceof Error ? error.message : String(error),
+        bodyPreview: text.slice(0, 200),
+      },
+    });
+  }
+}
+
 export function appendSearchParams(url: URL, values: Record<string, string | number | undefined>): URL {
   for (const [key, value] of Object.entries(values)) {
     if (value !== undefined && value !== '') {
@@ -41,7 +60,8 @@ export async function requestJson<T>(url: string, options: RequestJsonOptions = 
     });
 
     const text = await response.text();
-    const payload = text ? (JSON.parse(text) as unknown) : undefined;
+    const retryable = response.status >= 500 || response.status === 429;
+    const payload = parseJsonResponse(text, url, response.status, retryable);
     logDebug('HTTP response', {
       method,
       url,
@@ -53,7 +73,7 @@ export async function requestJson<T>(url: string, options: RequestJsonOptions = 
 
     if (!response.ok) {
       throw createError(response.status === 429 ? 'RATE_LIMITED' : 'API_ERROR', `HTTP ${response.status} from ${url}`, {
-        retryable: response.status >= 500 || response.status === 429,
+        retryable,
         details: payload,
       });
     }

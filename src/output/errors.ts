@@ -92,6 +92,27 @@ function isErrorLike(value: unknown): value is { name?: string; message?: string
   return typeof value === 'object' && value !== null;
 }
 
+function serializeErrorDetails(error: { [key: string]: unknown; name?: string; message?: string; stack?: string }): Record<string, unknown> {
+  const details: Record<string, unknown> = {};
+  if (typeof error.name === 'string') {
+    details.name = error.name;
+  }
+  if (typeof error.message === 'string') {
+    details.message = error.message;
+  }
+  if (typeof error.stack === 'string') {
+    details.stack = error.stack;
+  }
+
+  for (const [key, value] of Object.entries(error)) {
+    if (!(key in details)) {
+      details[key] = value;
+    }
+  }
+
+  return details;
+}
+
 export function normalizeError(error: unknown): CLIErrorBody {
   const internalSuggestion = ERROR_CATALOG.INTERNAL_ERROR.suggestion;
 
@@ -112,6 +133,7 @@ export function normalizeError(error: unknown): CLIErrorBody {
     const catalogEntry = ERROR_CATALOG[code as ErrorCode];
     const lowered = message.toLowerCase();
     const status = 'status' in error && typeof error.status === 'number' ? error.status : undefined;
+    const details = serializeErrorDetails(error as { [key: string]: unknown; name?: string; message?: string; stack?: string });
 
     if (error.name === 'APIError' || code === 'API') {
       if (status === 429) {
@@ -121,7 +143,7 @@ export function normalizeError(error: unknown): CLIErrorBody {
           message,
           retryable: true,
           suggestion: ERROR_CATALOG.RATE_LIMITED.suggestion,
-          details: error,
+          details,
         };
       }
 
@@ -133,7 +155,34 @@ export function normalizeError(error: unknown): CLIErrorBody {
         suggestion: lowered.includes('no quotes found')
           ? 'No upstream liquidity matched the quote request. Try a different amount, currency, or platform, or verify quote API availability.'
           : ERROR_CATALOG.API_ERROR.suggestion,
-        details: error,
+        details,
+      };
+    }
+
+    if (lowered.includes('graphql errors:')) {
+      return {
+        code: 'VALIDATION_ERROR',
+        category: 'validation',
+        message,
+        retryable: false,
+        suggestion: 'Inspect the GraphQL query shape, field names, and variables before retrying.',
+        details,
+      };
+    }
+
+    if (
+      lowered.includes('not found in configured protocolviewer escrows')
+      || lowered.startsWith('deposit not found')
+      || lowered.startsWith('intent not found')
+      || lowered.includes('not found')
+    ) {
+      return {
+        code: 'VALIDATION_ERROR',
+        category: 'validation',
+        message,
+        retryable: false,
+        suggestion: 'Verify the supplied identifier exists in the selected environment before retrying.',
+        details,
       };
     }
 
@@ -144,7 +193,7 @@ export function normalizeError(error: unknown): CLIErrorBody {
         message,
         retryable: true,
         suggestion: ERROR_CATALOG.TIMEOUT.suggestion,
-        details: error,
+        details,
       };
     }
 
@@ -155,7 +204,7 @@ export function normalizeError(error: unknown): CLIErrorBody {
         message,
         retryable: false,
         suggestion: ERROR_CATALOG.AUTH_REQUIRED.suggestion,
-        details: error,
+        details,
       };
     }
 
@@ -166,7 +215,7 @@ export function normalizeError(error: unknown): CLIErrorBody {
         message,
         retryable: true,
         suggestion: ERROR_CATALOG.NETWORK_ERROR.suggestion,
-        details: error,
+        details,
       };
     }
 
@@ -177,7 +226,7 @@ export function normalizeError(error: unknown): CLIErrorBody {
         message,
         retryable: true,
         suggestion: ERROR_CATALOG.RATE_LIMITED.suggestion,
-        details: error,
+        details,
       };
     }
 
@@ -188,7 +237,7 @@ export function normalizeError(error: unknown): CLIErrorBody {
         message,
         retryable: false,
         suggestion: ERROR_CATALOG.CONTRACT_ERROR.suggestion,
-        details: error,
+        details,
       };
     }
 
@@ -198,7 +247,7 @@ export function normalizeError(error: unknown): CLIErrorBody {
       message,
       retryable: catalogEntry?.retryable ?? false,
       suggestion: catalogEntry?.suggestion ?? internalSuggestion,
-      details: error,
+      details,
     };
   }
 

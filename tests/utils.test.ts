@@ -150,6 +150,22 @@ describe('requestJson', () => {
     });
   });
 
+  it('maps invalid upstream html to api errors', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: false,
+      status: 502,
+      text: async () => '<html>bad gateway</html>',
+    }));
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    await expect(requestJson('https://example.test')).rejects.toMatchObject({
+      code: 'API_ERROR',
+      category: 'api',
+      retryable: true,
+      message: 'Invalid JSON response from https://example.test',
+    });
+  });
+
   it('maps aborts to timeout errors', async () => {
     const abortError = Object.assign(new Error('aborted'), { name: 'AbortError' });
     vi.stubGlobal('fetch', vi.fn(async () => {

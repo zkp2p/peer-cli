@@ -64,6 +64,9 @@ describe('error normalization', () => {
     expect(normalizeError(new Error('ECONNREFUSED'))).toMatchObject({ code: 'NETWORK_ERROR', category: 'network' });
     expect(normalizeError(new Error('too many requests'))).toMatchObject({ code: 'RATE_LIMITED', category: 'rate_limit' });
     expect(normalizeError(new Error('contract revert'))).toMatchObject({ code: 'CONTRACT_ERROR', category: 'contract' });
+    expect(normalizeError(new Error('Deposit not found in configured ProtocolViewer escrows'))).toMatchObject({ code: 'VALIDATION_ERROR', category: 'validation' });
+    expect(normalizeError(new Error("GraphQL errors: field 'deposits' not found in type: 'query_root'"))).toMatchObject({ code: 'VALIDATION_ERROR', category: 'validation' });
+    expect(normalizeError({ name: 'APIError', code: 'API', message: 'Unsupported currency code', status: 400 })).toMatchObject({ code: 'API_ERROR', category: 'api' });
     expect(normalizeError({ code: 'TIMEOUT' })).toMatchObject({ code: 'TIMEOUT', category: 'timeout', message: 'Unknown error' });
     expect(normalizeError({ message: 'mystery', code: 'SOMETHING' })).toMatchObject({ code: 'SOMETHING', category: 'internal' });
   });

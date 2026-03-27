@@ -1,5 +1,13 @@
 import { erc20Abi, zeroAddress } from 'viem';
-import { amountToUnits, ensureAddress, ensureNumber, ensureString, parseCsv } from '../utils/validation.js';
+import {
+  amountToUnits,
+  ensureAddress,
+  ensureNumber,
+  ensureSupportedCurrency,
+  ensureSupportedPlatformList,
+  ensureString,
+  parseCsv,
+} from '../utils/validation.js';
 import { createError } from '../output/errors.js';
 import type { CommandDefinition } from './framework.js';
 import { sdkDirectWriteHandler, sdkReadHandler } from './helpers.js';
@@ -69,8 +77,9 @@ export const quoteDefinitions: CommandDefinition[] = [
       const destinationToken = resolveDestinationToken(input.to, client.getUsdcAddress());
       return [
         {
-          paymentPlatforms: parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS],
-          fiatCurrency: ensureString(input.from, 'from'),
+          paymentPlatforms: ensureSupportedPlatformList(parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS], 'platform')
+            ?? [...SUPPORTED_PLATFORMS],
+          fiatCurrency: ensureSupportedCurrency(input.from, 'from'),
           user: input.user ? ensureAddress(input.user, 'user') : walletClient.account?.address ?? zeroAddress,
           recipient: input.recipient ? ensureAddress(input.recipient, 'recipient') : walletClient.account?.address ?? zeroAddress,
           destinationChainId: ensureNumber(input.destinationChainId ?? 8453, 'destinationChainId'),

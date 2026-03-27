@@ -1,7 +1,14 @@
 import { parseUnits } from 'viem';
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler, sdkWriteHandler } from './helpers.js';
-import { ensureAddress, ensureNumber, ensurePositiveNumber, ensureString } from '../utils/validation.js';
+import {
+  ensureAddress,
+  ensureNumber,
+  ensurePositiveNumber,
+  ensureSupportedCurrency,
+  ensureSupportedPlatform,
+  ensureString,
+} from '../utils/validation.js';
 import { asBigInt, parseJsonArray, parseJsonObject } from '../utils/parsing.js';
 
 function parseConversionRate(value: unknown): string {
@@ -28,9 +35,9 @@ export const intentDefinitions: CommandDefinition[] = [
       depositId: asBigInt(input.deposit, 'deposit'),
       amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6),
       toAddress: ensureAddress(input.to, 'to'),
-      processorName: ensureString(input.platform, 'platform'),
+      processorName: ensureSupportedPlatform(input.platform, 'platform'),
       payeeDetails: ensureString(input.payeeDetails, 'payeeDetails'),
-      fiatCurrencyCode: ensureString(input.currency, 'currency'),
+      fiatCurrencyCode: ensureSupportedCurrency(input.currency, 'currency'),
       conversionRate: parseConversionRate(input.rate),
       processorIntentData: input.processorIntentData ? parseJsonObject(input.processorIntentData, 'processorIntentData') : undefined,
     })),

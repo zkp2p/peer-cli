@@ -148,6 +148,69 @@ describe('registry-backed command handlers', () => {
     });
   });
 
+  it('validates supported currencies and platforms locally before outbound calls', async () => {
+    const quoteRuntime = createMockRuntime();
+    const invalidQuote = await run(['quote'], {
+      from: 'invalid',
+      amount: 25,
+    }, quoteRuntime);
+    expect(invalidQuote).toMatchObject({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        category: 'validation',
+        message: expect.stringContaining('Unsupported currency: INVALID.'),
+      },
+    });
+    expect(quoteRuntime.calls.find((entry) => entry.path === 'getQuote')).toBeUndefined();
+
+    const normalizedQuoteRuntime = createMockRuntime();
+    const normalizedQuote = await run(['quote'], {
+      from: 'usd',
+      amount: 25,
+      platform: 'WISE,venmo',
+    }, normalizedQuoteRuntime);
+    expect(normalizedQuote).toMatchObject({ ok: true });
+    expect(normalizedQuoteRuntime.calls.find((entry) => entry.path === 'getQuote')?.args[0]).toMatchObject({
+      fiatCurrency: 'USD',
+      paymentPlatforms: ['wise', 'venmo'],
+    });
+
+    const marketRuntime = createMockRuntime();
+    const invalidMarket = await run(['market', 'spreads'], {
+      platform: 'not-real',
+    }, marketRuntime);
+    expect(invalidMarket).toMatchObject({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        category: 'validation',
+        message: expect.stringContaining('Unsupported platform: not-real.'),
+      },
+    });
+    expect(marketRuntime.requestJson).not.toHaveBeenCalled();
+
+    const depositRuntime = createMockRuntime({ yes: true });
+    const invalidDeposit = await run(['deposit', 'create'], {
+      amount: 100,
+      min: 10,
+      max: 20,
+      platforms: 'wise',
+      currencies: 'USD,INVALID',
+      rate: 1.2,
+      depositData: '[{"email":"maker@example.com"}]',
+    }, depositRuntime);
+    expect(invalidDeposit).toMatchObject({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        category: 'validation',
+        message: expect.stringContaining('Unsupported currency: INVALID.'),
+      },
+    });
+    expect(depositRuntime.calls.find((entry) => entry.path === 'prepareCreateDeposit')).toBeUndefined();
+  });
+
   it('handles deposit lifecycle commands', async () => {
     const runtime = createMockRuntime({ yes: true });
     await expect(run(['deposit', 'ensure-allowance'], { amount: 10 }, runtime)).resolves.toMatchObject({

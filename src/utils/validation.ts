@@ -1,5 +1,6 @@
 import { isAddress, parseUnits } from 'viem';
 import { createError } from '../output/errors.js';
+import { SUPPORTED_CURRENCIES, SUPPORTED_PLATFORMS } from './constants.js';
 
 export function parseCsv(value: string | undefined): string[] | undefined {
   if (!value) return undefined;
@@ -81,6 +82,38 @@ export function ensureOneOf<T extends readonly string[]>(value: unknown, fieldNa
     });
   }
   return parsed as T[number];
+}
+
+function ensureSupportedValue<T extends readonly string[]>(
+  value: unknown,
+  normalized: string,
+  allowed: T,
+  kind: 'currency' | 'platform',
+): T[number] {
+  if (!allowed.includes(normalized as T[number])) {
+    throw createError('VALIDATION_ERROR', `Unsupported ${kind}: ${normalized}. Must be one of: ${allowed.join(', ')}.`, {
+      details: { value, allowed },
+    });
+  }
+  return normalized as T[number];
+}
+
+export function ensureSupportedCurrency(value: unknown, fieldName: string): (typeof SUPPORTED_CURRENCIES)[number] {
+  const parsed = ensureString(value, fieldName).toUpperCase();
+  return ensureSupportedValue(value, parsed, SUPPORTED_CURRENCIES, 'currency');
+}
+
+export function ensureSupportedCurrencyList(values: string[] | undefined, fieldName: string): string[] | undefined {
+  return values?.map((value, index) => ensureSupportedCurrency(value, `${fieldName}[${index}]`));
+}
+
+export function ensureSupportedPlatform(value: unknown, fieldName: string): (typeof SUPPORTED_PLATFORMS)[number] {
+  const parsed = ensureString(value, fieldName).toLowerCase();
+  return ensureSupportedValue(value, parsed, SUPPORTED_PLATFORMS, 'platform');
+}
+
+export function ensureSupportedPlatformList(values: string[] | undefined, fieldName: string): string[] | undefined {
+  return values?.map((value, index) => ensureSupportedPlatform(value, `${fieldName}[${index}]`));
 }
 
 export function amountToUnits(value: unknown, fieldName: string, decimals = 6): bigint {

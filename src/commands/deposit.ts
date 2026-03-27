@@ -2,20 +2,41 @@ import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
 import { createError } from '../output/errors.js';
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler, sdkSeparatePrepareHandler, sdkWriteHandler } from './helpers.js';
-import { ensureAddress, ensureNumber, ensurePositiveNumber, ensureString, parseCsv } from '../utils/validation.js';
+import {
+  ensureAddress,
+  ensureNumber,
+  ensurePositiveNumber,
+  ensureSupportedCurrency,
+  ensureSupportedCurrencyList,
+  ensureSupportedPlatformList,
+  ensureString,
+  parseCsv,
+} from '../utils/validation.js';
 import { asBigInt, parseJsonArray, parseJsonObject } from '../utils/parsing.js';
 
 function parseConversionRate(value: unknown): string {
   return parseUnits(ensurePositiveNumber(value, 'rate').toString(), 18).toString();
 }
 
+function parseSupportedPlatforms(value: unknown, fieldName: string): string[] {
+  return ensureSupportedPlatformList(parseCsv(value as string | undefined), fieldName) ?? [];
+}
+
+function parseSupportedCurrencies(value: unknown, fieldName: string): string[] {
+  return ensureSupportedCurrencyList(parseCsv(value as string | undefined), fieldName) ?? [];
+}
+
 function parseConversionRates(input: Record<string, unknown>): { currency: string; conversionRate: string }[][] {
   if (input.conversionRates) {
-    return parseJsonArray(input.conversionRates, 'conversionRates') as { currency: string; conversionRate: string }[][];
+    const conversionRates = parseJsonArray(input.conversionRates, 'conversionRates') as { currency?: unknown; conversionRate: string }[][];
+    return conversionRates.map((entries, rowIndex) => entries.map((entry, entryIndex) => ({
+      ...entry,
+      currency: ensureSupportedCurrency(entry.currency, `conversionRates[${rowIndex}][${entryIndex}].currency`),
+    })));
   }
 
-  const processors = parseCsv(input.platforms as string | undefined) ?? [];
-  const currencies = parseCsv(input.currencies as string | undefined) ?? [];
+  const processors = parseSupportedPlatforms(input.platforms, 'platforms');
+  const currencies = parseSupportedCurrencies(input.currencies, 'currencies');
   if (processors.length === 0 || currencies.length === 0 || input.rate === undefined) {
     throw createError('VALIDATION_ERROR', 'Provide --conversion-rates JSON or --platforms, --currencies, and --rate.');
   }
@@ -209,7 +230,7 @@ export const depositDefinitions: CommandDefinition[] = [
       ['prepareCreateDeposit'],
       ['createDeposit'],
       async (input, context) => withUsdcAddress(input, context, async (token) => {
-        const processorNames = parseCsv(input.platforms as string | undefined) ?? [];
+        const processorNames = parseSupportedPlatforms(input.platforms, 'platforms');
         return {
           token: ensureAddress(token, 'token'),
           amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6),
@@ -334,7 +355,7 @@ export const depositDefinitions: CommandDefinition[] = [
     handler: sdkWriteHandler(['setCurrencyMinRate'], async (input) => ({
       depositId: asBigInt(input.id, 'id'),
       paymentMethod: ensureString(input.paymentMethod, 'paymentMethod'),
-      fiatCurrency: ensureString(input.currency, 'currency'),
+      fiatCurrency: ensureSupportedCurrency(input.currency, 'currency'),
       minConversionRate: parseConversionRate(input.rate),
     })),
   },
@@ -437,7 +458,7 @@ export const depositDefinitions: CommandDefinition[] = [
     handler: sdkWriteHandler(['addCurrencies'], async (input) => ({
       depositId: asBigInt(input.id, 'id'),
       paymentMethod: ensureString(input.paymentMethod, 'paymentMethod'),
-      currencies: parseCsv(input.currencies as string | undefined) ?? [],
+      currencies: parseSupportedCurrencies(input.currencies, 'currencies'),
     })),
   },
   {
@@ -453,7 +474,7 @@ export const depositDefinitions: CommandDefinition[] = [
     handler: sdkWriteHandler(['deactivateCurrency'], async (input) => ({
       depositId: asBigInt(input.id, 'id'),
       paymentMethod: ensureString(input.paymentMethod, 'paymentMethod'),
-      currencyCode: ensureString(input.currency, 'currency'),
+      currencyCode: ensureSupportedCurrency(input.currency, 'currency'),
     })),
   },
   {
@@ -469,7 +490,7 @@ export const depositDefinitions: CommandDefinition[] = [
     handler: sdkWriteHandler(['removeCurrency'], async (input) => ({
       depositId: asBigInt(input.id, 'id'),
       paymentMethod: ensureString(input.paymentMethod, 'paymentMethod'),
-      currencyCode: ensureString(input.currency, 'currency'),
+      currencyCode: ensureSupportedCurrency(input.currency, 'currency'),
     })),
   },
   {

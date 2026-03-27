@@ -2,7 +2,16 @@ import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler } from './helpers.js';
 import { createError } from '../output/errors.js';
 import { SUPPORTED_MARKET_PERIODS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
-import { amountToUnits, ensureAddress, ensureNumber, ensureOneOf, ensureString, parseCsv } from '../utils/validation.js';
+import {
+  amountToUnits,
+  ensureAddress,
+  ensureNumber,
+  ensureOneOf,
+  ensureSupportedCurrency,
+  ensureSupportedCurrencyList,
+  ensureSupportedPlatformList,
+  parseCsv,
+} from '../utils/validation.js';
 import { appendSearchParams } from '../utils/http.js';
 
 const FIAT_AMOUNT_DECIMALS = 6;
@@ -23,9 +32,11 @@ export const marketDefinitions: CommandDefinition[] = [
       { name: 'limit', flags: '--limit <value>', description: 'Maximum markets to return.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 200 },
     ],
     handler: async (input, context) => {
+      const platforms = ensureSupportedPlatformList(parseCsv(input.platform as string | undefined), 'platform');
+      const currencies = ensureSupportedCurrencyList(parseCsv(input.currency as string | undefined), 'currency');
       const url = appendSearchParams(new URL('v1/market/summary', context.config.marketBaseUrl), {
-        platform: parseCsv(input.platform as string | undefined)?.join(','),
-        currency: parseCsv(input.currency as string | undefined)?.join(','),
+        platform: platforms?.join(','),
+        currency: currencies?.join(','),
         includeRates: input.includeRates ? 'true' : undefined,
         limit: ensureNumber(input.limit ?? 200, 'limit'),
       });
@@ -57,8 +68,9 @@ export const marketDefinitions: CommandDefinition[] = [
       }
 
       return [{
-        paymentPlatforms: parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS],
-        fiatCurrency: ensureString(input.from, 'from'),
+        paymentPlatforms: ensureSupportedPlatformList(parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS], 'platform')
+          ?? [...SUPPORTED_PLATFORMS],
+        fiatCurrency: ensureSupportedCurrency(input.from, 'from'),
         amount: amountToUnits(input.amount, 'amount', FIAT_AMOUNT_DECIMALS).toString(),
         isExactFiat: true,
         recipient,
@@ -80,10 +92,12 @@ export const marketDefinitions: CommandDefinition[] = [
     ],
     handler: async (input, context) => {
       const range = ensureOneOf(input.range ?? 'mtd', 'range', SUPPORTED_MARKET_PERIODS);
+      const platforms = ensureSupportedPlatformList(parseCsv(input.platform as string | undefined), 'platform');
+      const currencies = ensureSupportedCurrencyList(parseCsv(input.currency as string | undefined), 'currency');
       const url = appendSearchParams(new URL('v1/analytics/period', context.config.marketBaseUrl), {
         range,
-        platform: parseCsv(input.platform as string | undefined)?.join(','),
-        currency: parseCsv(input.currency as string | undefined)?.join(','),
+        platform: platforms?.join(','),
+        currency: currencies?.join(','),
       });
       return context.requestJson(url.toString(), {
         headers: marketHeaders(context.config.marketApiKey),

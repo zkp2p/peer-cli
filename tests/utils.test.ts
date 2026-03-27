@@ -13,6 +13,10 @@ import {
   ensureNumber,
   ensureOneOf,
   ensurePositiveNumber,
+  ensureSupportedCurrency,
+  ensureSupportedCurrencyList,
+  ensureSupportedPlatform,
+  ensureSupportedPlatformList,
   ensureString,
   optionalAmountToUnits,
   parseCsv,
@@ -42,6 +46,10 @@ describe('validation utils', () => {
     expect(ensureBoolean('false', 'field')).toBe(false);
     expect(ensureArray([1, 2], 'field')).toEqual([1, 2]);
     expect(ensureOneOf('production', 'env', ['production', 'staging'] as const)).toBe('production');
+    expect(ensureSupportedCurrency('usd', 'currency')).toBe('USD');
+    expect(ensureSupportedCurrencyList(['usd', 'eur'], 'currencies')).toEqual(['USD', 'EUR']);
+    expect(ensureSupportedPlatform('WISE', 'platform')).toBe('wise');
+    expect(ensureSupportedPlatformList(['WISE', 'venmo'], 'platforms')).toEqual(['wise', 'venmo']);
   });
 
   it('derives amounts and private keys', () => {
@@ -59,6 +67,8 @@ describe('validation utils', () => {
     expect(() => ensureBoolean('maybe', 'field')).toThrow('field must be a boolean.');
     expect(() => ensureArray({}, 'field')).toThrow('field must be an array.');
     expect(() => ensureOneOf('bad', 'env', ['production', 'staging'] as const)).toThrow('env must be one of: production, staging.');
+    expect(() => ensureSupportedCurrency('invalid', 'currency')).toThrow('Unsupported currency: INVALID.');
+    expect(() => ensureSupportedPlatform('invalid', 'platform')).toThrow('Unsupported platform: invalid.');
   });
 
   it('parses json files', async () => {

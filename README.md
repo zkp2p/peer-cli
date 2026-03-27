@@ -225,7 +225,7 @@ Commands that need a signer require one of:
 - `peer config show`
 - `peer config set`
 - `peer config platforms`
-- `peer config currencies`
+- `peer config currencies` - List the 34 supported fiat currencies from the CLI source-of-truth catalog.
 
 ### MCP
 - `peer mcp`

@@ -16,6 +16,27 @@ import { DEFAULT_CHAIN_ID, SUPPORTED_PLATFORMS } from '../utils/constants.js';
 
 const FIAT_AMOUNT_DECIMALS = 6;
 
+function hasNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
+function validateRequiredQuoteInputs(input: Record<string, unknown>): void {
+  const missingFrom = !hasNonEmptyString(input.from);
+  const missingAmount = input.tokenAmount === undefined && input.amount === undefined;
+
+  if (missingFrom && missingAmount) {
+    throw createError('VALIDATION_ERROR', 'Missing required options: --from and either --amount or --token-amount.');
+  }
+
+  if (missingFrom) {
+    throw createError('VALIDATION_ERROR', 'Missing required option: --from.');
+  }
+
+  if (missingAmount) {
+    throw createError('VALIDATION_ERROR', 'Either --amount or --token-amount is required.');
+  }
+}
+
 function resolveDestinationToken(input: unknown, fallback: string | undefined): `0x${string}` {
   if (typeof input === 'string' && input.trim() !== '' && input.toUpperCase() !== 'USDC') {
     return ensureAddress(input, 'to');
@@ -71,9 +92,7 @@ export const quoteDefinitions: CommandDefinition[] = [
     ],
     handler: sdkReadHandler(['getQuote'], async (input, context) => {
       const { client, walletClient } = await context.getClient({ requireWallet: false });
-      if (input.tokenAmount === undefined && input.amount === undefined) {
-        throw createError('VALIDATION_ERROR', 'Either --amount or --token-amount is required.');
-      }
+      validateRequiredQuoteInputs(input);
       const destinationToken = resolveDestinationToken(input.to, client.getUsdcAddress());
       return [
         {

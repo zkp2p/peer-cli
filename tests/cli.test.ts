@@ -128,6 +128,20 @@ describe('in-process cli runner', () => {
     expect(failed.stdout).toBe('');
   });
 
+  it('mentions all missing required quote inputs in cli validation errors', async () => {
+    const runtime = createMockRuntime();
+
+    const failed = await runCliInProcess(
+      ['node', 'peer', 'quote'],
+      runtime.deps,
+    );
+
+    expect(failed.exitCode).toBe(1);
+    expect(failed.stdout).toBe('');
+    expect(failed.stderr).toContain('"code": "VALIDATION_ERROR"');
+    expect(failed.stderr).toContain('"message": "Missing required options: --from and either --amount or --token-amount."');
+  });
+
   it('sets a non-zero exit code for normalized API failures', async () => {
     const runtime = createMockRuntime({
       behaviors: {

@@ -274,6 +274,32 @@ describe('registry-backed command handlers', () => {
     expect(depositRuntime.calls.find((entry) => entry.path === 'prepareCreateDeposit')).toBeUndefined();
   });
 
+  it('reports all missing required quote inputs before outbound calls', async () => {
+    const missingBothRuntime = createMockRuntime();
+    const missingBoth = await run(['quote'], {}, missingBothRuntime);
+    expect(missingBoth).toMatchObject({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        category: 'validation',
+        message: 'Missing required options: --from and either --amount or --token-amount.',
+      },
+    });
+    expect(missingBothRuntime.calls.find((entry) => entry.path === 'getQuote')).toBeUndefined();
+
+    const missingFromRuntime = createMockRuntime();
+    const missingFrom = await run(['quote'], { amount: 25 }, missingFromRuntime);
+    expect(missingFrom).toMatchObject({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        category: 'validation',
+        message: 'Missing required option: --from.',
+      },
+    });
+    expect(missingFromRuntime.calls.find((entry) => entry.path === 'getQuote')).toBeUndefined();
+  });
+
   it('handles deposit lifecycle commands', async () => {
     const runtime = createMockRuntime({ yes: true });
     await expect(run(['deposit', 'ensure-allowance'], { amount: 10 }, runtime)).resolves.toMatchObject({

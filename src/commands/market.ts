@@ -324,11 +324,22 @@ export const marketDefinitions: CommandDefinition[] = [
       { name: 'offset', flags: '--offset <value>', description: 'Pagination offset.', schema: { type: 'number', description: 'Offset.' }, defaultValue: 0 },
     ],
     handler: async (input, context) => {
+      const depositor = input.depositor ? ensureAddress(input.depositor, 'depositor') : undefined;
+      const delegate = input.delegate ? ensureAddress(input.delegate, 'delegate') : undefined;
+      const platforms = ensureSupportedPlatformList(parseCsv(input.platform as string | undefined), 'platform');
+      const currencies = ensureSupportedCurrencyList(parseCsv(input.currency as string | undefined), 'currency');
+      if (!depositor && !delegate && !(platforms?.length) && !(currencies?.length)) {
+        throw createError(
+          'VALIDATION_ERROR',
+          'At least one filter is required: --depositor, --delegate, --platform, or --currency.',
+        );
+      }
+
       const url = appendSearchParams(new URL('v1/deposits', context.config.marketBaseUrl), {
-        depositor: input.depositor as string | undefined,
-        delegate: input.delegate as string | undefined,
-        platform: parseCsv(input.platform as string | undefined)?.join(','),
-        currency: parseCsv(input.currency as string | undefined)?.join(','),
+        depositor,
+        delegate,
+        platform: platforms?.join(','),
+        currency: currencies?.join(','),
         status: input.status as string | undefined,
         accepting: input.accepting ? 'true' : undefined,
         limit: ensureNumber(input.limit ?? 50, 'limit'),

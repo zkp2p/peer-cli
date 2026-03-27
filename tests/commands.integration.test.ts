@@ -633,6 +633,15 @@ describe('registry-backed command handlers', () => {
         data: { url: 'https://market.example/v1/deposits?depositor=0x1111111111111111111111111111111111111111&limit=50&offset=0' },
       });
 
+      const marketDepositsMissingFilter = await run(['market', 'deposits'], {}, runtime);
+      expect(marketDepositsMissingFilter).toMatchObject({
+        ok: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'At least one filter is required: --depositor, --delegate, --platform, or --currency.',
+        },
+      });
+
       await expect(run(['market', 'intents'], { status: 'FULFILLED', limit: 10 }, runtime)).resolves.toMatchObject({
         ok: true,
         data: { url: 'https://market.example/v1/intents?status=FULFILLED&limit=10&offset=0' },

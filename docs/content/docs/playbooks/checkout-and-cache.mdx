@@ -24,15 +24,15 @@ peer checkout create --amount 100 --description "Order 123" --recipient 0x111111
 ### 3. Inspect the resulting session
 
 ```bash
-peer checkout show --session-id order_123
+peer checkout show order_123
 peer checkout list --status pending
 ```
 
 ### 4. Cancel if required
 
 ```bash
-peer checkout cancel --session-id order_123
-peer checkout cancel --session-id order_123 --yes
+peer checkout cancel order_123
+peer checkout cancel order_123 --yes
 ```
 
 ## Cache-Aware Behavior

@@ -23,10 +23,45 @@ peer pv intent show <intentHash>
 
 Indexer reads are broader and better for relation-heavy or bulk workflows.
 
+#### Deposits
+
 ```text
+peer indexer deposits list --owner <address>
+peer indexer deposits list-relations --owner <address>
 peer indexer deposits show <composite-deposit-id>
+peer indexer deposits by-ids --ids <json>
+peer indexer deposits by-ids-relations --ids <json>
+peer indexer deposits fund-activities <composite-deposit-id>
+peer indexer deposits snapshots <composite-deposit-id>
+```
+
+#### Makers
+
+```text
+peer indexer makers fund-activities <address>
+```
+
+#### Intents
+
+```text
+peer indexer intents by-deposit-ids --deposit-ids <json>
 peer indexer intents by-owner <owner>
+peer indexer intents show <intentHash>
+peer indexer intents expired --now <value> --deposit-ids <json>
+peer indexer intents fulfilled-events --hashes <json>
+peer indexer intents fulfillment-amounts <intentHash>
+peer indexer intents fulfillment-and-payment <intentHash>
+```
+
+#### Delegations
+
+```text
 peer indexer delegations by-deposit <composite-deposit-id>
+```
+
+#### Raw GraphQL
+
+```text
 peer indexer query --query '{ deposits { id } }'
 ```
 

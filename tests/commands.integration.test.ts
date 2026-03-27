@@ -103,6 +103,46 @@ describe('registry-backed command handlers', () => {
     expect(takerTier).toMatchObject({ ok: true, data: { responseObject: { tier: 'standard' } } });
   });
 
+  it('normalizes upstream quote API failures into canonical API errors', async () => {
+    const runtime = createMockRuntime({
+      behaviors: {
+        getQuote: async () => {
+          throw {
+            name: 'APIError',
+            code: 'API',
+            message: 'No quotes found',
+            status: 404,
+            details: {
+              url: 'https://api.zkp2p.xyz/v2/quote/exact-fiat?quotesToReturn=5',
+            },
+          };
+        },
+      },
+    });
+
+    const quote = await executeDefinition(definition(['quote']), {
+      from: 'USD',
+      amount: 25,
+      platform: 'wise',
+    }, {}, runtime.deps);
+
+    expect(quote).toMatchObject({
+      ok: false,
+      error: {
+        code: 'API_ERROR',
+        category: 'api',
+        message: 'No quotes found',
+        retryable: false,
+        suggestion: 'No upstream liquidity matched the quote request. Try a different amount, currency, or platform, or verify quote API availability.',
+        details: expect.objectContaining({
+          name: 'APIError',
+          code: 'API',
+          status: 404,
+        }),
+      },
+    });
+  });
+
   it('handles deposit lifecycle commands', async () => {
     const runtime = createMockRuntime({ yes: true });
     await expect(run(['deposit', 'ensure-allowance'], { amount: 10 }, runtime)).resolves.toMatchObject({

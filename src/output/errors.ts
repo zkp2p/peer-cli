@@ -111,6 +111,31 @@ export function normalizeError(error: unknown): CLIErrorBody {
     const code = typeof error.code === 'string' ? error.code : 'INTERNAL_ERROR';
     const catalogEntry = ERROR_CATALOG[code as ErrorCode];
     const lowered = message.toLowerCase();
+    const status = 'status' in error && typeof error.status === 'number' ? error.status : undefined;
+
+    if (error.name === 'APIError' || code === 'API') {
+      if (status === 429) {
+        return {
+          code: 'RATE_LIMITED',
+          category: 'rate_limit',
+          message,
+          retryable: true,
+          suggestion: ERROR_CATALOG.RATE_LIMITED.suggestion,
+          details: error,
+        };
+      }
+
+      return {
+        code: 'API_ERROR',
+        category: 'api',
+        message,
+        retryable: status !== undefined ? status >= 500 : false,
+        suggestion: lowered.includes('no quotes found')
+          ? 'No upstream liquidity matched the quote request. Try a different amount, currency, or platform, or verify quote API availability.'
+          : ERROR_CATALOG.API_ERROR.suggestion,
+        details: error,
+      };
+    }
 
     if (lowered.includes('timeout')) {
       return {

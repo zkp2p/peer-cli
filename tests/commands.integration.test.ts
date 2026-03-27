@@ -312,6 +312,79 @@ describe('registry-backed command handlers', () => {
     });
   });
 
+  it('enriches direct deposit reads with readable payment method and currency metadata', async () => {
+    const paymentMethodHash = '0x617f88ab82b5c1b014c539f7e75121427f0bb50a4c58b187a238531e7d58605d';
+    const currencyHash = '0xc4ae21aac0c6549d71dd96035b7e0bdb6c79ebdba8891b666115bc976d16a29e';
+    const depositPayload = {
+      depositId: '1',
+      paymentMethods: [
+        {
+          paymentMethod: paymentMethodHash,
+          currencies: [
+            {
+              code: currencyHash,
+              minConversionRate: '1020000000000000000',
+            },
+          ],
+        },
+      ],
+    };
+    const runtime = createMockRuntime({
+      behaviors: {
+        getDeposit: () => depositPayload,
+        getPvDepositById: () => depositPayload,
+        getAccountDeposits: () => [depositPayload],
+        getDeposits: () => [depositPayload],
+      },
+    });
+
+    await expect(run(['deposit', 'show'], { depositId: '1' }, runtime)).resolves.toMatchObject({
+      ok: true,
+      data: {
+        paymentMethods: [
+          {
+            paymentMethod: paymentMethodHash,
+            paymentMethodName: 'revolut',
+            currencies: [
+              {
+                code: currencyHash,
+                currencyName: 'USD',
+                minConversionRate: '1020000000000000000',
+                minConversionRateDecimal: '1.02',
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    await expect(run(['pv', 'deposit', 'show'], { depositId: '1' }, runtime)).resolves.toMatchObject({
+      ok: true,
+      data: {
+        paymentMethods: [
+          {
+            paymentMethodName: 'revolut',
+            currencies: [{ currencyName: 'USD', minConversionRateDecimal: '1.02' }],
+          },
+        ],
+      },
+    });
+
+    await expect(run(['deposit', 'list'], {}, runtime)).resolves.toMatchObject({
+      ok: true,
+      data: [
+        {
+          paymentMethods: [
+            {
+              paymentMethodName: 'revolut',
+              currencies: [{ currencyName: 'USD', minConversionRateDecimal: '1.02' }],
+            },
+          ],
+        },
+      ],
+    });
+  });
+
   it('handles intent and hook commands', async () => {
     const runtime = createMockRuntime({ yes: true });
     await expect(call(['intent', 'create'], {

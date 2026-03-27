@@ -1,4 +1,4 @@
-import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
+import { encodeFunctionData, erc20Abi, formatUnits, keccak256, parseUnits, stringToHex } from 'viem';
 import { createError } from '../output/errors.js';
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler, sdkSeparatePrepareHandler, sdkWriteHandler } from './helpers.js';
@@ -13,6 +13,91 @@ import {
   parseCsv,
 } from '../utils/validation.js';
 import { asBigInt, parseJsonArray, parseJsonObject } from '../utils/parsing.js';
+import { SUPPORTED_CURRENCIES, SUPPORTED_PLATFORMS } from '../utils/constants.js';
+
+const PLATFORM_NAME_BY_HASH = new Map(
+  SUPPORTED_PLATFORMS.map((platform) => [keccak256(stringToHex(platform)).toLowerCase(), platform]),
+);
+
+const CURRENCY_NAME_BY_HASH = new Map(
+  SUPPORTED_CURRENCIES.map((currency) => [keccak256(stringToHex(currency)).toLowerCase(), currency]),
+);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function resolveHashName(hashMap: Map<string, string>, value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  return hashMap.get(value.toLowerCase());
+}
+
+function formatMinConversionRate(value: unknown): string | undefined {
+  if (typeof value === 'bigint') {
+    return formatUnits(value, 18);
+  }
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
+    return formatUnits(BigInt(value), 18);
+  }
+  if (typeof value === 'string' && /^\d+$/.test(value)) {
+    return formatUnits(BigInt(value), 18);
+  }
+  return undefined;
+}
+
+function enrichDepositCurrency(value: unknown): unknown {
+  if (!isRecord(value)) {
+    return value;
+  }
+
+  const currencyName = resolveHashName(CURRENCY_NAME_BY_HASH, value.code);
+  const minConversionRateDecimal = formatMinConversionRate(value.minConversionRate);
+  return {
+    ...value,
+    ...(currencyName ? { currencyName } : {}),
+    ...(minConversionRateDecimal ? { minConversionRateDecimal } : {}),
+  };
+}
+
+function enrichDepositPaymentMethod(value: unknown): unknown {
+  if (!isRecord(value)) {
+    return value;
+  }
+
+  const paymentMethodName = resolveHashName(PLATFORM_NAME_BY_HASH, value.paymentMethod);
+  return {
+    ...value,
+    ...(paymentMethodName ? { paymentMethodName } : {}),
+    ...(Array.isArray(value.currencies)
+      ? { currencies: value.currencies.map(enrichDepositCurrency) }
+      : {}),
+  };
+}
+
+function enrichDepositReadableFields(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(enrichDepositReadableFields);
+  }
+  if (!isRecord(value) || !Array.isArray(value.paymentMethods)) {
+    return value;
+  }
+  return {
+    ...value,
+    paymentMethods: value.paymentMethods.map(enrichDepositPaymentMethod),
+  };
+}
+
+function sdkDepositReadHandler(
+  path: readonly string[],
+  buildArgs: (input: Record<string, unknown>, context: Parameters<NonNullable<CommandDefinition['handler']>>[1]) => Promise<unknown[]> | unknown[],
+  options: { requireWallet?: boolean } = {},
+) {
+  const handler = sdkReadHandler(path, buildArgs, options);
+  return async (input: Record<string, unknown>, context: Parameters<NonNullable<CommandDefinition['handler']>>[1]) =>
+    enrichDepositReadableFields(await handler(input, context));
+}
 
 function parseConversionRate(value: unknown): string {
   return parseUnits(ensurePositiveNumber(value, 'rate').toString(), 18).toString();
@@ -262,7 +347,8 @@ export const depositDefinitions: CommandDefinition[] = [
     handler: async (input, context) => {
       const { client, walletClient } = await context.getClient({ requireWallet: false });
       const owner = input.owner ? ensureAddress(input.owner, 'owner') : walletClient.account?.address;
-      return owner ? client.getAccountDeposits(owner) : client.getDeposits();
+      const result = owner ? await client.getAccountDeposits(owner) : await client.getDeposits();
+      return enrichDepositReadableFields(result);
     },
   },
   {
@@ -270,14 +356,14 @@ export const depositDefinitions: CommandDefinition[] = [
     description: 'Show a single deposit by deposit ID.',
     readOnly: true,
     args: [{ name: 'depositId', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } }],
-    handler: sdkReadHandler(['getDeposit'], async (input) => [asBigInt(input.depositId, 'depositId')]),
+    handler: sdkDepositReadHandler(['getDeposit'], async (input) => [asBigInt(input.depositId, 'depositId')]),
   },
   {
     path: ['deposit', 'show-many'],
     description: 'Show multiple deposits by ID.',
     readOnly: true,
     options: [{ name: 'ids', flags: '--ids <csv>', description: 'Comma-separated deposit IDs.', schema: { type: 'string', description: 'Deposit IDs.' } }],
-    handler: sdkReadHandler(['getDepositsById'], async (input) => [(parseCsv(input.ids as string | undefined) ?? []).map((value) => BigInt(value))]),
+    handler: sdkDepositReadHandler(['getDepositsById'], async (input) => [(parseCsv(input.ids as string | undefined) ?? []).map((value) => BigInt(value))]),
   },
   {
     path: ['deposit', 'add-funds'],
@@ -590,21 +676,21 @@ export const depositDefinitions: CommandDefinition[] = [
     description: 'Fetch a deposit directly from ProtocolViewer.',
     readOnly: true,
     args: [{ name: 'depositId', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } }],
-    handler: sdkReadHandler(['getPvDepositById'], async (input) => [ensureString(input.depositId, 'depositId')]),
+    handler: sdkDepositReadHandler(['getPvDepositById'], async (input) => [ensureString(input.depositId, 'depositId')]),
   },
   {
     path: ['pv', 'deposit', 'show-many'],
     description: 'Fetch multiple deposits directly from ProtocolViewer.',
     readOnly: true,
     options: [{ name: 'ids', flags: '--ids <csv>', description: 'Comma-separated deposit IDs.', schema: { type: 'string', description: 'Deposit IDs.' } }],
-    handler: sdkReadHandler(['getPvDepositsFromIds'], async (input) => [(parseCsv(input.ids as string | undefined) ?? [])]),
+    handler: sdkDepositReadHandler(['getPvDepositsFromIds'], async (input) => [(parseCsv(input.ids as string | undefined) ?? [])]),
   },
   {
     path: ['pv', 'deposit', 'list-owner'],
     description: 'Fetch deposits for an owner directly from ProtocolViewer.',
     readOnly: true,
     options: [{ name: 'owner', flags: '--owner <address>', description: 'Owner address.', schema: { type: 'string', description: 'Owner address.' } }],
-    handler: sdkReadHandler(['getPvAccountDeposits'], async (input) => [ensureAddress(input.owner, 'owner')]),
+    handler: sdkDepositReadHandler(['getPvAccountDeposits'], async (input) => [ensureAddress(input.owner, 'owner')]),
   },
   {
     path: ['indexer', 'deposits', 'list'],

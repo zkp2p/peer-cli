@@ -279,6 +279,7 @@ export const checkoutDefinitions: CommandDefinition[] = [
     path: ['checkout', 'cancel'],
     description: 'Cancel an active checkout session.',
     readOnly: false,
+    dangerous: true,
     args: [{ name: 'sessionId', description: 'Checkout session / order ID.', schema: { type: 'string', description: 'Session identifier.' } }],
     handler: async (input, context) => {
       const sessionId = ensureString(input.sessionId, 'sessionId');

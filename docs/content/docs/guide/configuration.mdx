@@ -62,13 +62,28 @@ The CLI exposes config helpers instead of forcing direct file edits:
 ```bash
 peer config show
 peer config set env staging
+peer config unset marketApiKey
+peer config reset
 peer config platforms
 peer config currencies
 ```
 
+`peer config unset` removes a single key; `peer config reset` clears all stored values.
+
 Use these for scripted bootstrapping when you want the environment to persist across sessions.
 
 `peer config currencies` is backed by the CLI constants list and currently returns 34 fiat currencies. Treat that command output as authoritative if any summary text disagrees.
+
+## Raw Params Override
+
+Every command accepts `--params <json>` and `--params-file <path>` to pass a raw JSON object underneath typed flags. Explicit typed flags always win when both are present.
+
+```bash
+peer deposit create --amount 250 --params '{"retainOnEmpty":true}'
+peer deposit create --params-file deposit-config.json --amount 250
+```
+
+This is useful for SDK-level parameters that don't have a dedicated CLI flag.
 
 ## Agent Recommendations
 

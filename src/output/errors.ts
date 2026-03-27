@@ -55,7 +55,7 @@ export const ERROR_CATALOG = {
   INTERNAL_ERROR: {
     category: 'internal',
     retryable: false,
-    suggestion: 'Inspect the stack trace in --debug mode and fix the local command or adapter bug.',
+    suggestion: 'Inspect the stack trace in debug mode and fix the local command or adapter bug.',
   },
 } as const satisfies Record<string, ErrorCatalogEntry>;
 

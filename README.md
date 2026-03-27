@@ -85,7 +85,7 @@ npm run dev -- quote --from USD --amount 100 --platform wise
 
 The persistent config file lives at `~/.peer/config.json`. The checkout cache is stored at `~/.peer/checkout-sessions.json`.
 
-Use `peer config set` to update stored values. Supported keys include `env`, `walletPath`, `apiKey`, `marketApiKey`, `payApiKey`, `rpcUrl`, `indexerUrl`, and `indexerKey`, plus their common dashed aliases.
+Use `peer config set` to update stored values and `peer config unset` to remove them. Supported keys include `env`, `walletPath`, `apiKey`, `marketApiKey`, `payApiKey`, `rpcUrl`, `indexerUrl`, and `indexerKey`, plus their common dashed aliases.
 
 ### Common config commands
 
@@ -94,6 +94,16 @@ peer config show
 peer config set env staging
 peer config set walletPath /path/to/wallet.txt
 peer config set payApiKey $PEER_PAY_API_KEY
+peer config unset marketApiKey
+peer config reset
+```
+
+### Raw params override
+
+Every command accepts `--params <json>` and `--params-file <path>` to merge a raw JSON object underneath typed flags. Explicit flags always win.
+
+```bash
+peer deposit create --amount 250 --params '{"retainOnEmpty":true}'
 ```
 
 ## Command Model
@@ -236,6 +246,8 @@ Commands that need a signer require one of:
 - `peer checkout cancel` - Previews the cancel action and only executes with `--yes`.
 - `peer config show`
 - `peer config set`
+- `peer config unset` - Remove a stored config value.
+- `peer config reset` - Clear all stored config.
 - `peer config platforms`
 - `peer config currencies` - List the 34 supported fiat currencies from the CLI source-of-truth catalog.
 

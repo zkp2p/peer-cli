@@ -109,7 +109,7 @@ export const vaultDefinitions: CommandDefinition[] = [
       );
       if (!match) {
         throw createError('VALIDATION_ERROR', `Vault not found: ${id}`, {
-          suggestion: 'Run peer vault list to see available vault IDs.',
+          suggestion: 'Use vault list to see available vault IDs.',
         });
       }
       return match;

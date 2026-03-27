@@ -108,7 +108,7 @@ describe('tool registration', () => {
     expect(mocks.server.registerTool).toHaveBeenCalledWith(
       'peer_transfer',
       expect.objectContaining({
-        annotations: { readOnlyHint: false },
+        annotations: { readOnlyHint: false, destructiveHint: false },
       }),
       expect.any(Function),
     );

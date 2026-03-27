@@ -503,6 +503,7 @@ export const marketDefinitions: CommandDefinition[] = [
     path: ['market', 'api-key', 'delete'],
     description: 'Delete a Peerlytics API key.',
     readOnly: false,
+    dangerous: true,
     args: [
       { name: 'key', description: 'The API key to delete.', schema: { type: 'string', description: 'API key to delete.' } },
     ],

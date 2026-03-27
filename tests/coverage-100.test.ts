@@ -244,6 +244,44 @@ describe('deposit.ts coverage', () => {
   });
 });
 
+// --- config unset/reset ---
+describe('config unset and reset', () => {
+  it('config unset removes a stored value', async () => {
+    await withTempHome(async () => {
+      await run(['config', 'set'], { key: 'env', value: 'staging' });
+      await run(['config', 'set'], { key: 'rpcUrl', value: 'https://custom-rpc' });
+      const unset = await run(['config', 'unset'], { key: 'rpcUrl' });
+      expect(unset).toMatchObject({ ok: true });
+      const show = await run(['config', 'show'], {});
+      expect(show).toMatchObject({ ok: true, data: { stored: expect.objectContaining({ env: 'staging' }) } });
+      expect((show as { data: { stored: Record<string, unknown> } }).data.stored).not.toHaveProperty('rpcUrl');
+    });
+  });
+
+  it('config reset clears all stored values', async () => {
+    await withTempHome(async () => {
+      await run(['config', 'set'], { key: 'env', value: 'staging' });
+      const reset = await run(['config', 'reset'], {});
+      expect(reset).toMatchObject({ ok: true, data: {} });
+      const show = await run(['config', 'show'], {});
+      expect((show as { data: { stored: Record<string, unknown> } }).data.stored).toEqual({});
+    });
+  });
+});
+
+// --- deposit set-range min <= max validation ---
+describe('deposit set-range validation', () => {
+  it('rejects min > max', async () => {
+    const runtime = makeContext({ yes: true, walletAddress: DEFAULT_ADDRESS });
+    await expect(
+      lookup(['deposit', 'set-range']).handler({ id: '1', min: 100, max: 50 }, runtime.context),
+    ).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      message: expect.stringContaining('must be less than or equal to'),
+    });
+  });
+});
+
 // --- delegate.ts: line 49 (undelegate without explicit escrow) ---
 describe('delegate.ts coverage', () => {
   it('undelegate without explicit escrow', async () => {

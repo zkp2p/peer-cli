@@ -1,6 +1,8 @@
 import { privateKeyToAccount } from 'viem/accounts';
 import type { CommandDefinition } from './framework.js';
-import { readStoredConfig, writeStoredConfig } from '../sdk/config.js';
+import { getPeerConfigPath, readStoredConfig, writeStoredConfig } from '../sdk/config.js';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { SUPPORTED_CURRENCIES, SUPPORTED_ENVS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
 import { ensureHexPrivateKey, ensureOneOf, ensureString } from '../utils/validation.js';
 
@@ -85,6 +87,35 @@ export const configDefinitions: CommandDefinition[] = [
       }
 
       return sanitizeConfigShape(await writeStoredConfig({ [key]: value }));
+    },
+  },
+  {
+    path: ['config', 'unset'],
+    description: 'Remove a persisted config value from ~/.peer/config.json.',
+    readOnly: false,
+    args: [
+      { name: 'key', description: 'Config key to remove.', schema: { type: 'string', description: 'Config key.' } },
+    ],
+    handler: async (input) => {
+      const key = normalizeConfigKey(ensureString(input.key, 'key'));
+      const stored = await readStoredConfig();
+      const { [key]: _, ...rest } = stored as Record<string, unknown>;
+      void _;
+      const configPath = getPeerConfigPath();
+      await mkdir(dirname(configPath), { recursive: true });
+      await writeFile(configPath, JSON.stringify(rest, null, 2));
+      return sanitizeConfigShape(rest);
+    },
+  },
+  {
+    path: ['config', 'reset'],
+    description: 'Clear all persisted config values from ~/.peer/config.json.',
+    readOnly: false,
+    handler: async () => {
+      const configPath = getPeerConfigPath();
+      await mkdir(dirname(configPath), { recursive: true });
+      await writeFile(configPath, '{}');
+      return {};
     },
   },
   {

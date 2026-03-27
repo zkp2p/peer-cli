@@ -380,6 +380,7 @@ export const depositDefinitions: CommandDefinition[] = [
     path: ['deposit', 'remove-funds'],
     description: 'Remove liquidity from a deposit.',
     readOnly: false,
+    dangerous: true,
     requireWallet: true,
     options: [
       { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
@@ -389,8 +390,9 @@ export const depositDefinitions: CommandDefinition[] = [
   },
   {
     path: ['deposit', 'withdraw'],
-    description: 'Withdraw and close a deposit.',
+    description: 'Withdraw and close a deposit. This is irreversible.',
     readOnly: false,
+    dangerous: true,
     requireWallet: true,
     options: [{ name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } }],
     handler: sdkWriteHandler(['withdrawDeposit'], async (input) => ({ depositId: asBigInt(input.id, 'id') })),
@@ -421,11 +423,18 @@ export const depositDefinitions: CommandDefinition[] = [
       { name: 'min', flags: '--min <value>', description: 'Minimum intent amount.', schema: { type: 'number', description: 'Minimum intent.' } },
       { name: 'max', flags: '--max <value>', description: 'Maximum intent amount.', schema: { type: 'number', description: 'Maximum intent.' } },
     ],
-    handler: sdkWriteHandler(['setIntentRange'], async (input) => ({
-      depositId: asBigInt(input.id, 'id'),
-      min: parseUnits(ensurePositiveNumber(input.min, 'min').toString(), 6),
-      max: parseUnits(ensurePositiveNumber(input.max, 'max').toString(), 6),
-    })),
+    handler: sdkWriteHandler(['setIntentRange'], async (input) => {
+      const min = ensurePositiveNumber(input.min, 'min');
+      const max = ensurePositiveNumber(input.max, 'max');
+      if (min > max) {
+        throw createError('VALIDATION_ERROR', `--min (${min}) must be less than or equal to --max (${max}).`);
+      }
+      return {
+        depositId: asBigInt(input.id, 'id'),
+        min: parseUnits(min.toString(), 6),
+        max: parseUnits(max.toString(), 6),
+      };
+    }),
   },
   {
     path: ['deposit', 'set-rate'],

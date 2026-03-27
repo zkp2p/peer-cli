@@ -37,7 +37,7 @@ Config precedence: CLI flags > environment variables > `~/.peer/config.json` > d
 - `peer transfer`, `peer balance`
 
 - `peer checkout create/list/show/cancel` (`create` and `cancel` preview first; execute with `--yes`)
-- `peer config show/set/platforms/currencies`
+- `peer config show/set/unset/reset/platforms/currencies`
 - `peer mcp`
 
 ## Behavior notes

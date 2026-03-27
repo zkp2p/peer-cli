@@ -41,6 +41,7 @@ export function registerCommandTools(
         inputSchema: buildToolInputShape(spec),
         annotations: {
           readOnlyHint: spec.readOnly,
+          destructiveHint: spec.dangerous ?? false,
         },
       },
       async (args) => {

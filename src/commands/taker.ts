@@ -1,5 +1,5 @@
 import type { CommandDefinition } from './framework.js';
-import { sdkReadHandler } from './helpers.js';
+import { createError } from '../output/errors.js';
 import { DEFAULT_CHAIN_ID } from '../utils/constants.js';
 import { ensureAddress, ensureNumber } from '../utils/validation.js';
 
@@ -12,11 +12,17 @@ export const takerDefinitions: CommandDefinition[] = [
       { name: 'address', flags: '--address <address>', description: 'Taker wallet address.', schema: { type: 'string', description: 'Taker wallet address.' } },
       { name: 'chainId', flags: '--chain-id <id>', description: 'Chain ID to evaluate.', schema: { type: 'number', description: 'Chain ID.' }, defaultValue: DEFAULT_CHAIN_ID },
     ],
-    handler: sdkReadHandler(['getTakerTier'], async (input) => [
-      {
-        owner: ensureAddress(input.address, 'address'),
+    handler: async (input, context) => {
+      const { client, walletClient } = await context.getClient({ requireWallet: false });
+      const address = input.address ? ensureAddress(input.address, 'address') : walletClient.account?.address;
+      if (!address) {
+        throw createError('AUTH_REQUIRED', 'Provide --address when no wallet is configured.');
+      }
+
+      return client.getTakerTier({
+        owner: address,
         chainId: ensureNumber(input.chainId ?? DEFAULT_CHAIN_ID, 'chainId'),
-      },
-    ]),
+      });
+    },
   },
 ];

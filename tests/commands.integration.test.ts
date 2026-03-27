@@ -109,6 +109,39 @@ describe('registry-backed command handlers', () => {
     expect(takerTier).toMatchObject({ ok: true, data: { responseObject: { tier: 'standard' } } });
   });
 
+  it('auto-resolves taker tier address from the configured wallet when omitted', async () => {
+    const runtime = createMockRuntime({
+      accountAddress: '0x2222222222222222222222222222222222222222',
+    });
+
+    const takerTier = await executeDefinition(definition(['taker', 'tier']), {}, {}, runtime.deps);
+
+    expect(takerTier).toMatchObject({ ok: true, data: { responseObject: { tier: 'standard' } } });
+    expect(runtime.calls.find((entry) => entry.path === 'getTakerTier')?.args[0]).toMatchObject({
+      owner: '0x2222222222222222222222222222222222222222',
+      chainId: 8453,
+    });
+  });
+
+  it('requires an explicit address for taker tier when no wallet is configured', async () => {
+    const runtime = createMockRuntime();
+    runtime.deps.createClient = vi.fn(async () => ({
+      client: runtime.bundle.client,
+      publicClient: runtime.bundle.publicClient,
+      walletClient: { account: undefined } as typeof runtime.bundle.walletClient,
+    }));
+
+    const takerTier = await executeDefinition(definition(['taker', 'tier']), {}, {}, runtime.deps);
+
+    expect(takerTier).toMatchObject({
+      ok: false,
+      error: {
+        code: 'AUTH_REQUIRED',
+        message: 'Provide --address when no wallet is configured.',
+      },
+    });
+  });
+
   it('normalizes upstream quote API failures into canonical API errors', async () => {
     const runtime = createMockRuntime({
       behaviors: {

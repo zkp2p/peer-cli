@@ -695,6 +695,29 @@ describe('registry-backed command handlers', () => {
     });
   });
 
+  it('supports persisted private keys and rejects raw keys passed as wallet paths', async () => {
+    await withTempHome(async () => {
+      const rawKey = '0x8f2a55949024377f59ffcb76953361d492af6f9d932c8f3aef0f0cbce4e3d4c0';
+      const setPrivateKey = await run(['config', 'set'], { key: 'private-key', value: rawKey });
+      expect(setPrivateKey).toMatchObject({
+        ok: true,
+        data: expect.objectContaining({
+          privateKey: '0x8f2a...4c0',
+          walletAddress: expect.stringMatching(/^0x[a-fA-F0-9]{40}$/),
+        }),
+      });
+
+      const walletPathError = await run(['config', 'set'], { key: 'wallet', value: rawKey });
+      expect(walletPathError).toMatchObject({
+        ok: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Config key wallet expects a file path, not a raw private key. Use `peer config set private-key <hex>` instead.',
+        },
+      });
+    });
+  });
+
   it('masks secrets in config show output', async () => {
     await withTempHome(async () => {
       const rawKey = '0x59c6995e998f97a5a0044966f0945383f0d7d1f5eb53d3d16c23f0a3077ec12e';

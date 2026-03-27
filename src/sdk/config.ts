@@ -44,6 +44,7 @@ export interface GlobalOptions {
 
 export interface StoredConfig {
   env?: PeerEnv;
+  privateKey?: string;
   walletPath?: string;
   rpcUrl?: string;
   apiKey?: string;
@@ -98,6 +99,7 @@ export async function writeStoredConfig(patch: Partial<StoredConfig>): Promise<S
 export async function resolveConfig(globalOptions: GlobalOptions = {}): Promise<ResolvedConfig> {
   const stored = await readStoredConfig();
   logDebug('Loaded stored config', {
+    hasPrivateKey: Boolean(stored.privateKey),
     hasWalletPath: Boolean(stored.walletPath),
     hasApiKey: Boolean(stored.apiKey),
     hasIndexerKey: Boolean(stored.indexerKey),
@@ -117,7 +119,7 @@ export async function resolveConfig(globalOptions: GlobalOptions = {}): Promise<
     format,
     yes: Boolean(globalOptions.yes ?? globalOptions.execute),
     debug: Boolean(globalOptions.debug),
-    privateKey: globalOptions.privateKey ?? process.env.PEER_PRIVATE_KEY,
+    privateKey: globalOptions.privateKey ?? process.env.PEER_PRIVATE_KEY ?? stored.privateKey,
     walletPath: globalOptions.walletPath ?? process.env.PEER_WALLET_PATH ?? stored.walletPath,
     rpcUrl: globalOptions.rpcUrl ?? process.env.PEER_RPC_URL ?? stored.rpcUrl ?? DEFAULT_RPC_URL,
     apiKey: globalOptions.apiKey ?? process.env.PEER_API_KEY ?? stored.apiKey,

@@ -4,9 +4,10 @@ import { getPeerConfigPath, readStoredConfig, writeStoredConfig } from '../sdk/c
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { SUPPORTED_CURRENCIES, SUPPORTED_ENVS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
+import { createError } from '../output/errors.js';
 import { ensureHexPrivateKey, ensureOneOf, ensureString } from '../utils/validation.js';
 
-const CONFIG_KEYS = ['env', 'wallet', 'walletPath', 'api-key', 'apiKey', 'market-api-key', 'marketApiKey', 'pay-api-key', 'payApiKey', 'rpc-url', 'rpcUrl', 'indexer-url', 'indexerUrl', 'indexer-key', 'indexerKey'] as const;
+const CONFIG_KEYS = ['env', 'wallet', 'walletPath', 'private-key', 'privateKey', 'api-key', 'apiKey', 'market-api-key', 'marketApiKey', 'pay-api-key', 'payApiKey', 'rpc-url', 'rpcUrl', 'indexer-url', 'indexerUrl', 'indexer-key', 'indexerKey'] as const;
 
 type ConfigKey = (typeof CONFIG_KEYS)[number];
 
@@ -43,6 +44,8 @@ function normalizeConfigKey(value: string): ConfigKey {
     env: 'env',
     wallet: 'walletPath',
     walletPath: 'walletPath',
+    'private-key': 'privateKey',
+    privateKey: 'privateKey',
     'api-key': 'apiKey',
     apiKey: 'apiKey',
     'market-api-key': 'marketApiKey',
@@ -58,6 +61,15 @@ function normalizeConfigKey(value: string): ConfigKey {
   };
 
   return aliases[value] ?? ensureOneOf(value, 'key', CONFIG_KEYS);
+}
+
+function isHexPrivateKey(value: string): boolean {
+  try {
+    ensureHexPrivateKey(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export const configDefinitions: CommandDefinition[] = [
@@ -84,6 +96,17 @@ export const configDefinitions: CommandDefinition[] = [
 
       if (key === 'env') {
         return sanitizeConfigShape(await writeStoredConfig({ env: ensureOneOf(value, 'value', SUPPORTED_ENVS) }));
+      }
+
+      if (key === 'privateKey') {
+        return sanitizeConfigShape(await writeStoredConfig({ privateKey: ensureHexPrivateKey(value) }));
+      }
+
+      if (key === 'walletPath' && isHexPrivateKey(value)) {
+        throw createError(
+          'VALIDATION_ERROR',
+          'Config key wallet expects a file path, not a raw private key. Use `peer config set private-key <hex>` instead.',
+        );
       }
 
       return sanitizeConfigShape(await writeStoredConfig({ [key]: value }));

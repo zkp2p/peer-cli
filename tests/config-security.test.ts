@@ -46,6 +46,23 @@ describe('config output safety', () => {
     });
   });
 
+  it('masks persisted private keys in config set responses', async () => {
+    await withTempHome(async () => {
+      const rawKey = '0x59c6995e998f97a5a0044966f0945383f0d7d1f5eb53d3d16c23f0a3077ec12e';
+      const result = await run(['config', 'set'], { key: 'private-key', value: rawKey });
+
+      expect(result).toMatchObject({
+        ok: true,
+        data: expect.objectContaining({
+          privateKey: '0x59c6...12e',
+          walletAddress: expect.stringMatching(/^0x[a-fA-F0-9]{40}$/),
+        }),
+      });
+
+      expect(JSON.stringify(result)).not.toContain(rawKey);
+    });
+  });
+
   it('masks secrets and adds a wallet address in config show', async () => {
     await withTempHome(async () => {
       const runtime = createMockRuntime({

@@ -92,6 +92,7 @@ describe('config helpers', () => {
   it('resolves config from stored, env, and flags', async () => {
     await withTempHome(async () => {
       await writeStoredConfig({
+        privateKey: '0x8f2a55949024377f59ffcb76953361d492af6f9d932c8f3aef0f0cbce4e3d4c0',
         walletPath: '/tmp/wallet.json',
         rpcUrl: 'https://rpc.stored',
         marketApiKey: 'stored-market',
@@ -124,6 +125,19 @@ describe('config helpers', () => {
         marketBaseUrl: 'https://market.env/',
         payBaseUrl: 'https://pay.env',
         indexerUrl: 'https://indexer.flag',
+      });
+    });
+  });
+
+  it('uses a stored private key when no flag or env override is present', async () => {
+    await withTempHome(async () => {
+      const rawKey = '0x8f2a55949024377f59ffcb76953361d492af6f9d932c8f3aef0f0cbce4e3d4c0';
+      delete process.env.PEER_ENV;
+      delete process.env.PEER_PRIVATE_KEY;
+      await writeStoredConfig({ privateKey: rawKey });
+
+      await expect(resolveConfig()).resolves.toMatchObject({
+        privateKey: rawKey,
       });
     });
   });

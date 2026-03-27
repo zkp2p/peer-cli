@@ -81,10 +81,10 @@ export const configDefinitions: CommandDefinition[] = [
       const value = ensureString(input.value, 'value');
 
       if (key === 'env') {
-        return writeStoredConfig({ env: ensureOneOf(value, 'value', SUPPORTED_ENVS) });
+        return sanitizeConfigShape(await writeStoredConfig({ env: ensureOneOf(value, 'value', SUPPORTED_ENVS) }));
       }
 
-      return writeStoredConfig({ [key]: value });
+      return sanitizeConfigShape(await writeStoredConfig({ [key]: value }));
     },
   },
   {

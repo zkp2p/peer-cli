@@ -119,4 +119,15 @@ describe('in-process cli runner', () => {
     expect(failed.stderr).toContain("unknown command 'nonexistent'");
     expect(failed.stderr).not.toContain('Usage: peer');
   });
+
+  it('documents --execute as an alias for --yes in command help', async () => {
+    const result = await runCliInProcess(
+      ['node', 'peer', 'deposit', 'add-funds', '--help'],
+    );
+
+    expect(result.exitCode).toBeUndefined();
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('--execute');
+    expect(result.stdout).toContain('Alias for global --yes');
+  });
 });

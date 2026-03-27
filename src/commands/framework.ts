@@ -295,7 +295,7 @@ function applyDefinition(command: Command, spec: CommandDefinition, deps: Runtim
   command.option('--params <json>', 'Raw JSON params object to merge under typed flags.');
   command.option('--params-file <path>', 'Read a raw JSON params object from a file path.');
   if (isWriteCommand(spec)) {
-    command.option('--execute', 'Broadcast the prepared transaction immediately.');
+    command.option('--execute', 'Alias for global --yes. Skip preview and execute immediately.');
   }
 
   command.action(async (...args: unknown[]) => {

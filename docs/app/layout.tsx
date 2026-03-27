@@ -15,8 +15,23 @@ const mono = IBM_Plex_Mono({
   variable: '--font-mono',
 });
 
+function resolveMetadataBase(): URL {
+  const configuredHost =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.SITE_URL ??
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
+    process.env.VERCEL_URL;
+
+  if (configuredHost) {
+    const origin = configuredHost.startsWith('http') ? configuredHost : `https://${configuredHost}`;
+    return new URL(origin);
+  }
+
+  return new URL('http://127.0.0.1:3007');
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL('http://127.0.0.1:3007'),
+  metadataBase: resolveMetadataBase(),
   title: {
     default: `${appName} docs`,
     template: `%s | ${appName} docs`,

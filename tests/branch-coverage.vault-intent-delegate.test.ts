@@ -135,5 +135,125 @@ describe('branch coverage vault, intent, and delegate branches', () => {
     await expect(lookup(['delegate', 'show']).handler({ deposit: '7' }, runtime.context)).resolves.toMatchObject({
       path: 'getDepositRateManager',
     });
+
+    // delegate set-direct
+    await expect(
+      lookup(['delegate', 'set-direct']).handler({ deposit: '7', rateManagerAddress: DEFAULT_ADDRESS, vault: 'vault-1' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // delegate clear-direct
+    await expect(
+      lookup(['delegate', 'clear-direct']).handler({ deposit: '7' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // undelegate with explicit escrow
+    await expect(
+      lookup(['undelegate']).handler({ deposit: '7', escrow: DEFAULT_ADDRESS }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit oracle set
+    await expect(
+      lookup(['deposit', 'oracle', 'set']).handler({ id: '1', paymentMethodHash: '0xaa', currencyHash: '0xbb', config: '{"feed":"chainlink"}' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit oracle remove
+    await expect(
+      lookup(['deposit', 'oracle', 'remove']).handler({ id: '1', paymentMethodHash: '0xaa', currencyHash: '0xbb' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit oracle set-batch
+    await expect(
+      lookup(['deposit', 'oracle', 'set-batch']).handler({ id: '1', paymentMethods: '["0xaa"]', currencies: '[["0xbb"]]', configs: '[[{"feed":"cl"}]]' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit prune-intents
+    await expect(
+      lookup(['deposit', 'prune-intents']).handler({ id: '1' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit currency-config update-batch
+    await expect(
+      lookup(['deposit', 'currency-config', 'update-batch']).handler({ id: '1', paymentMethods: '["0xaa"]', updates: '[[{"currency":"0xbb","rate":"1"}]]' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit currency deactivate-batch
+    await expect(
+      lookup(['deposit', 'currency', 'deactivate-batch']).handler({ id: '1', paymentMethods: '["0xaa"]', currencyCodes: '[["0xbb"]]' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit remove-funds
+    await expect(
+      lookup(['deposit', 'remove-funds']).handler({ id: '1', amount: 10 }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit withdraw
+    await expect(
+      lookup(['deposit', 'withdraw']).handler({ id: '1' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit pause
+    await expect(
+      lookup(['deposit', 'pause']).handler({ id: '1' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit resume
+    await expect(
+      lookup(['deposit', 'resume']).handler({ id: '1' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit set-range
+    await expect(
+      lookup(['deposit', 'set-range']).handler({ id: '1', min: 10, max: 100 }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit set-rate
+    await expect(
+      lookup(['deposit', 'set-rate']).handler({ id: '1', paymentMethod: 'wise', currency: 'USD', rate: 1.01 }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit set-retain-on-empty
+    await expect(
+      lookup(['deposit', 'set-retain-on-empty']).handler({ id: '1', retain: true }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit set-delegate
+    await expect(
+      lookup(['deposit', 'set-delegate']).handler({ id: '1', delegate: DEFAULT_ADDRESS }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit remove-delegate
+    await expect(
+      lookup(['deposit', 'remove-delegate']).handler({ id: '1' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit payment-method add
+    await expect(
+      lookup(['deposit', 'payment-method', 'add']).handler({ id: '1', paymentMethods: 'wise', paymentMethodData: '[{"email":"test@test.com"}]', currencies: '[["USD"]]' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit payment-method set-active
+    await expect(
+      lookup(['deposit', 'payment-method', 'set-active']).handler({ id: '1', paymentMethod: 'wise', active: true }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit payment-method remove
+    await expect(
+      lookup(['deposit', 'payment-method', 'remove']).handler({ id: '1', paymentMethod: 'wise' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit currency add
+    await expect(
+      lookup(['deposit', 'currency', 'add']).handler({ id: '1', paymentMethod: 'wise', currencies: 'USD' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit currency deactivate
+    await expect(
+      lookup(['deposit', 'currency', 'deactivate']).handler({ id: '1', paymentMethod: 'wise', currency: 'USD' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
+
+    // deposit currency remove
+    await expect(
+      lookup(['deposit', 'currency', 'remove']).handler({ id: '1', paymentMethod: 'wise', currency: 'USD' }, runtime.context),
+    ).resolves.toMatchObject({ executed: true });
   });
 });

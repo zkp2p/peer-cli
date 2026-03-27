@@ -2,8 +2,10 @@ import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler } from './helpers.js';
 import { createError } from '../output/errors.js';
 import { SUPPORTED_MARKET_PERIODS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
-import { ensureAddress, ensureNumber, ensureOneOf, ensurePositiveNumber, ensureString, parseCsv } from '../utils/validation.js';
+import { amountToUnits, ensureAddress, ensureNumber, ensureOneOf, ensureString, parseCsv } from '../utils/validation.js';
 import { appendSearchParams } from '../utils/http.js';
+
+const FIAT_AMOUNT_DECIMALS = 6;
 
 function marketHeaders(apiKey?: string): Record<string, string> {
   return apiKey ? { 'x-api-key': apiKey } : {};
@@ -57,7 +59,7 @@ export const marketDefinitions: CommandDefinition[] = [
       return [{
         paymentPlatforms: parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS],
         fiatCurrency: ensureString(input.from, 'from'),
-        amount: ensurePositiveNumber(input.amount, 'amount').toString(),
+        amount: amountToUnits(input.amount, 'amount', FIAT_AMOUNT_DECIMALS).toString(),
         isExactFiat: true,
         recipient,
         user: caller ?? recipient,

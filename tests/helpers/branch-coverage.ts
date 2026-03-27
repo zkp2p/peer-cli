@@ -24,7 +24,9 @@ export const { getRateManagerContracts, resolveFiatCurrencyBytes32, resolvePayme
 export const DEFAULT_ADDRESS = '0x1111111111111111111111111111111111111111';
 export const ALT_TOKEN = '0x2222222222222222222222222222222222222222';
 
-export type QuoteResult = Array<{ args: Array<{ isExactFiat?: boolean; destinationToken?: string }> }>;
+export type QuoteResult = Array<{
+  args: Array<{ amount?: string; isExactFiat?: boolean; destinationToken?: string }>;
+}>;
 
 type PreparedCallResult = {
   path: string;

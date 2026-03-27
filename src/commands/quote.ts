@@ -1,10 +1,12 @@
-import { zeroAddress } from 'viem';
-import { ensureAddress, ensureNumber, ensurePositiveNumber, ensureString, parseCsv } from '../utils/validation.js';
+import { erc20Abi, zeroAddress } from 'viem';
+import { amountToUnits, ensureAddress, ensureNumber, ensureString, parseCsv } from '../utils/validation.js';
 import { createError } from '../output/errors.js';
 import type { CommandDefinition } from './framework.js';
 import { sdkDirectWriteHandler, sdkReadHandler } from './helpers.js';
 import { SUPPORTED_PLATFORMS } from '../utils/constants.js';
 import { parseJsonArray } from '../utils/parsing.js';
+
+const FIAT_AMOUNT_DECIMALS = 6;
 
 function resolveDestinationToken(input: unknown, fallback: string | undefined): `0x${string}` {
   if (typeof input === 'string' && input.trim() !== '' && input.toUpperCase() !== 'USDC') {
@@ -14,6 +16,33 @@ function resolveDestinationToken(input: unknown, fallback: string | undefined): 
     return ensureAddress(fallback, 'to');
   }
   throw createError('CONFIG_ERROR', 'USDC address is not available for the current runtime environment.');
+}
+
+async function readTokenDecimals(
+  context: Parameters<NonNullable<CommandDefinition['handler']>>[1],
+  token: `0x${string}`,
+): Promise<number> {
+  const { publicClient } = await context.getClient({ requireWallet: false });
+  return Number(
+    await publicClient.readContract({
+      address: token,
+      abi: erc20Abi,
+      functionName: 'decimals',
+    }),
+  );
+}
+
+async function normalizeQuoteAmount(
+  input: Record<string, unknown>,
+  context: Parameters<NonNullable<CommandDefinition['handler']>>[1],
+  destinationToken: `0x${string}`,
+): Promise<string> {
+  if (input.tokenAmount !== undefined) {
+    const decimals = await readTokenDecimals(context, destinationToken);
+    return amountToUnits(input.tokenAmount, 'tokenAmount', decimals).toString();
+  }
+
+  return amountToUnits(input.amount, 'amount', FIAT_AMOUNT_DECIMALS).toString();
 }
 
 export const quoteDefinitions: CommandDefinition[] = [
@@ -34,10 +63,10 @@ export const quoteDefinitions: CommandDefinition[] = [
     ],
     handler: sdkReadHandler(['getQuote'], async (input, context) => {
       const { client, walletClient } = await context.getClient({ requireWallet: false });
-      const amount = input.tokenAmount ?? input.amount;
-      if (amount === undefined) {
+      if (input.tokenAmount === undefined && input.amount === undefined) {
         throw createError('VALIDATION_ERROR', 'Either --amount or --token-amount is required.');
       }
+      const destinationToken = resolveDestinationToken(input.to, client.getUsdcAddress());
       return [
         {
           paymentPlatforms: parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS],
@@ -45,9 +74,9 @@ export const quoteDefinitions: CommandDefinition[] = [
           user: input.user ? ensureAddress(input.user, 'user') : walletClient.account?.address ?? zeroAddress,
           recipient: input.recipient ? ensureAddress(input.recipient, 'recipient') : walletClient.account?.address ?? zeroAddress,
           destinationChainId: ensureNumber(input.destinationChainId ?? 8453, 'destinationChainId'),
-          destinationToken: resolveDestinationToken(input.to, client.getUsdcAddress()),
+          destinationToken,
           quotesToReturn: ensureNumber(input.quotesToReturn ?? 5, 'quotesToReturn'),
-          amount: ensurePositiveNumber(amount, 'amount').toString(),
+          amount: await normalizeQuoteAmount(input, context, destinationToken),
           isExactFiat: input.tokenAmount === undefined,
         },
       ];

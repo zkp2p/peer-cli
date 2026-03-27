@@ -7,6 +7,7 @@ describe('branch coverage quote, market, transfer, and checkout branches', () =>
 
     const quote = await lookup(['quote']).handler({ from: 'USD', tokenAmount: 5 }, runtime.context);
     expect((quote as QuoteResult)[0]?.args[0]?.isExactFiat).toBe(false);
+    expect((quote as QuoteResult)[0]?.args[0]?.amount).toBe('5000000');
 
     const quoteExact = await lookup(['quote']).handler(
       {
@@ -20,6 +21,7 @@ describe('branch coverage quote, market, transfer, and checkout branches', () =>
       runtime.context,
     );
     expect((quoteExact as QuoteResult)[0]?.args[0]?.isExactFiat).toBe(true);
+    expect((quoteExact as QuoteResult)[0]?.args[0]?.amount).toBe('5000000');
 
     await expect(lookup(['quote']).handler({ from: 'USD' }, runtime.context)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
     await expect(lookup(['market', 'volume']).handler({ range: 'mtd' }, runtime.context)).resolves.toEqual({

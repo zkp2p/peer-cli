@@ -84,6 +84,11 @@ describe('registry-backed command handlers', () => {
     }, {}, runtime.deps);
 
     expect(quote).toMatchObject({ ok: true, data: [{ route: 'fast', price: '1.23' }] });
+    expect(runtime.calls.find((entry) => entry.path === 'getQuote')?.args[0]).toMatchObject({
+      amount: '25000000',
+      isExactFiat: true,
+      paymentPlatforms: ['wise', 'venmo'],
+    });
 
     const payee = await executeDefinition(definition(['payee', 'register']), {
       processors: 'wise,venmo',
@@ -292,9 +297,14 @@ describe('registry-backed command handlers', () => {
         data: { url: 'https://market.example/v1/market/summary?platform=wise&currency=USD&limit=200' },
       });
 
-      await expect(run(['market', 'compare'], { from: 'USD', amount: 10 }, runtime)).resolves.toMatchObject({
+      const compare = await run(['market', 'compare'], { from: 'USD', amount: 10 }, runtime);
+      expect(compare).toMatchObject({
         ok: true,
         data: [{ route: 'fast', price: '1.23' }],
+      });
+      expect(runtime.calls.filter((entry) => entry.path === 'getQuote').at(-1)?.args[0]).toMatchObject({
+        amount: '10000000',
+        isExactFiat: true,
       });
 
       await expect(run(['market', 'volume'], { platform: 'wise', currency: 'USD', range: 'mtd' }, runtime)).resolves.toMatchObject({

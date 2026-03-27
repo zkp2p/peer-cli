@@ -138,7 +138,7 @@ export const marketDefinitions: CommandDefinition[] = [
     description: 'Fetch Peerlytics analytics by dimension slice.',
     readOnly: true,
     args: [
-      { name: 'slice', description: 'Analytics slice: by-platform, by-currency, by-maker, etc.', schema: { type: 'string', description: 'Dimension slice.' } },
+      { name: 'slice', description: 'Analytics slice: by-platform, by-currency, by-maker, etc.', schema: { type: 'string', description: 'Dimension slice.' }, optionFlags: ['--slice <value>'] },
     ],
     options: [
       { name: 'limit', flags: '--limit <value>', description: 'Maximum entries.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 50 },
@@ -192,7 +192,7 @@ export const marketDefinitions: CommandDefinition[] = [
     description: 'Look up a wallet address profile on Peerlytics.',
     readOnly: true,
     args: [
-      { name: 'address', description: 'Wallet address.', schema: { type: 'string', description: 'Address.' } },
+      { name: 'address', description: 'Wallet address.', schema: { type: 'string', description: 'Address.' }, optionFlags: ['--address <address>'] },
     ],
     options: [
       { name: 'limit', flags: '--limit <value>', description: 'Maximum linked entries.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 100 },
@@ -214,7 +214,7 @@ export const marketDefinitions: CommandDefinition[] = [
     description: 'Look up a deposit on Peerlytics.',
     readOnly: true,
     args: [
-      { name: 'id', description: 'Deposit ID (numeric or composite 0x..._123).', schema: { type: 'string', description: 'Deposit ID.' } },
+      { name: 'id', description: 'Deposit ID (numeric or composite 0x..._123).', schema: { type: 'string', description: 'Deposit ID.' }, optionFlags: ['--id <depositId>'] },
     ],
     options: [
       { name: 'limit', flags: '--limit <value>', description: 'Maximum linked entries.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 100 },
@@ -236,7 +236,7 @@ export const marketDefinitions: CommandDefinition[] = [
     description: 'Look up an intent on Peerlytics.',
     readOnly: true,
     args: [
-      { name: 'hash', description: 'Intent hash.', schema: { type: 'string', description: 'Intent hash.' } },
+      { name: 'hash', description: 'Intent hash.', schema: { type: 'string', description: 'Intent hash.' }, optionFlags: ['--hash <intentHash>'] },
     ],
     handler: async (input, context) => {
       const hash = ensureString(input.hash, 'hash');
@@ -251,7 +251,7 @@ export const marketDefinitions: CommandDefinition[] = [
     description: 'Look up a maker profile on Peerlytics.',
     readOnly: true,
     args: [
-      { name: 'address', description: 'Maker wallet address.', schema: { type: 'string', description: 'Maker address.' } },
+      { name: 'address', description: 'Maker wallet address.', schema: { type: 'string', description: 'Maker address.' }, optionFlags: ['--address <address>'] },
     ],
     handler: async (input, context) => {
       const address = ensureAddress(input.address, 'address');
@@ -266,7 +266,7 @@ export const marketDefinitions: CommandDefinition[] = [
     description: 'Look up a verifier profile on Peerlytics.',
     readOnly: true,
     args: [
-      { name: 'address', description: 'Verifier address.', schema: { type: 'string', description: 'Verifier address.' } },
+      { name: 'address', description: 'Verifier address.', schema: { type: 'string', description: 'Verifier address.' }, optionFlags: ['--address <address>'] },
     ],
     handler: async (input, context) => {
       const address = ensureAddress(input.address, 'address');
@@ -281,7 +281,7 @@ export const marketDefinitions: CommandDefinition[] = [
     description: 'Look up a vault on Peerlytics.',
     readOnly: true,
     args: [
-      { name: 'id', description: 'Vault ID.', schema: { type: 'string', description: 'Vault ID.' } },
+      { name: 'id', description: 'Vault ID.', schema: { type: 'string', description: 'Vault ID.' }, optionFlags: ['--id <vaultId>'] },
     ],
     handler: async (input, context) => {
       const id = ensureString(input.id, 'id');
@@ -296,7 +296,7 @@ export const marketDefinitions: CommandDefinition[] = [
     description: 'Search across addresses, deposits, intents, and vaults on Peerlytics.',
     readOnly: true,
     args: [
-      { name: 'query', description: 'Search query (address, hash, deposit ID, etc.).', schema: { type: 'string', description: 'Search query.' } },
+      { name: 'query', description: 'Search query (address, hash, deposit ID, etc.).', schema: { type: 'string', description: 'Search query.' }, optionFlags: ['--query <value>'] },
     ],
     handler: async (input, context) => {
       const query = ensureString(input.query, 'query');
@@ -393,7 +393,7 @@ export const marketDefinitions: CommandDefinition[] = [
     description: 'Fetch taker activity history for an address from Peerlytics.',
     readOnly: true,
     args: [
-      { name: 'address', description: 'Taker wallet address.', schema: { type: 'string', description: 'Taker address.' } },
+      { name: 'address', description: 'Taker wallet address.', schema: { type: 'string', description: 'Taker address.' }, optionFlags: ['--address <address>'] },
     ],
     handler: async (input, context) => {
       const address = ensureAddress(input.address, 'address');
@@ -408,7 +408,7 @@ export const marketDefinitions: CommandDefinition[] = [
     description: 'Fetch maker activity history for an address from Peerlytics.',
     readOnly: true,
     args: [
-      { name: 'address', description: 'Maker wallet address.', schema: { type: 'string', description: 'Maker address.' } },
+      { name: 'address', description: 'Maker wallet address.', schema: { type: 'string', description: 'Maker address.' }, optionFlags: ['--address <address>'] },
     ],
     handler: async (input, context) => {
       const address = ensureAddress(input.address, 'address');

@@ -35,6 +35,7 @@ export interface CliArgumentDefinition {
   description: string;
   schema: SchemaProperty;
   required?: boolean;
+  optionFlags?: string[];
 }
 
 export interface PreparedExecutionResult<TResult = unknown, TPreview = unknown> {
@@ -120,6 +121,15 @@ function commandString(path: string[]): string {
 
 function pruneUndefined<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, current]) => current !== undefined)) as T;
+}
+
+function optionPropertyName(flags: string): string {
+  const match = flags.match(/--([a-z0-9-]+)/i);
+  if (!match) {
+    throw createError('CONFIG_ERROR', `Invalid option flag alias: ${flags}`);
+  }
+
+  return match[1]!.replace(/-([a-z0-9])/gi, (_whole, letter: string) => letter.toUpperCase());
 }
 
 export function mergeCommandInput(
@@ -287,7 +297,14 @@ function isWriteCommand(spec: CommandDefinition): boolean {
 
 function applyDefinition(command: Command, spec: CommandDefinition, deps: RuntimeDeps): void {
   for (const arg of spec.args ?? []) {
-    command.argument(arg.required === false ? `[${arg.name}]` : `<${arg.name}>`, arg.description);
+    const optional = arg.required === false || (arg.optionFlags?.length ?? 0) > 0;
+    command.argument(optional ? `[${arg.name}]` : `<${arg.name}>`, arg.description);
+  }
+
+  for (const arg of spec.args ?? []) {
+    for (const flags of arg.optionFlags ?? []) {
+      command.option(flags, `${arg.description} Alias for the positional ${arg.name}.`);
+    }
   }
 
   for (const option of spec.options ?? []) {
@@ -303,11 +320,27 @@ function applyDefinition(command: Command, spec: CommandDefinition, deps: Runtim
   command.action(async (...args: unknown[]) => {
     const commandInstance = args.at(-1) as Command;
     const optionBag = args.at(-2) as Record<string, unknown>;
+    const argAliasOptionNames = new Set(
+      (spec.args ?? []).flatMap((definition) => (definition.optionFlags ?? []).map((flags) => optionPropertyName(flags))),
+    );
     const optionInput = Object.fromEntries(
-      Object.entries(optionBag).filter(([key]) => key !== 'params' && key !== 'paramsFile'),
+      Object.entries(optionBag).filter(([key]) => key !== 'params' && key !== 'paramsFile' && !argAliasOptionNames.has(key)),
     );
     const rawPositionals = args.slice(0, Math.max(0, args.length - 2));
     const explicitInput = Object.fromEntries((spec.args ?? []).map((definition, index) => [definition.name, rawPositionals[index]]));
+    for (const definition of spec.args ?? []) {
+      if (explicitInput[definition.name] !== undefined) {
+        continue;
+      }
+
+      for (const flags of definition.optionFlags ?? []) {
+        const value = optionBag[optionPropertyName(flags)];
+        if (value !== undefined) {
+          explicitInput[definition.name] = value;
+          break;
+        }
+      }
+    }
     const paramsInput = await parseJsonFile(optionBag.paramsFile as string | undefined);
     const paramsInline = parseJsonInput(optionBag.params as string | undefined, '--params');
     const mergedParams = { ...(paramsInput ?? {}), ...(paramsInline ?? {}) };

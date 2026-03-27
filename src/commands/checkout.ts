@@ -250,7 +250,7 @@ export const checkoutDefinitions: CommandDefinition[] = [
     path: ['checkout', 'show'],
     description: 'Show a single checkout session or poll its latest status.',
     readOnly: true,
-    args: [{ name: 'sessionId', description: 'Checkout session / order ID.', schema: { type: 'string', description: 'Session identifier.' } }],
+    args: [{ name: 'sessionId', description: 'Checkout session / order ID.', schema: { type: 'string', description: 'Session identifier.' }, optionFlags: ['--id <sessionId>'] }],
     handler: async (input, context) => {
       const sessionId = ensureString(input.sessionId, 'sessionId');
       if (!context.config.payApiKey) {
@@ -280,7 +280,7 @@ export const checkoutDefinitions: CommandDefinition[] = [
     description: 'Cancel an active checkout session.',
     readOnly: false,
     dangerous: true,
-    args: [{ name: 'sessionId', description: 'Checkout session / order ID.', schema: { type: 'string', description: 'Session identifier.' } }],
+    args: [{ name: 'sessionId', description: 'Checkout session / order ID.', schema: { type: 'string', description: 'Session identifier.' }, optionFlags: ['--id <sessionId>'] }],
     handler: async (input, context) => {
       const sessionId = ensureString(input.sessionId, 'sessionId');
       const apiKey = requirePayApiKey(context.config.payApiKey);

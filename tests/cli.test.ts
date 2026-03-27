@@ -196,6 +196,72 @@ describe('in-process cli runner', () => {
     expect(debugFailed.stderr).toContain('"stack"');
   });
 
+  it('accepts named aliases for positional deposit and indexer show commands', async () => {
+    const pvRuntime = createMockRuntime();
+    const pvResult = await runCliInProcess(
+      ['node', 'peer', 'pv', 'deposit', 'show', '--id', '7'],
+      pvRuntime.deps,
+    );
+    expect(pvResult.exitCode).toBeUndefined();
+    expect(pvResult.stderr).toBe('');
+    expect(pvRuntime.calls.find((entry) => entry.path === 'getPvDepositById')?.args[0]).toBe('7');
+
+    const indexerRuntime = createMockRuntime();
+    const indexerResult = await runCliInProcess(
+      ['node', 'peer', 'indexer', 'deposits', 'show', '--id', '0xabc_7'],
+      indexerRuntime.deps,
+    );
+    expect(indexerResult.exitCode).toBeUndefined();
+    expect(indexerResult.stderr).toBe('');
+    expect(indexerRuntime.calls.find((entry) => entry.path === 'indexer.getDepositById')?.args[0]).toBe('0xabc_7');
+  });
+
+  it('accepts named aliases for positional market and intent reads', async () => {
+    const address = '0x1111111111111111111111111111111111111111';
+
+    const analyticsRuntime = createMockRuntime();
+    const analyticsResult = await runCliInProcess(
+      ['node', 'peer', 'market', 'analytics', '--slice', 'by-platform'],
+      analyticsRuntime.deps,
+    );
+    expect(analyticsResult.exitCode).toBeUndefined();
+    expect(analyticsResult.stderr).toBe('');
+    expect(analyticsRuntime.requestJson).toHaveBeenCalledWith(
+      'https://peerlytics.xyz/api/v1/analytics/by-platform?limit=50&offset=0',
+      expect.any(Object),
+    );
+
+    const historyRuntime = createMockRuntime();
+    const historyResult = await runCliInProcess(
+      ['node', 'peer', 'market', 'taker-history', '--address', address],
+      historyRuntime.deps,
+    );
+    expect(historyResult.exitCode).toBeUndefined();
+    expect(historyResult.stderr).toBe('');
+    expect(historyRuntime.requestJson).toHaveBeenCalledWith(
+      `https://peerlytics.xyz/api/v1/takers/${address}/history`,
+      expect.any(Object),
+    );
+
+    const intentRuntime = createMockRuntime();
+    const intentResult = await runCliInProcess(
+      ['node', 'peer', 'indexer', 'intents', 'by-owner', '--owner', address],
+      intentRuntime.deps,
+    );
+    expect(intentResult.exitCode).toBeUndefined();
+    expect(intentResult.stderr).toBe('');
+    expect(intentRuntime.calls.find((entry) => entry.path === 'indexer.getOwnerIntents')?.args[0]).toBe(address);
+
+    const hookRuntime = createMockRuntime();
+    const hookResult = await runCliInProcess(
+      ['node', 'peer', 'intent-hook', 'pre', 'get', '--id', '7'],
+      hookRuntime.deps,
+    );
+    expect(hookResult.exitCode).toBeUndefined();
+    expect(hookResult.stderr).toBe('');
+    expect(hookRuntime.calls.find((entry) => entry.path === 'getDepositPreIntentHook')?.args[0]).toBe(7n);
+  });
+
   it('wraps invalid global env values in the json error envelope', async () => {
     const failed = await runCliInProcess(
       ['node', 'peer', '--env', 'fake', 'quote', '--from', 'USD', '--amount', '10'],

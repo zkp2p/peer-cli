@@ -93,7 +93,7 @@ export const vaultDefinitions: CommandDefinition[] = [
     path: ['vault', 'show'],
     description: 'Show vault details by rateManagerId.',
     readOnly: true,
-    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId (bytes32 hash).', schema: { type: 'string', description: 'Vault identifier.' } }],
+    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId (bytes32 hash).', schema: { type: 'string', description: 'Vault identifier.' }, optionFlags: ['--id <rateManagerId>'] }],
     handler: async (input, context) => {
       const id = ensureString(input.rateManagerId, 'rateManagerId');
       const { client } = await context.getClient({ requireWallet: false });
@@ -188,7 +188,7 @@ export const vaultDefinitions: CommandDefinition[] = [
     path: ['vault', 'delegates'],
     description: 'List delegated deposits for a vault.',
     readOnly: true,
-    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' } }],
+    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' }, optionFlags: ['--id <rateManagerId>'] }],
     options: [
       { name: 'limit', flags: '--limit <value>', description: 'Maximum delegations.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 50 },
       { name: 'offset', flags: '--offset <value>', description: 'Pagination offset.', schema: { type: 'number', description: 'Offset.' }, defaultValue: 0 },
@@ -205,7 +205,7 @@ export const vaultDefinitions: CommandDefinition[] = [
     path: ['vault', 'snapshots'],
     description: 'Fetch daily snapshots for a vault.',
     readOnly: true,
-    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' } }],
+    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' }, optionFlags: ['--id <rateManagerId>'] }],
     options: [
       { name: 'limit', flags: '--limit <value>', description: 'Maximum snapshots.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 30 },
       { name: 'options', flags: '--options <json>', description: 'Raw JSON snapshot options (advanced).', schema: { type: 'object', description: 'Snapshot options.' } },
@@ -221,7 +221,7 @@ export const vaultDefinitions: CommandDefinition[] = [
     path: ['vault', 'manual-rate-updates'],
     description: 'Fetch manual rate updates for a vault.',
     readOnly: true,
-    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' } }],
+    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' }, optionFlags: ['--id <rateManagerId>'] }],
     options: [
       { name: 'limit', flags: '--limit <value>', description: 'Maximum entries.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 50 },
       { name: 'options', flags: '--options <json>', description: 'Raw JSON query options (advanced).', schema: { type: 'object', description: 'Query options.' } },
@@ -237,7 +237,7 @@ export const vaultDefinitions: CommandDefinition[] = [
     path: ['vault', 'oracle-config-updates'],
     description: 'Fetch oracle config updates for a vault.',
     readOnly: true,
-    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' } }],
+    args: [{ name: 'rateManagerId', description: 'Vault rateManagerId.', schema: { type: 'string', description: 'Vault identifier.' }, optionFlags: ['--id <rateManagerId>'] }],
     options: [
       { name: 'limit', flags: '--limit <value>', description: 'Maximum entries.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 50 },
       { name: 'options', flags: '--options <json>', description: 'Raw JSON query options (advanced).', schema: { type: 'object', description: 'Query options.' } },

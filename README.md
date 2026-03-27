@@ -214,6 +214,18 @@ Commands that need a signer require one of:
 - `peer market volume`
 - `peer market leaderboard`
 - `peer market protocol-stats`
+- `peer market analytics <slice>` - Fetch analytics by dimension (overview, liquidity, volume, activity, flows, performance).
+- `peer market vaults`
+- `peer market attribution`
+- `peer market explorer address|deposit|intent|maker|verifier|vault|search` - Look up entities on Peerlytics.
+- `peer market deposits` - Query deposits with filtering.
+- `peer market intents` - Query intents with filtering.
+- `peer market activity` - Fetch recent protocol events.
+- `peer market taker-history <address>`
+- `peer market maker-history <address>`
+- `peer market meta platforms|currencies` - List supported platforms and currencies from Peerlytics.
+- `peer market api-key list|create|rotate|delete` - Manage Peerlytics API keys.
+- `peer market credits` - Check API credit balance.
 - `peer transfer`
 - `peer balance`
 

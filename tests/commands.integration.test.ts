@@ -514,6 +514,129 @@ describe('registry-backed command handlers', () => {
         data: { url: 'https://market.example/v1/analytics/summary' },
       });
 
+      // --- New Peerlytics commands ---
+
+      await expect(run(['market', 'analytics'], { slice: 'overview' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/analytics/overview?limit=50&offset=0' },
+      });
+
+      await expect(run(['market', 'vaults'], {}, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/analytics/vaults?limit=50&offset=0' },
+      });
+
+      await expect(run(['market', 'attribution'], {}, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/analytics/attribution' },
+      });
+
+      await expect(run(['market', 'explorer', 'address'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/explorer/address/0x1111111111111111111111111111111111111111?limit=100&offset=0' },
+      });
+
+      await expect(run(['market', 'explorer', 'deposit'], { id: '123' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/explorer/deposit/123?limit=100&offset=0' },
+      });
+
+      await expect(run(['market', 'explorer', 'intent'], { hash: '0xabc' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/explorer/intent/0xabc' },
+      });
+
+      await expect(run(['market', 'explorer', 'maker'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/explorer/maker/0x1111111111111111111111111111111111111111' },
+      });
+
+      await expect(run(['market', 'explorer', 'verifier'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/explorer/verifier/0x1111111111111111111111111111111111111111' },
+      });
+
+      await expect(run(['market', 'explorer', 'vault'], { id: '42' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/explorer/vault/42' },
+      });
+
+      await expect(run(['market', 'explorer', 'search'], { query: '0xtest' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/explorer/search?q=0xtest' },
+      });
+
+      await expect(run(['market', 'deposits'], { depositor: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/deposits?depositor=0x1111111111111111111111111111111111111111&limit=50&offset=0' },
+      });
+
+      await expect(run(['market', 'intents'], { status: 'FULFILLED', limit: 10 }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/intents?status=FULFILLED&limit=10&offset=0' },
+      });
+
+      await expect(run(['market', 'activity'], { type: 'intent_fulfilled', limit: 5 }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/activity?type=intent_fulfilled&limit=5' },
+      });
+
+      await expect(run(['market', 'taker-history'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/takers/0x1111111111111111111111111111111111111111/history' },
+      });
+
+      await expect(run(['market', 'maker-history'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/makers/0x1111111111111111111111111111111111111111/history' },
+      });
+
+      await expect(run(['market', 'meta', 'platforms'], {}, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/meta/platforms' },
+      });
+
+      await expect(run(['market', 'meta', 'currencies'], {}, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/meta/currencies' },
+      });
+
+      await expect(run(['market', 'api-key', 'list'], {}, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/account/keys' },
+      });
+
+      await expect(run(['market', 'api-key', 'create'], { label: 'test' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/account/keys' },
+      });
+
+      await expect(run(['market', 'api-key', 'rotate'], { key: 'pk_old' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/account/keys' },
+      });
+
+      await expect(run(['market', 'api-key', 'delete'], { key: 'pk_old' }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/account/keys' },
+      });
+
+      await expect(run(['market', 'credits'], {}, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/account/credits' },
+      });
+
+      // API key commands require marketApiKey
+      const noKeyRuntime = createMockRuntime({ config: { marketBaseUrl: 'https://market.example/' } });
+      await expect(run(['market', 'api-key', 'list'], {}, noKeyRuntime)).resolves.toMatchObject({
+        ok: false,
+        error: { code: 'AUTH_REQUIRED' },
+      });
+      await expect(run(['market', 'credits'], {}, noKeyRuntime)).resolves.toMatchObject({
+        ok: false,
+        error: { code: 'AUTH_REQUIRED' },
+      });
+
       await expect(run(['transfer'], { to: '0x1111111111111111111111111111111111111111', amount: 1 }, runtime)).resolves.toMatchObject({
         ok: true,
         data: {

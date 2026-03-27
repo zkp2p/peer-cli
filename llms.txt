@@ -29,7 +29,11 @@ Config precedence: CLI flags > environment variables > `~/.peer/config.json` > d
 - `peer oracle supports-inline`, `validate-feeds`
 - `peer delegate set/undelegate/show/set-direct/clear-direct`
 
-- `peer market spreads/compare/volume/leaderboard/protocol-stats`
+- `peer market spreads/compare/volume/leaderboard/protocol-stats/analytics/vaults/attribution`
+- `peer market explorer address/deposit/intent/maker/verifier/vault/search`
+- `peer market deposits/intents/activity/taker-history/maker-history`
+- `peer market meta platforms/currencies`
+- `peer market api-key list/create/rotate/delete`, `peer market credits`
 - `peer transfer`, `peer balance`
 
 - `peer checkout create/list/show/cancel` (`create` and `cancel` preview first; execute with `--yes`)

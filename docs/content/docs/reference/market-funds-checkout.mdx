@@ -5,15 +5,67 @@ description: Analytics endpoints, direct wallet transfers, balance checks, and c
 
 ## Market Commands
 
+### Analytics
+
 ```text
 peer market spreads
 peer market compare
 peer market volume
 peer market leaderboard
 peer market protocol-stats
+peer market analytics <slice>
+peer market vaults
+peer market attribution
 ```
 
 Use market commands for analytics and venue comparison rather than protocol mutations.
+
+### Explorer
+
+```text
+peer market explorer address <address>
+peer market explorer deposit <id>
+peer market explorer intent <hash>
+peer market explorer maker <address>
+peer market explorer verifier <address>
+peer market explorer vault <id>
+peer market explorer search <query>
+```
+
+Explorer commands look up entities on Peerlytics by address, deposit ID, intent hash, or free-text search.
+
+### Data Queries
+
+```text
+peer market deposits
+peer market intents
+peer market activity
+peer market taker-history <address>
+peer market maker-history <address>
+```
+
+Query deposits and intents with filtering (depositor, delegate, platform, currency, status). Activity returns a feed of protocol events.
+
+### Meta
+
+```text
+peer market meta platforms
+peer market meta currencies
+```
+
+List supported platforms (with method hashes) and currencies from Peerlytics.
+
+### API Key Management
+
+```text
+peer market api-key list
+peer market api-key create
+peer market api-key rotate <key>
+peer market api-key delete <key>
+peer market credits
+```
+
+Manage Peerlytics API keys and check credit balance. All account commands require an existing `--market-api-key` to authenticate.
 
 ## Transfer and Balance
 

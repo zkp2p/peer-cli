@@ -113,6 +113,31 @@ describe('error normalization', () => {
     expect(error).toBeInstanceOf(PeerCliError);
   });
 
+  it('omits stack details unless debug details are enabled', () => {
+    const error = Object.assign(new Error('No quotes found'), {
+      name: 'APIError',
+      code: 'API',
+      status: 404,
+      details: { url: 'https://api.zkp2p.xyz/v2/quote/exact-fiat' },
+    });
+
+    const defaultNormalized = normalizeError(error);
+    expect(defaultNormalized).toMatchObject({
+      code: 'API_ERROR',
+      details: expect.objectContaining({
+        name: 'APIError',
+        message: 'No quotes found',
+        status: 404,
+      }),
+    });
+    expect(defaultNormalized.details).not.toHaveProperty('stack');
+
+    const debugNormalized = normalizeError(error, { includeDebugDetails: true });
+    expect(debugNormalized.details).toMatchObject({
+      stack: expect.stringContaining('No quotes found'),
+    });
+  });
+
   it('maps common error messages to catalog categories', () => {
     expect(normalizeError(new Error('timeout while fetching'))).toMatchObject({ code: 'TIMEOUT', category: 'timeout' });
     expect(normalizeError(new Error('Unauthorized api key'))).toMatchObject({ code: 'AUTH_REQUIRED', category: 'auth' });

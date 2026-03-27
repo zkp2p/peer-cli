@@ -157,6 +157,45 @@ describe('in-process cli runner', () => {
     expect(failed.stderr).toContain('"message": "No quotes found"');
   });
 
+  it('omits stack traces from json errors unless --debug is enabled', async () => {
+    const apiError = () => Object.assign(new Error('No quotes found'), {
+      name: 'APIError',
+      code: 'API',
+      status: 404,
+      details: {
+        url: 'https://api.zkp2p.xyz/v2/quote/exact-fiat',
+      },
+    });
+
+    const runtime = createMockRuntime({
+      behaviors: {
+        getQuote: async () => {
+          throw apiError();
+        },
+      },
+    });
+
+    const failed = await runCliInProcess(
+      ['node', 'peer', 'quote', '--from', 'USD', '--amount', '10'],
+      runtime.deps,
+    );
+    expect(failed.stderr).not.toContain('"stack"');
+
+    const debugRuntime = createMockRuntime({
+      behaviors: {
+        getQuote: async () => {
+          throw apiError();
+        },
+      },
+    });
+
+    const debugFailed = await runCliInProcess(
+      ['node', 'peer', '--debug', 'quote', '--from', 'USD', '--amount', '10'],
+      debugRuntime.deps,
+    );
+    expect(debugFailed.stderr).toContain('"stack"');
+  });
+
   it('wraps invalid global env values in the json error envelope', async () => {
     const failed = await runCliInProcess(
       ['node', 'peer', '--env', 'fake', 'quote', '--from', 'USD', '--amount', '10'],

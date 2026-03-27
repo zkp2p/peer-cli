@@ -174,12 +174,14 @@ export async function executeDefinition(
 ): Promise<CLIOutput<unknown>> {
   const startedAt = Date.now();
   const command = commandString(spec.path);
+  let includeDebugDetails = Boolean(globalOptions.debug);
   setDebugEnabled(Boolean(globalOptions.debug));
   logDebug('Resolving command config', { command, globalOptions });
   const fallbackEnv = typeof globalOptions.env === 'string' ? globalOptions.env : process.env.PEER_ENV ?? 'unknown';
 
   try {
     const config = await deps.resolveConfig(globalOptions);
+    includeDebugDetails = Boolean(config.debug);
     setDebugEnabled(config.debug);
     logDebug('Resolved config', {
       command,
@@ -263,7 +265,7 @@ export async function executeDefinition(
   } catch (error) {
     logDebug('Command failed', { command, durationMs: Date.now() - startedAt, error });
     return buildOutput(
-      { ok: false, error: normalizeError(error) },
+      { ok: false, error: normalizeError(error, { includeDebugDetails }) },
       {
         command,
         env: fallbackEnv,

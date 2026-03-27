@@ -61,6 +61,10 @@ export const ERROR_CATALOG = {
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;
 
+export interface NormalizeErrorOptions {
+  includeDebugDetails?: boolean;
+}
+
 export class PeerCliError extends Error {
   readonly code: string;
   readonly category: ErrorCategory;
@@ -113,7 +117,37 @@ function serializeErrorDetails(error: { [key: string]: unknown; name?: string; m
   return details;
 }
 
-export function normalizeError(error: unknown): CLIErrorBody {
+function sanitizeErrorDetails(value: unknown, includeDebugDetails: boolean, seen = new WeakSet<object>()): unknown {
+  if (value instanceof Error) {
+    return sanitizeErrorDetails(
+      serializeErrorDetails(value as Error & { [key: string]: unknown }),
+      includeDebugDetails,
+      seen,
+    );
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => sanitizeErrorDetails(entry, includeDebugDetails, seen));
+  }
+
+  if (value && typeof value === 'object') {
+    if (seen.has(value as object)) {
+      return '[Circular]';
+    }
+    seen.add(value as object);
+
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([key]) => includeDebugDetails || key !== 'stack')
+        .map(([key, entry]) => [key, sanitizeErrorDetails(entry, includeDebugDetails, seen)]),
+    );
+  }
+
+  return value;
+}
+
+export function normalizeError(error: unknown, options: NormalizeErrorOptions = {}): CLIErrorBody {
+  const includeDebugDetails = options.includeDebugDetails ?? false;
   const internalSuggestion = ERROR_CATALOG.INTERNAL_ERROR.suggestion;
 
   if (error instanceof PeerCliError) {
@@ -123,7 +157,7 @@ export function normalizeError(error: unknown): CLIErrorBody {
       message: error.message,
       retryable: error.retryable,
       suggestion: error.suggestion,
-      details: error.details,
+      details: sanitizeErrorDetails(error.details, includeDebugDetails),
     };
   }
 
@@ -133,7 +167,10 @@ export function normalizeError(error: unknown): CLIErrorBody {
     const catalogEntry = ERROR_CATALOG[code as ErrorCode];
     const lowered = message.toLowerCase();
     const status = 'status' in error && typeof error.status === 'number' ? error.status : undefined;
-    const details = serializeErrorDetails(error as { [key: string]: unknown; name?: string; message?: string; stack?: string });
+    const details = sanitizeErrorDetails(
+      serializeErrorDetails(error as { [key: string]: unknown; name?: string; message?: string; stack?: string }),
+      includeDebugDetails,
+    );
 
     if (error.name === 'APIError' || code === 'API') {
       if (status === 429) {
@@ -257,6 +294,6 @@ export function normalizeError(error: unknown): CLIErrorBody {
     message: typeof error === 'string' ? error : 'Unknown error',
     retryable: false,
     suggestion: internalSuggestion,
-    details: error,
+    details: sanitizeErrorDetails(error, includeDebugDetails),
   };
 }

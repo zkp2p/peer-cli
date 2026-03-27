@@ -70,6 +70,10 @@ function inferEnv(argv: string[]): string {
   return process.env.PEER_ENV ?? 'unknown';
 }
 
+function inferDebug(argv: string[]): boolean {
+  return argv.includes('--debug');
+}
+
 export function inferCommand(argv: string[]): string {
   const tokens = argv.slice(2);
   const commandParts: string[] = [];
@@ -102,8 +106,9 @@ function renderTopLevelError(error: unknown, argv: string[]): string {
         createError('VALIDATION_ERROR', commanderError.message.replace(/^error:\s*/, ''), {
           details: { commanderCode: commanderError.code, exitCode: commanderError.exitCode },
         }),
+        { includeDebugDetails: inferDebug(argv) },
       )
-    : /* v8 ignore next */ normalizeError(error);
+    : /* v8 ignore next */ normalizeError(error, { includeDebugDetails: inferDebug(argv) });
 
   return renderOutput(
     buildOutput(

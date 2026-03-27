@@ -23,6 +23,55 @@ function parseConversionRates(input: Record<string, unknown>): { currency: strin
   return processors.map(() => currencies.map((currency) => ({ currency, conversionRate: parseConversionRate(input.rate) })));
 }
 
+function parseDepositDataEntries(input: Record<string, unknown>, processorNames: string[]): Record<string, unknown>[] {
+  if (processorNames.length === 0) {
+    return input.depositData ? (parseJsonArray(input.depositData, 'depositData') as Record<string, unknown>[]) : [];
+  }
+
+  if (!input.depositData) {
+    throw createError(
+      'VALIDATION_ERROR',
+      'Provide --deposit-data as a JSON array with one platform-specific detail object per entry in --platforms.',
+      {
+        details: {
+          platforms: processorNames,
+          example: "--platforms wise,venmo --deposit-data '[{...wiseDetails},{...venmoDetails}]'",
+          note: 'Use the same processor-specific detail objects accepted by payee register.',
+        },
+      },
+    );
+  }
+
+  const depositData = parseJsonArray(input.depositData, 'depositData');
+  if (depositData.length !== processorNames.length) {
+    throw createError(
+      'VALIDATION_ERROR',
+      `--deposit-data must contain exactly one object per platform in --platforms (${processorNames.length} platform(s), ${depositData.length} entr${depositData.length === 1 ? 'y' : 'ies'} provided).`,
+      {
+        details: {
+          platforms: processorNames,
+          expectedLength: processorNames.length,
+          actualLength: depositData.length,
+        },
+      },
+    );
+  }
+
+  for (const [index, entry] of depositData.entries()) {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+      throw createError('VALIDATION_ERROR', `depositData[${index}] must be a JSON object.`, {
+        details: {
+          platforms: processorNames,
+          index,
+          value: entry,
+        },
+      });
+    }
+  }
+
+  return depositData as Record<string, unknown>[];
+}
+
 async function withUsdcAddress<T>(
   input: Record<string, unknown>,
   context: Parameters<NonNullable<CommandDefinition['handler']>>[1],
@@ -143,14 +192,14 @@ export const depositDefinitions: CommandDefinition[] = [
     readOnly: false,
     requireWallet: true,
     options: [
-      { name: 'amount', flags: '--amount <value>', description: 'USDC amount to deposit.', schema: { type: 'number', description: 'USDC amount.' } },
-      { name: 'min', flags: '--min <value>', description: 'Minimum intent size in USDC.', schema: { type: 'number', description: 'Minimum intent size.' } },
-      { name: 'max', flags: '--max <value>', description: 'Maximum intent size in USDC.', schema: { type: 'number', description: 'Maximum intent size.' } },
-      { name: 'platforms', flags: '--platforms <names>', description: 'Comma-separated payment platforms.', schema: { type: 'string', description: 'Payment platforms.' } },
-      { name: 'currencies', flags: '--currencies <codes>', description: 'Comma-separated fiat currencies.', schema: { type: 'string', description: 'Fiat currencies.' } },
-      { name: 'rate', flags: '--rate <value>', description: 'Default conversion rate if conversionRates JSON is omitted.', schema: { type: 'number', description: 'Conversion rate.' } },
+      { name: 'amount', flags: '--amount <value>', description: 'Required. USDC amount to deposit.', schema: { type: 'number', description: 'USDC amount.' } },
+      { name: 'min', flags: '--min <value>', description: 'Required. Minimum intent size in USDC.', schema: { type: 'number', description: 'Minimum intent size.' } },
+      { name: 'max', flags: '--max <value>', description: 'Required. Maximum intent size in USDC.', schema: { type: 'number', description: 'Maximum intent size.' } },
+      { name: 'platforms', flags: '--platforms <names>', description: 'Required. Comma-separated payment platforms.', schema: { type: 'string', description: 'Payment platforms.' } },
+      { name: 'currencies', flags: '--currencies <codes>', description: 'Required when --conversion-rates is omitted. Comma-separated fiat currencies.', schema: { type: 'string', description: 'Fiat currencies.' } },
+      { name: 'rate', flags: '--rate <value>', description: 'Required when --conversion-rates is omitted. Default conversion rate.', schema: { type: 'number', description: 'Conversion rate.' } },
       { name: 'conversionRates', flags: '--conversion-rates <json>', description: 'JSON matrix of conversion rate entries.', schema: { type: 'array', description: 'Conversion rate matrix.' } },
-      { name: 'depositData', flags: '--deposit-data <json>', description: 'JSON array of payee detail payloads.', schema: { type: 'array', description: 'Deposit data array.' } },
+      { name: 'depositData', flags: '--deposit-data <json>', description: 'Required when --platforms is set. JSON array with one platform-specific detail object per platform.', schema: { type: 'array', description: 'Deposit data array.' } },
       { name: 'delegate', flags: '--delegate <address>', description: 'Optional delegate address.', schema: { type: 'string', description: 'Delegate address.' } },
       { name: 'intentGuardian', flags: '--intent-guardian <address>', description: 'Optional intent guardian address.', schema: { type: 'string', description: 'Intent guardian.' } },
       { name: 'retainOnEmpty', flags: '--retain-on-empty', description: 'Keep the deposit config active at zero balance.', schema: { type: 'boolean', description: 'Retain deposit on empty.' } },
@@ -159,20 +208,23 @@ export const depositDefinitions: CommandDefinition[] = [
     handler: sdkSeparatePrepareHandler(
       ['prepareCreateDeposit'],
       ['createDeposit'],
-      async (input, context) => withUsdcAddress(input, context, async (token) => ({
-        token: ensureAddress(token, 'token'),
-        amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6),
-        intentAmountRange: {
-          min: parseUnits(ensurePositiveNumber(input.min, 'min').toString(), 6),
-          max: parseUnits(ensurePositiveNumber(input.max, 'max').toString(), 6),
-        },
-        processorNames: parseCsv(input.platforms as string | undefined) ?? [],
-        depositData: input.depositData ? (parseJsonArray(input.depositData, 'depositData') as Record<string, string>[]) : [],
-        conversionRates: parseConversionRates(input),
-        delegate: input.delegate ? ensureAddress(input.delegate, 'delegate') : undefined,
-        intentGuardian: input.intentGuardian ? ensureAddress(input.intentGuardian, 'intentGuardian') : undefined,
-        retainOnEmpty: Boolean(input.retainOnEmpty),
-      })),
+      async (input, context) => withUsdcAddress(input, context, async (token) => {
+        const processorNames = parseCsv(input.platforms as string | undefined) ?? [];
+        return {
+          token: ensureAddress(token, 'token'),
+          amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6),
+          intentAmountRange: {
+            min: parseUnits(ensurePositiveNumber(input.min, 'min').toString(), 6),
+            max: parseUnits(ensurePositiveNumber(input.max, 'max').toString(), 6),
+          },
+          processorNames,
+          depositData: parseDepositDataEntries(input, processorNames),
+          conversionRates: parseConversionRates(input),
+          delegate: input.delegate ? ensureAddress(input.delegate, 'delegate') : undefined,
+          intentGuardian: input.intentGuardian ? ensureAddress(input.intentGuardian, 'intentGuardian') : undefined,
+          retainOnEmpty: Boolean(input.retainOnEmpty),
+        };
+      }),
       {
         description: () => 'Create a deposit after previewing the transaction calldata.',
         previewData: (prepared) => (prepared as { depositDetails?: unknown }).depositDetails,

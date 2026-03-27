@@ -168,7 +168,7 @@ describe('registry-backed command handlers', () => {
       platforms: 'wise,venmo',
       currencies: 'USD,EUR',
       rate: 1.2,
-      depositData: '[]',
+      depositData: '[{"email":"maker@example.com"},{"handle":"maker"}]',
       retainOnEmpty: true,
     }, runtime)).resolves.toMatchObject({
       ok: true,
@@ -209,6 +209,43 @@ describe('registry-backed command handlers', () => {
     const oracleSetData = oracleSet.data as { executed: boolean; result: { path: string } };
     expect(oracleSetData.executed).toBe(true);
     expect(oracleSetData.result.path).toBe('setOracleRateConfig');
+  });
+
+  it('validates deposit create deposit-data requirements before calling the sdk', async () => {
+    const runtime = createMockRuntime({ yes: true });
+
+    await expect(run(['deposit', 'create'], {
+      amount: 100,
+      min: 10,
+      max: 20,
+      platforms: 'wise',
+      currencies: 'USD',
+      rate: 1.2,
+    }, runtime)).resolves.toMatchObject({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        category: 'validation',
+        message: 'Provide --deposit-data as a JSON array with one platform-specific detail object per entry in --platforms.',
+      },
+    });
+
+    await expect(run(['deposit', 'create'], {
+      amount: 100,
+      min: 10,
+      max: 20,
+      platforms: 'wise,venmo',
+      currencies: 'USD,EUR',
+      rate: 1.2,
+      depositData: '[{"email":"maker@example.com"}]',
+    }, runtime)).resolves.toMatchObject({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        category: 'validation',
+        message: '--deposit-data must contain exactly one object per platform in --platforms (2 platform(s), 1 entry provided).',
+      },
+    });
   });
 
   it('handles intent and hook commands', async () => {

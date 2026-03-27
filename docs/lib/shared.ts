@@ -6,5 +6,5 @@ export const docsContentRoute = '/llms.mdx/docs';
 export const gitConfig = {
   user: 'zkp2p',
   repo: 'peer-cli',
-  branch: 'codex/peer-cli-review-fixes',
+  branch: 'main',
 };

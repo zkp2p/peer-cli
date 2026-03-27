@@ -156,7 +156,15 @@ export function makeContext(options: {
       getIntentFulfillmentAmounts: async (...args: unknown[]) => ({ path: 'getIntentFulfillmentAmounts', args }),
       getFulfillmentAndPayment: async (...args: unknown[]) => ({ path: 'getFulfillmentAndPayment', args }),
       getDelegationForDeposit: async (...args: unknown[]) => ({ path: 'getDelegationForDeposit', args }),
+      getDepositsWithRelations: async (...args: unknown[]) => ({ path: 'getDepositsWithRelations', args }),
+      getDepositById: async (...args: unknown[]) => ({ path: 'getDepositById', args }),
     },
+    // deposit prepare/create
+    prepareCreateDeposit: async () => ({
+      prepared: { to: DEFAULT_ADDRESS, data: '0x', value: 0n, chainId: 8453 },
+      depositDetails: { depositId: 1 },
+    }),
+    createDeposit: async () => ({ txHash: '0xcreated' }),
     // deposit mutations
     addFunds: makePreparedMethod('addFunds'),
     removeFunds: makePreparedMethod('removeFunds'),

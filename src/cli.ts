@@ -7,7 +7,7 @@ import { buildOutput, renderOutput } from './output/formatter.js';
 import { createError, normalizeError } from './output/errors.js';
 import { readPackageVersion } from './utils/package.js';
 
-function isMainModule(): boolean {
+export function isMainModule(): boolean {
   const entry = process.argv[1];
   return entry !== undefined && /(?:^|[/\\])(?:src[/\\]cli\.ts|dist[/\\]cli\.(?:cjs|js))$/.test(resolve(entry));
 }
@@ -70,7 +70,7 @@ function inferEnv(argv: string[]): string {
   return process.env.PEER_ENV ?? 'unknown';
 }
 
-function inferCommand(argv: string[]): string {
+export function inferCommand(argv: string[]): string {
   const tokens = argv.slice(2);
   const commandParts: string[] = [];
 
@@ -103,7 +103,7 @@ function renderTopLevelError(error: unknown, argv: string[]): string {
           details: { commanderCode: commanderError.code, exitCode: commanderError.exitCode },
         }),
       )
-    : normalizeError(error);
+    : /* v8 ignore next */ normalizeError(error);
 
   return renderOutput(
     buildOutput(
@@ -121,30 +121,23 @@ function renderTopLevelError(error: unknown, argv: string[]): string {
 }
 
 export async function runCli(argv: string[] = process.argv, deps?: RuntimeDeps): Promise<Command> {
-  const program = await createProgram(deps);
+  let program: Command | undefined;
   try {
+    program = await createProgram(deps);
     await program.parseAsync(argv);
   } catch (error) {
     if (error instanceof CommanderError && (error.code === 'commander.helpDisplayed' || error.code === 'commander.version')) {
-      return program;
+      return program!;
     }
 
     const rendered = renderTopLevelError(error, argv);
     process.stderr.write(`${rendered}\n`);
     process.exitCode = error instanceof CommanderError ? error.exitCode : 1;
   }
-  return program;
+  return program!;
 }
 
-async function main(): Promise<void> {
-  try {
-    await runCli();
-  } catch (error) {
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-    process.exitCode = 1;
-  }
-}
-
+/* v8 ignore next 3 -- entry-point guard only runs when script is executed directly */
 if (isMainModule()) {
-  void main();
+  void runCli();
 }

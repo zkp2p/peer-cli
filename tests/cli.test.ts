@@ -1,10 +1,46 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runCliInProcess } from './helpers/cli-runner.js';
 import { createMockRuntime } from './helpers/mock-runtime.js';
+import { isMainModule, inferCommand } from '../src/cli.js';
 
 type MockPreparedMethod = ReturnType<typeof vi.fn> & {
   prepare: ReturnType<typeof vi.fn>;
 };
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe('isMainModule', () => {
+  it('returns false when argv[1] does not match cli entry', () => {
+    expect(isMainModule()).toBe(false);
+  });
+});
+
+describe('inferCommand', () => {
+  it('extracts command parts from argv', () => {
+    expect(inferCommand(['node', 'peer', 'quote'])).toBe('peer quote');
+    expect(inferCommand(['node', 'peer', 'deposit', 'create'])).toBe('peer deposit create');
+    expect(inferCommand(['node', 'peer'])).toBe('peer');
+  });
+
+  it('skips global flags with values', () => {
+    expect(inferCommand(['node', 'peer', '--env', 'staging', 'quote'])).toBe('peer quote');
+    expect(inferCommand(['node', 'peer', '--format', 'table', 'market', 'spreads'])).toBe('peer market spreads');
+  });
+
+  it('skips boolean global flags', () => {
+    expect(inferCommand(['node', 'peer', '--debug', 'quote'])).toBe('peer quote');
+  });
+
+  it('stops at command-level flags', () => {
+    expect(inferCommand(['node', 'peer', 'quote', '--from', 'USD'])).toBe('peer quote');
+  });
+
+  it('handles empty tokens', () => {
+    expect(inferCommand(['node', 'peer'])).toBe('peer');
+  });
+});
 
 describe('in-process cli runner', () => {
   it('executes read commands and renders json output', async () => {
@@ -118,6 +154,22 @@ describe('in-process cli runner', () => {
     expect(failed.stderr).toContain('"code": "VALIDATION_ERROR"');
     expect(failed.stderr).toContain("unknown command 'nonexistent'");
     expect(failed.stderr).not.toContain('Usage: peer');
+  });
+
+  it('renders non-CommanderError exceptions in the json error envelope', async () => {
+    // Trigger a non-CommanderError by passing deps that throw during program setup
+    const brokenDeps = {
+      createClient: async () => { throw new Error('boom'); },
+      resolveConfig: async () => { throw new Error('config exploded'); },
+      requestJson: async () => { throw new Error('nope'); },
+    };
+    const result = await runCliInProcess(
+      ['node', 'peer', 'quote', '--from', 'USD', '--amount', '10'],
+      brokenDeps,
+    );
+    // The error is caught by framework.ts executeDefinition, not renderTopLevelError
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('"ok": false');
   });
 
   it('documents --execute as an alias for --yes in command help', async () => {

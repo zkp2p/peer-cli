@@ -91,4 +91,32 @@ describe('in-process cli runner', () => {
     expect(failed.stderr).toContain('"code": "VALIDATION_ERROR"');
     expect(failed.stdout).toBe('');
   });
+
+  it('wraps invalid global env values in the json error envelope', async () => {
+    const failed = await runCliInProcess(
+      ['node', 'peer', '--env', 'fake', 'quote', '--from', 'USD', '--amount', '10'],
+    );
+
+    expect(failed.exitCode).toBe(1);
+    expect(failed.stdout).toBe('');
+    expect(failed.stderr).toContain('"ok": false');
+    expect(failed.stderr).toContain('"code": "VALIDATION_ERROR"');
+    expect(failed.stderr).toContain('env must be one of: production, preproduction, staging.');
+  });
+
+  it('wraps unknown commands in the json error envelope', async () => {
+    const runtime = createMockRuntime();
+
+    const failed = await runCliInProcess(
+      ['node', 'peer', 'nonexistent'],
+      runtime.deps,
+    );
+
+    expect(failed.exitCode).toBe(1);
+    expect(failed.stdout).toBe('');
+    expect(failed.stderr).toContain('"ok": false');
+    expect(failed.stderr).toContain('"code": "VALIDATION_ERROR"');
+    expect(failed.stderr).toContain("unknown command 'nonexistent'");
+    expect(failed.stderr).not.toContain('Usage: peer');
+  });
 });

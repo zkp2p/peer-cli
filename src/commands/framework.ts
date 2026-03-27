@@ -176,76 +176,78 @@ export async function executeDefinition(
   const command = commandString(spec.path);
   setDebugEnabled(Boolean(globalOptions.debug));
   logDebug('Resolving command config', { command, globalOptions });
-  const config = await deps.resolveConfig(globalOptions);
-  setDebugEnabled(config.debug);
-  logDebug('Resolved config', {
-    command,
-    env: config.env,
-    format: config.format,
-    yes: config.yes,
-    debug: config.debug,
-    rpcUrl: config.rpcUrl,
-    walletPath: config.walletPath,
-    indexerUrl: config.indexerUrl,
-    baseApiUrl: config.baseApiUrl,
-    marketBaseUrl: config.marketBaseUrl,
-    payBaseUrl: config.payBaseUrl,
-    hasPrivateKey: Boolean(config.privateKey),
-    hasApiKey: Boolean(config.apiKey),
-    hasIndexerKey: Boolean(config.indexerKey),
-    hasMarketApiKey: Boolean(config.marketApiKey),
-    hasPayApiKey: Boolean(config.payApiKey),
-  });
-  logDebug('Command input', { command, input });
-
-  const context: CommandExecutionContext = {
-    spec,
-    command,
-    config,
-    globalOptions,
-    deps,
-    getClient: (options = {}) => deps.createClient(config, { requireWallet: spec.requireWallet ?? options.requireWallet }),
-    requestJson: deps.requestJson,
-    readJsonFile: parseJsonFile,
-    readTextFile: async (path) => readFile(path, 'utf8'),
-    writeJsonFile: async (path, value) => {
-      await mkdir(dirname(path), { recursive: true });
-      await writeFile(path, JSON.stringify(value, null, 2));
-    },
-    runPrepared: async (plan) => {
-      logDebug('Preparing write operation', { command, description: plan.description });
-      const { prepared, previewData } = await plan.prepare();
-      const preview = {
-        to: prepared.to,
-        data: prepared.data,
-        value: prepared.value.toString(),
-        chainId: prepared.chainId,
-        description: plan.description,
-      };
-      logDebug('Prepared write operation', { command, preview, previewData });
-
-      if (!config.yes) {
-        logDebug('Write execution skipped because --yes/--execute was not set', { command });
-        return {
-          executed: false,
-          preview,
-          previewData,
-        };
-      }
-
-      logDebug('Executing prepared write operation', { command });
-      const result = await plan.execute();
-      logDebug('Executed prepared write operation', { command, result });
-      return {
-        executed: true,
-        preview,
-        previewData,
-        result,
-      };
-    },
-  };
+  const fallbackEnv = typeof globalOptions.env === 'string' ? globalOptions.env : process.env.PEER_ENV ?? 'unknown';
 
   try {
+    const config = await deps.resolveConfig(globalOptions);
+    setDebugEnabled(config.debug);
+    logDebug('Resolved config', {
+      command,
+      env: config.env,
+      format: config.format,
+      yes: config.yes,
+      debug: config.debug,
+      rpcUrl: config.rpcUrl,
+      walletPath: config.walletPath,
+      indexerUrl: config.indexerUrl,
+      baseApiUrl: config.baseApiUrl,
+      marketBaseUrl: config.marketBaseUrl,
+      payBaseUrl: config.payBaseUrl,
+      hasPrivateKey: Boolean(config.privateKey),
+      hasApiKey: Boolean(config.apiKey),
+      hasIndexerKey: Boolean(config.indexerKey),
+      hasMarketApiKey: Boolean(config.marketApiKey),
+      hasPayApiKey: Boolean(config.payApiKey),
+    });
+    logDebug('Command input', { command, input });
+
+    const context: CommandExecutionContext = {
+      spec,
+      command,
+      config,
+      globalOptions,
+      deps,
+      getClient: (options = {}) => deps.createClient(config, { requireWallet: spec.requireWallet ?? options.requireWallet }),
+      requestJson: deps.requestJson,
+      readJsonFile: parseJsonFile,
+      readTextFile: async (path) => readFile(path, 'utf8'),
+      writeJsonFile: async (path, value) => {
+        await mkdir(dirname(path), { recursive: true });
+        await writeFile(path, JSON.stringify(value, null, 2));
+      },
+      runPrepared: async (plan) => {
+        logDebug('Preparing write operation', { command, description: plan.description });
+        const { prepared, previewData } = await plan.prepare();
+        const preview = {
+          to: prepared.to,
+          data: prepared.data,
+          value: prepared.value.toString(),
+          chainId: prepared.chainId,
+          description: plan.description,
+        };
+        logDebug('Prepared write operation', { command, preview, previewData });
+
+        if (!config.yes) {
+          logDebug('Write execution skipped because --yes/--execute was not set', { command });
+          return {
+            executed: false,
+            preview,
+            previewData,
+          };
+        }
+
+        logDebug('Executing prepared write operation', { command });
+        const result = await plan.execute();
+        logDebug('Executed prepared write operation', { command, result });
+        return {
+          executed: true,
+          preview,
+          previewData,
+          result,
+        };
+      },
+    };
+
     const data = await spec.handler(input, context);
     logDebug('Command completed', { command, durationMs: Date.now() - startedAt });
     return buildOutput(
@@ -264,7 +266,7 @@ export async function executeDefinition(
       { ok: false, error: normalizeError(error) },
       {
         command,
-        env: config.env,
+        env: fallbackEnv,
         chain: 'base',
         timestamp: new Date().toISOString(),
         duration_ms: Date.now() - startedAt,

@@ -21,8 +21,8 @@ describe('branch coverage quote, market, intent, and delegate edge branches', ()
     await expect(lookup(['market', 'compare']).handler({ from: 'USD', amount: 10 }, makeContext({ walletAddress: undefined }).context)).rejects.toMatchObject({
       code: 'AUTH_REQUIRED',
     });
-    await expect(lookup(['market', 'volume']).handler({ period: '7d', granularity: 'daily' }, quoteRuntime.context)).resolves.toEqual({
-      url: 'https://market.example/v1/volume?period=7d&granularity=daily',
+    await expect(lookup(['market', 'volume']).handler({ range: '3mtd' }, quoteRuntime.context)).resolves.toEqual({
+      url: 'https://market.example/v1/analytics/period?range=3mtd',
     });
 
     const runtime = makeContext({ yes: true });

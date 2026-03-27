@@ -54,7 +54,7 @@ function makeConfig(partial: Partial<ResolvedConfig> = {}): ResolvedConfig {
     marketApiKey: partial.marketApiKey,
     payApiKey: partial.payApiKey,
     baseApiUrl: partial.baseApiUrl ?? 'https://api.zkp2p.xyz',
-    marketBaseUrl: partial.marketBaseUrl ?? 'https://api.peerlytics.xyz',
+    marketBaseUrl: partial.marketBaseUrl ?? 'https://peerlytics.xyz/api/',
     payBaseUrl: partial.payBaseUrl ?? 'https://api.pay.zkp2p.xyz',
     privateKey: partial.privateKey,
   };
@@ -121,7 +121,7 @@ describe('config helpers', () => {
         walletPath: '/tmp/override-wallet.json',
         rpcUrl: 'https://rpc.env',
         baseApiUrl: 'https://base.env',
-        marketBaseUrl: 'https://market.env',
+        marketBaseUrl: 'https://market.env/',
         payBaseUrl: 'https://pay.env',
         indexerUrl: 'https://indexer.flag',
       });

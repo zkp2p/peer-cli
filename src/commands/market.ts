@@ -1,17 +1,12 @@
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler } from './helpers.js';
 import { createError } from '../output/errors.js';
-import { SUPPORTED_MARKET_GRANULARITIES, SUPPORTED_MARKET_PERIODS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
+import { SUPPORTED_MARKET_PERIODS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
 import { ensureAddress, ensureNumber, ensureOneOf, ensurePositiveNumber, ensureString, parseCsv } from '../utils/validation.js';
 import { appendSearchParams } from '../utils/http.js';
 
 function marketHeaders(apiKey?: string): Record<string, string> {
   return apiKey ? { 'x-api-key': apiKey } : {};
-}
-
-function normalizeVolumePeriod(period: string): (typeof SUPPORTED_MARKET_PERIODS)[number] {
-  if (period === '24h') return '1d';
-  return ensureOneOf(period, 'period', SUPPORTED_MARKET_PERIODS);
 }
 
 export const marketDefinitions: CommandDefinition[] = [
@@ -22,11 +17,15 @@ export const marketDefinitions: CommandDefinition[] = [
     options: [
       { name: 'platform', flags: '--platform <value>', description: 'Comma-separated payment platforms.', schema: { type: 'string', description: 'Payment platforms.' } },
       { name: 'currency', flags: '--currency <value>', description: 'Comma-separated fiat currencies.', schema: { type: 'string', description: 'Fiat currencies.' } },
+      { name: 'includeRates', flags: '--include-rates', description: 'Include per-rate-level entries in each market.', schema: { type: 'boolean', description: 'Include rate entries.' } },
+      { name: 'limit', flags: '--limit <value>', description: 'Maximum markets to return.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 200 },
     ],
     handler: async (input, context) => {
-      const url = appendSearchParams(new URL('/v1/spreads', context.config.marketBaseUrl), {
-        paymentPlatforms: parseCsv(input.platform as string | undefined)?.join(','),
-        fiatCurrencies: parseCsv(input.currency as string | undefined)?.join(','),
+      const url = appendSearchParams(new URL('v1/market/summary', context.config.marketBaseUrl), {
+        platform: parseCsv(input.platform as string | undefined)?.join(','),
+        currency: parseCsv(input.currency as string | undefined)?.join(','),
+        includeRates: input.includeRates ? 'true' : undefined,
+        limit: ensureNumber(input.limit ?? 200, 'limit'),
       });
       return context.requestJson(url.toString(), {
         headers: marketHeaders(context.config.marketApiKey),
@@ -70,22 +69,19 @@ export const marketDefinitions: CommandDefinition[] = [
   },
   {
     path: ['market', 'volume'],
-    description: 'Fetch Peerlytics protocol volume metrics.',
+    description: 'Fetch Peerlytics protocol volume and analytics for a time range.',
     readOnly: true,
     options: [
-      { name: 'platform', flags: '--platform <value>', description: 'Comma-separated payment platforms.', schema: { type: 'string', description: 'Payment platforms.' } },
-      { name: 'currency', flags: '--currency <value>', description: 'Fiat currency code.', schema: { type: 'string', description: 'Fiat currency.' } },
-      { name: 'period', flags: '--period <value>', description: 'Volume lookback window: 24h, 7d, 30d, 90d.', schema: { type: 'string', description: 'Lookback window.' }, defaultValue: '24h' },
-      { name: 'granularity', flags: '--granularity <value>', description: 'Aggregation granularity.', schema: { type: 'string', description: 'Granularity.' }, defaultValue: 'daily' },
+      { name: 'platform', flags: '--platform <value>', description: 'Comma-separated payment platform filter.', schema: { type: 'string', description: 'Payment platforms.' } },
+      { name: 'currency', flags: '--currency <value>', description: 'Comma-separated fiat currency filter.', schema: { type: 'string', description: 'Fiat currencies.' } },
+      { name: 'range', flags: '--range <value>', description: 'Analytics range: mtd, 3mtd, ytd, all.', schema: { type: 'string', description: 'Analytics range.' }, defaultValue: 'mtd' },
     ],
     handler: async (input, context) => {
-      const period = normalizeVolumePeriod(ensureString(input.period ?? '24h', 'period'));
-      const granularity = ensureOneOf(input.granularity ?? 'daily', 'granularity', SUPPORTED_MARKET_GRANULARITIES);
-      const url = appendSearchParams(new URL('/v1/volume', context.config.marketBaseUrl), {
-        paymentPlatforms: parseCsv(input.platform as string | undefined)?.join(','),
-        fiatCurrency: input.currency ? ensureString(input.currency, 'currency') : undefined,
-        period,
-        granularity,
+      const range = ensureOneOf(input.range ?? 'mtd', 'range', SUPPORTED_MARKET_PERIODS);
+      const url = appendSearchParams(new URL('v1/analytics/period', context.config.marketBaseUrl), {
+        range,
+        platform: parseCsv(input.platform as string | undefined)?.join(','),
+        currency: parseCsv(input.currency as string | undefined)?.join(','),
       });
       return context.requestJson(url.toString(), {
         headers: marketHeaders(context.config.marketApiKey),
@@ -94,18 +90,16 @@ export const marketDefinitions: CommandDefinition[] = [
   },
   {
     path: ['market', 'leaderboard'],
-    description: 'Fetch maker leaderboard data from Peerlytics.',
+    description: 'Fetch maker and taker leaderboard data from Peerlytics.',
     readOnly: true,
     options: [
-      { name: 'period', flags: '--period <value>', description: 'Leaderboard lookback window.', schema: { type: 'string', description: 'Lookback window.' }, defaultValue: '7d' },
-      { name: 'limit', flags: '--limit <value>', description: 'Maximum number of makers to return.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 10 },
-      { name: 'sortBy', flags: '--sort-by <value>', description: 'Sort order: volume, fillRate, txCount.', schema: { type: 'string', description: 'Sort field.' }, defaultValue: 'volume' },
+      { name: 'limit', flags: '--limit <value>', description: 'Maximum entries per leaderboard.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 20 },
+      { name: 'offset', flags: '--offset <value>', description: 'Pagination offset.', schema: { type: 'number', description: 'Offset.' }, defaultValue: 0 },
     ],
     handler: async (input, context) => {
-      const url = appendSearchParams(new URL('/v1/leaderboard/makers', context.config.marketBaseUrl), {
-        period: ensureString(input.period ?? '7d', 'period'),
-        limit: ensureNumber(input.limit ?? 10, 'limit'),
-        sortBy: ensureString(input.sortBy ?? 'volume', 'sortBy'),
+      const url = appendSearchParams(new URL('v1/analytics/leaderboard', context.config.marketBaseUrl), {
+        limit: ensureNumber(input.limit ?? 20, 'limit'),
+        offset: ensureNumber(input.offset ?? 0, 'offset'),
       });
       return context.requestJson(url.toString(), {
         headers: marketHeaders(context.config.marketApiKey),
@@ -117,7 +111,7 @@ export const marketDefinitions: CommandDefinition[] = [
     description: 'Fetch aggregate Peerlytics protocol statistics.',
     readOnly: true,
     handler: async (_input, context) => {
-      const url = new URL('/v1/protocol/stats', context.config.marketBaseUrl);
+      const url = new URL('v1/analytics/summary', context.config.marketBaseUrl);
       return context.requestJson(url.toString(), {
         headers: marketHeaders(context.config.marketApiKey),
       });

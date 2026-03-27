@@ -16,6 +16,10 @@ import {
 import { ensureOneOf } from '../utils/validation.js';
 import type { OutputFormat } from '../output/types.js';
 
+function ensureTrailingSlash(url: string): string {
+  return url.endsWith('/') ? url : `${url}/`;
+}
+
 export type PeerEnv = (typeof SUPPORTED_ENVS)[number];
 
 export interface GlobalOptions {
@@ -113,8 +117,9 @@ export async function resolveConfig(globalOptions: GlobalOptions = {}): Promise<
     marketApiKey: globalOptions.marketApiKey ?? process.env.PEER_MARKET_API_KEY ?? stored.marketApiKey,
     payApiKey: globalOptions.payApiKey ?? process.env.PEER_PAY_API_KEY ?? stored.payApiKey,
     baseApiUrl: globalOptions.baseApiUrl ?? process.env.PEER_BASE_API_URL ?? stored.baseApiUrl ?? DEFAULT_BASE_API_URL,
-    marketBaseUrl:
+    marketBaseUrl: ensureTrailingSlash(
       globalOptions.marketBaseUrl ?? process.env.PEER_MARKET_BASE_URL ?? stored.marketBaseUrl ?? DEFAULT_MARKET_API_URL,
+    ),
     payBaseUrl: globalOptions.payBaseUrl ?? process.env.PEER_PAY_BASE_URL ?? stored.payBaseUrl ?? DEFAULT_PAY_API_URL,
   };
 }

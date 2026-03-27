@@ -57,7 +57,7 @@ describe('config precedence branches', () => {
         marketApiKey: 'flag-market',
         payApiKey: 'flag-pay',
         baseApiUrl: 'https://flag-base',
-        marketBaseUrl: 'https://flag-market',
+        marketBaseUrl: 'https://flag-market/',
         payBaseUrl: 'https://flag-pay',
         rpcUrl: 'https://env-rpc',
       });

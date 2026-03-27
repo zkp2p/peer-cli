@@ -234,7 +234,7 @@ describe('registry-backed command handlers', () => {
           payApiKey: 'pay-key',
           marketApiKey: 'market-key',
           payBaseUrl: 'https://pay.example',
-          marketBaseUrl: 'https://market.example',
+          marketBaseUrl: 'https://market.example/',
         },
         requestJson: async (url, options) => {
           if (url.includes('/v1/checkout/session') && !url.includes('/cancel')) {
@@ -249,7 +249,7 @@ describe('registry-backed command handlers', () => {
 
       await expect(run(['market', 'spreads'], { platform: 'wise', currency: 'USD' }, runtime)).resolves.toMatchObject({
         ok: true,
-        data: { url: 'https://market.example/v1/spreads?paymentPlatforms=wise&fiatCurrencies=USD' },
+        data: { url: 'https://market.example/v1/market/summary?platform=wise&currency=USD&limit=200' },
       });
 
       await expect(run(['market', 'compare'], { from: 'USD', amount: 10 }, runtime)).resolves.toMatchObject({
@@ -257,19 +257,19 @@ describe('registry-backed command handlers', () => {
         data: [{ route: 'fast', price: '1.23' }],
       });
 
-      await expect(run(['market', 'volume'], { platform: 'wise', currency: 'USD', period: '24h', granularity: 'daily' }, runtime)).resolves.toMatchObject({
+      await expect(run(['market', 'volume'], { platform: 'wise', currency: 'USD', range: 'mtd' }, runtime)).resolves.toMatchObject({
         ok: true,
-        data: { url: 'https://market.example/v1/volume?paymentPlatforms=wise&fiatCurrency=USD&period=1d&granularity=daily' },
+        data: { url: 'https://market.example/v1/analytics/period?range=mtd&platform=wise&currency=USD' },
       });
 
       await expect(run(['market', 'leaderboard'], {}, runtime)).resolves.toMatchObject({
         ok: true,
-        data: { url: 'https://market.example/v1/leaderboard/makers?period=7d&limit=10&sortBy=volume' },
+        data: { url: 'https://market.example/v1/analytics/leaderboard?limit=20&offset=0' },
       });
 
       await expect(run(['market', 'protocol-stats'], {}, runtime)).resolves.toMatchObject({
         ok: true,
-        data: { url: 'https://market.example/v1/protocol/stats' },
+        data: { url: 'https://market.example/v1/analytics/summary' },
       });
 
       await expect(run(['transfer'], { to: '0x1111111111111111111111111111111111111111', amount: 1 }, runtime)).resolves.toMatchObject({

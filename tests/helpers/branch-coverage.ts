@@ -177,7 +177,7 @@ export function makeContext(options: {
     marketApiKey: undefined,
     payApiKey: options.payApiKey,
     baseApiUrl: 'https://base.example',
-    marketBaseUrl: 'https://market.example',
+    marketBaseUrl: 'https://market.example/',
     payBaseUrl: 'https://pay.example',
     privateKey: undefined,
   };

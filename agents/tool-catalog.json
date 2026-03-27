@@ -2636,6 +2636,15 @@
           "type": "string",
           "description": "Comma-separated fiat currencies."
         },
+        "includeRates": {
+          "type": "boolean",
+          "description": "Include per-rate-level entries in each market."
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum markets to return.",
+          "default": 200
+        },
         "params": {
           "type": "object",
           "description": "Optional raw JSON params object merged underneath the typed CLI flags."
@@ -2693,27 +2702,22 @@
       "market",
       "volume"
     ],
-    "description": "Fetch Peerlytics protocol volume metrics.",
+    "description": "Fetch Peerlytics protocol volume and analytics for a time range.",
     "parameter_schema": {
       "type": "object",
       "properties": {
         "platform": {
           "type": "string",
-          "description": "Comma-separated payment platforms."
+          "description": "Comma-separated payment platform filter."
         },
         "currency": {
           "type": "string",
-          "description": "Fiat currency code."
+          "description": "Comma-separated fiat currency filter."
         },
-        "period": {
+        "range": {
           "type": "string",
-          "description": "Volume lookback window: 24h, 7d, 30d, 90d.",
-          "default": "24h"
-        },
-        "granularity": {
-          "type": "string",
-          "description": "Aggregation granularity.",
-          "default": "daily"
+          "description": "Analytics range: mtd, 3mtd, ytd, all.",
+          "default": "mtd"
         },
         "params": {
           "type": "object",
@@ -2731,24 +2735,19 @@
       "market",
       "leaderboard"
     ],
-    "description": "Fetch maker leaderboard data from Peerlytics.",
+    "description": "Fetch maker and taker leaderboard data from Peerlytics.",
     "parameter_schema": {
       "type": "object",
       "properties": {
-        "period": {
-          "type": "string",
-          "description": "Leaderboard lookback window.",
-          "default": "7d"
-        },
         "limit": {
           "type": "number",
-          "description": "Maximum number of makers to return.",
-          "default": 10
+          "description": "Maximum entries per leaderboard.",
+          "default": 20
         },
-        "sortBy": {
-          "type": "string",
-          "description": "Sort order: volume, fillRate, txCount.",
-          "default": "volume"
+        "offset": {
+          "type": "number",
+          "description": "Pagination offset.",
+          "default": 0
         },
         "params": {
           "type": "object",

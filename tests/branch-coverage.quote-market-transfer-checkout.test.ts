@@ -22,10 +22,10 @@ describe('branch coverage quote, market, transfer, and checkout branches', () =>
     expect((quoteExact as QuoteResult)[0]?.args[0]?.isExactFiat).toBe(true);
 
     await expect(lookup(['quote']).handler({ from: 'USD' }, runtime.context)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
-    await expect(lookup(['market', 'volume']).handler({ period: '24h', granularity: 'daily' }, runtime.context)).resolves.toEqual({
-      url: 'https://market.example/v1/volume?period=1d&granularity=daily',
+    await expect(lookup(['market', 'volume']).handler({ range: 'mtd' }, runtime.context)).resolves.toEqual({
+      url: 'https://market.example/v1/analytics/period?range=mtd',
     });
-    await expect(lookup(['market', 'volume']).handler({ period: 'bad', granularity: 'daily' }, runtime.context)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    await expect(lookup(['market', 'volume']).handler({ range: 'bad' }, runtime.context)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
 
     await expect(lookup(['transfer']).handler({ to: DEFAULT_ADDRESS, amount: 1, token: ALT_TOKEN }, runtime.context)).resolves.toMatchObject({
       executed: false,

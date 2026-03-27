@@ -145,7 +145,7 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): MockRuntime
     marketApiKey: undefined,
     payApiKey: undefined,
     baseApiUrl: 'https://api.zkp2p.xyz',
-    marketBaseUrl: 'https://api.peerlytics.xyz',
+    marketBaseUrl: 'https://peerlytics.xyz/api/',
     payBaseUrl: 'https://api.pay.zkp2p.xyz',
     privateKey: undefined,
   };

@@ -38,6 +38,63 @@ describe('output helpers', () => {
     expect(renderOutput({ ok: true, data: { amount: 12n }, meta }, 'json')).toContain('"12"');
     expect(renderOutput({ ok: true, data: [{ name: 'alice', amount: 12n }], meta }, 'table')).toContain('alice');
     expect(renderOutput({ ok: true, data: [], meta }, 'table')).toBe('(empty)');
+    expect(
+      renderOutput(
+        {
+          ok: true,
+          data: {
+            success: true,
+            responseObject: {
+              tier: 'PEASANT',
+              platforms: [
+                { platform: 'wise', risk: 'LOW', cap: '500 USDC' },
+                { platform: 'venmo', risk: 'HIGH', cap: '100 USDC' },
+              ],
+            },
+          },
+          meta,
+        },
+        'table',
+      ),
+    ).toContain('responseObject:');
+    expect(
+      renderOutput(
+        {
+          ok: true,
+          data: {
+            success: true,
+            responseObject: {
+              tier: 'PEASANT',
+              platforms: [
+                { platform: 'wise', risk: 'LOW', cap: '500 USDC' },
+                { platform: 'venmo', risk: 'HIGH', cap: '100 USDC' },
+              ],
+            },
+          },
+          meta,
+        },
+        'table',
+      ),
+    ).toContain('platforms:');
+    expect(
+      renderOutput(
+        {
+          ok: true,
+          data: {
+            success: true,
+            responseObject: {
+              tier: 'PEASANT',
+              platforms: [
+                { platform: 'wise', risk: 'LOW', cap: '500 USDC' },
+                { platform: 'venmo', risk: 'HIGH', cap: '100 USDC' },
+              ],
+            },
+          },
+          meta,
+        },
+        'table',
+      ),
+    ).toContain('platform');
     const errorBody: CLIErrorBody = { code: 'X', category: 'internal', message: 'bad', retryable: false };
     expect(renderOutput({ ok: false, error: errorBody, meta }, 'json')).toContain('"ok": false');
   });

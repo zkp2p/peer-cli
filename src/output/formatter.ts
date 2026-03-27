@@ -23,28 +23,58 @@ function renderPrimitive(value: unknown): string {
   return String(value);
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function renderRows(rows: Record<string, unknown>[]): string {
+  if (rows.length === 0) return '(empty)';
+  const headers = [...new Set(rows.flatMap((row) => Object.keys(row)))];
+  const widths = headers.map((header) =>
+    Math.max(header.length, ...rows.map((row) => renderPrimitive(row[header]).length)),
+  );
+  const line = (cells: string[]) => cells.map((cell, index) => cell.padEnd(widths[index] ?? 0, ' ')).join(' | ');
+  return [
+    line(headers),
+    widths.map((width) => '-'.repeat(width)).join('-|-'),
+    ...rows.map((row) => line(headers.map((header) => renderPrimitive(row[header])))),
+  ].join('\n');
+}
+
+function renderKeyValueTable(entries: Array<[string, unknown]>): string {
+  return renderRows(entries.map(([key, value]) => ({ Key: key, Value: value })));
+}
+
+function renderSection(title: string, body: string): string {
+  return `${title}:\n${body}`;
+}
+
 function renderTable(data: unknown): string {
   if (Array.isArray(data)) {
     if (data.length === 0) return '(empty)';
-    const rows: Record<string, unknown>[] = data.map((item) =>
-      typeof item === 'object' && item !== null ? (item as Record<string, unknown>) : { value: item },
-    );
-    const headers = [...new Set(rows.flatMap((row) => Object.keys(row)))];
-    const widths = headers.map((header) =>
-      Math.max(header.length, ...rows.map((row) => renderPrimitive(row[header]).length)),
-    );
-    const line = (cells: string[]) => cells.map((cell, index) => cell.padEnd(widths[index] ?? 0, ' ')).join(' | ');
-    return [
-      line(headers),
-      widths.map((width) => '-'.repeat(width)).join('-|-'),
-      ...rows.map((row) => line(headers.map((header) => renderPrimitive(row[header])))),
-    ].join('\n');
+    if (data.every((item) => isPlainObject(item))) {
+      return renderRows(data as Record<string, unknown>[]);
+    }
+    return renderRows(data.map((item, index) => ({ Index: index, Value: item })));
   }
 
-  if (typeof data === 'object' && data !== null) {
-    return Object.entries(data as Record<string, unknown>)
-      .map(([key, value]) => `${key}: ${renderPrimitive(value)}`)
-      .join('\n');
+  if (isPlainObject(data)) {
+    const entries = Object.entries(data);
+    if (entries.length === 0) return '(empty)';
+
+    const scalarEntries = entries.filter(([, value]) => !isPlainObject(value) && !Array.isArray(value));
+    const complexEntries = entries.filter(([, value]) => isPlainObject(value) || Array.isArray(value));
+    const sections: string[] = [];
+
+    if (scalarEntries.length > 0) {
+      sections.push(renderKeyValueTable(scalarEntries));
+    }
+
+    for (const [key, value] of complexEntries) {
+      sections.push(renderSection(key, renderTable(value)));
+    }
+
+    return sections.join('\n\n');
   }
 
   return renderPrimitive(data);

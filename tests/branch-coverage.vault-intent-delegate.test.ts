@@ -37,28 +37,27 @@ describe('branch coverage vault, intent, and delegate branches', () => {
     expect(resolvePaymentMethodHash).toHaveBeenCalled();
     expect(resolveFiatCurrencyBytes32).toHaveBeenCalled();
 
-    // vault list flattens output
+    // vault list returns raw SDK data
     const vaultList = await lookup(['vault', 'list']).handler({}, runtime.context);
     expect(vaultList).toEqual([
       expect.objectContaining({
-        name: 'Test Vault',
-        rateManagerId: '0xabc123',
-        manager: DEFAULT_ADDRESS,
-        feePercent: '0.10%',
-        maxFeePercent: '2.00%',
-        delegatedDeposits: 2,
-        volumeUsdc: 5,
-        fulfilledIntents: 5,
+        manager: expect.objectContaining({ name: 'Test Vault', rateManagerId: '0xabc123' }),
+        aggregate: expect.objectContaining({ currentDelegatedDeposits: 2, fulfilledIntents: 5 }),
       }),
     ]);
 
     // vault list with manager filter
     const filteredList = await lookup(['vault', 'list']).handler({ manager: DEFAULT_ADDRESS }, runtime.context);
-    expect(filteredList).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'Test Vault' })]));
+    expect(filteredList).toEqual(expect.arrayContaining([
+      expect.objectContaining({ manager: expect.objectContaining({ name: 'Test Vault' }) }),
+    ]));
 
     // vault show falls back to list when detail returns null
     const vaultShow = await lookup(['vault', 'show']).handler({ rateManagerId: '0xabc123' }, runtime.context);
-    expect(vaultShow).toMatchObject({ name: 'Test Vault', rateManagerId: '0xabc123' });
+    expect(vaultShow).toMatchObject({
+      manager: expect.objectContaining({ name: 'Test Vault', rateManagerId: '0xabc123' }),
+      aggregate: expect.objectContaining({ fulfilledIntents: 5 }),
+    });
 
     // vault show with unknown ID throws
     await expect(lookup(['vault', 'show']).handler({ rateManagerId: '0xdeadbeef' }, runtime.context)).rejects.toMatchObject({
@@ -67,7 +66,9 @@ describe('branch coverage vault, intent, and delegate branches', () => {
 
     // vault list with raw pagination/filter JSON
     const rawList = await lookup(['vault', 'list']).handler({ pagination: '{"limit":5}', filter: '{"hasHook":true}' }, runtime.context);
-    expect(rawList).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'Test Vault' })]));
+    expect(rawList).toEqual(expect.arrayContaining([
+      expect.objectContaining({ manager: expect.objectContaining({ name: 'Test Vault' }) }),
+    ]));
 
     // vault delegates with typed flags
     await expect(lookup(['vault', 'delegates']).handler({ rateManagerId: '0xabc123', limit: 10 }, runtime.context)).resolves.toMatchObject({

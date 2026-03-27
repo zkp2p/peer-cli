@@ -1,4 +1,4 @@
-import { formatUnits, parseUnits } from 'viem';
+import { parseUnits } from 'viem';
 import type { MulticallClient } from '@zkp2p/sdk';
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler, sdkWriteHandler } from './helpers.js';
@@ -34,31 +34,6 @@ async function maybeResolveCurrency(input: string): Promise<`0x${string}`> {
 interface VaultManagerEntry {
   manager: Record<string, unknown>;
   aggregate: Record<string, unknown>;
-}
-
-function flattenVaultEntry(entry: VaultManagerEntry): Record<string, unknown> {
-  const mgr = entry.manager;
-  const agg = entry.aggregate;
-  const fee = typeof mgr.fee === 'string' ? Number(formatUnits(BigInt(mgr.fee), 18)) * 100 : undefined;
-  const maxFee = typeof mgr.maxFee === 'string' ? Number(formatUnits(BigInt(mgr.maxFee), 18)) * 100 : undefined;
-  const volume = typeof agg.totalFilledVolume === 'string' ? Number(agg.totalFilledVolume) / 1e6 : undefined;
-  const pnl = typeof agg.totalPnlUsdCents === 'string' ? Number(agg.totalPnlUsdCents) / 100 : undefined;
-  const delegatedBalance = typeof agg.currentDelegatedBalance === 'string' ? Number(agg.currentDelegatedBalance) / 1e6 : undefined;
-  return {
-    name: mgr.name,
-    rateManagerId: mgr.rateManagerId,
-    manager: mgr.manager,
-    feePercent: fee !== undefined ? `${fee.toFixed(2)}%` : undefined,
-    maxFeePercent: maxFee !== undefined ? `${maxFee.toFixed(2)}%` : undefined,
-    feeRecipient: mgr.feeRecipient,
-    delegatedDeposits: agg.currentDelegatedDeposits,
-    delegatedBalanceUsdc: delegatedBalance,
-    volumeUsdc: volume,
-    pnlUsd: pnl,
-    fulfilledIntents: agg.fulfilledIntents,
-    uri: mgr.uri || undefined,
-    createdAt: mgr.createdAt,
-  };
 }
 
 export const vaultDefinitions: CommandDefinition[] = [
@@ -111,8 +86,7 @@ export const vaultDefinitions: CommandDefinition[] = [
         : input.manager
           ? { manager: ensureAddress(input.manager, 'manager') }
           : undefined;
-      const results = await client.indexer.getRateManagers(pagination, filter) as unknown as VaultManagerEntry[];
-      return results.map(flattenVaultEntry);
+      return client.indexer.getRateManagers(pagination, filter);
     },
   },
   {
@@ -138,7 +112,7 @@ export const vaultDefinitions: CommandDefinition[] = [
           suggestion: 'Run peer vault list to see available vault IDs.',
         });
       }
-      return flattenVaultEntry(match);
+      return match;
     },
   },
   {

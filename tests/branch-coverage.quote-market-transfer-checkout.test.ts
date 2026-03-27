@@ -50,12 +50,29 @@ describe('branch coverage quote, market, transfer, and checkout branches', () =>
     const checkoutCreate = makeContext({
       payApiKey: 'pay-key',
       walletAddress: DEFAULT_ADDRESS,
-      requestJson: async <T>() => ({ path: 'checkout.session', orderId: 'order-1' } as T),
+      requestJson: async <T>(url: string) => {
+        if (url.endsWith('/api/merchants/me')) {
+          return {
+            success: true,
+            responseObject: {
+              id: 'merchant-1',
+              defaultAddress: DEFAULT_ADDRESS,
+            },
+          } as T;
+        }
+        return {
+          success: true,
+          responseObject: {
+            path: 'checkout.session',
+            session: { id: 'session-1', status: 'CREATED' },
+          },
+        } as T;
+      },
       yes: true,
     });
     await expect(
       lookup(['checkout', 'create']).handler({ amount: 12, recipient: DEFAULT_ADDRESS, description: 'demo' }, checkoutCreate.context),
-    ).resolves.toMatchObject({ executed: true, result: { path: 'checkout.session' } });
+    ).resolves.toMatchObject({ executed: true, result: { path: 'checkout.session', session: { id: 'session-1' } } });
 
     const checkout = makeContext({
       cache: {

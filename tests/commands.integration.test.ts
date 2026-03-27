@@ -319,8 +319,26 @@ describe('registry-backed command handlers', () => {
           marketBaseUrl: 'https://market.example/',
         },
         requestJson: async (url, options) => {
-          if (url.includes('/v1/checkout/session') && !url.includes('/cancel')) {
-            return { orderId: 'order-1', status: 'created', url, options };
+          if (url.endsWith('/api/merchants/me')) {
+            return {
+              success: true,
+              responseObject: {
+                id: 'merchant-1',
+                defaultAddress: '0x1111111111111111111111111111111111111111',
+              },
+            };
+          }
+          if (url.endsWith('/api/checkout/sessions')) {
+            return {
+              success: true,
+              responseObject: {
+                session: { id: 'session-1', status: 'CREATED' },
+                sessionToken: 'token-1',
+                checkoutUrl: 'https://pay.example/checkout?session=session-1&token=token-1',
+                url,
+                options,
+              },
+            };
           }
           if (url.includes('/v1/checkout/session/order-1/cancel')) {
             return { orderId: 'order-1', status: 'cancelled', url, options };
@@ -373,8 +391,8 @@ describe('registry-backed command handlers', () => {
       amount: 12,
       description: 'Order',
       }, runtime);
-      expect(create).toMatchObject({ ok: true, data: { executed: true, result: { orderId: 'order-1' } } });
-      expect(await readFile(join(home, '.peer', 'checkout-sessions.json'), 'utf8')).toContain('order-1');
+      expect(create).toMatchObject({ ok: true, data: { executed: true, result: { session: { id: 'session-1' } } } });
+      expect(await readFile(join(home, '.peer', 'checkout-sessions.json'), 'utf8')).toContain('session-1');
 
       const list = await run(['checkout', 'list'], { status: 'pending' }, createMockRuntime({
         config: {
@@ -382,12 +400,12 @@ describe('registry-backed command handlers', () => {
           payApiKey: undefined,
         },
       }));
-      expect(list).toMatchObject({ ok: true, data: { source: 'cache', sessions: [{ orderId: 'order-1', status: 'created' }] } });
+      expect(list).toMatchObject({ ok: true, data: { source: 'cache', sessions: [{ id: 'session-1', status: 'CREATED' }] } });
 
-      const show = await run(['checkout', 'show'], { sessionId: 'order-1' }, createMockRuntime({
+      const show = await run(['checkout', 'show'], { sessionId: 'session-1' }, createMockRuntime({
         config: { payApiKey: undefined },
       }));
-      expect(show).toMatchObject({ ok: true, data: { source: 'cache', session: { orderId: 'order-1', status: 'created' } } });
+      expect(show).toMatchObject({ ok: true, data: { source: 'cache', session: { id: 'session-1', status: 'CREATED' } } });
 
       const cancel = await run(['checkout', 'cancel'], { sessionId: 'order-1' }, runtime);
       expect(cancel).toMatchObject({ ok: true, data: { executed: true, result: { status: 'cancelled' } } });

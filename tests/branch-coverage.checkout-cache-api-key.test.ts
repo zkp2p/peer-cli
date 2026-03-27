@@ -59,14 +59,56 @@ describe('branch coverage checkout cache and api-key branches', () => {
     const created = makeContext({
       payApiKey: 'pay-key',
       walletAddress: DEFAULT_ADDRESS,
-      requestJson: async () => ({ status: 'created' }),
+      requestJson: async <T>(url: string) => {
+        if (url.endsWith('/api/merchants/me')) {
+          return {
+            success: true,
+            responseObject: {
+              id: 'merchant-1',
+              defaultAddress: DEFAULT_ADDRESS,
+            },
+          } as T;
+        }
+        return {
+          success: true,
+          responseObject: {
+            session: { id: 'session-1', status: 'CREATED' },
+            sessionToken: 'token-1',
+            checkoutUrl: 'https://pay.example/checkout?session=session-1&token=token-1',
+          },
+        } as T;
+      },
       yes: true,
     });
     await expect(create.handler({ amount: 1, description: 'demo' }, created.context)).resolves.toMatchObject({
       executed: true,
-      result: { status: 'created' },
+      result: { session: { id: 'session-1', status: 'CREATED' } },
     });
-    expect(created.written).toHaveLength(0);
+    expect(created.written).toHaveLength(1);
+    expect(created.written[0]?.value).toMatchObject({
+      sessions: {
+        'session-1': { id: 'session-1', status: 'CREATED' },
+      },
+    });
+
+    const listRemote = makeContext({
+      payApiKey: 'pay-key',
+      requestJson: async () => ({
+        success: true,
+        responseObject: {
+          sessions: [{ id: 'session-1', status: 'CREATED' }],
+          total: 1,
+          page: 1,
+          limit: 25,
+        },
+      }),
+    });
+    await expect(list.handler({}, listRemote.context)).resolves.toEqual({
+      sessions: [{ id: 'session-1', status: 'CREATED' }],
+      total: 1,
+      page: 1,
+      limit: 25,
+    });
 
     const showPersist = makeContext({
       payApiKey: 'pay-key',

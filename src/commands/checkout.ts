@@ -9,8 +9,67 @@ interface CheckoutCacheRecord {
   sessions: Record<string, unknown>;
 }
 
+interface PayEnvelope<T> {
+  success?: boolean;
+  message?: string;
+  responseObject?: T;
+  statusCode?: number;
+}
+
+interface PayMerchantProfile {
+  id: string;
+  defaultAddress?: string | null;
+}
+
 function payHeaders(apiKey?: string): Record<string, string> {
   return apiKey ? { 'x-api-key': apiKey } : {};
+}
+
+function unwrapPayEnvelope<T>(value: unknown): T {
+  if (typeof value === 'object' && value !== null && 'responseObject' in value) {
+    return (value as PayEnvelope<T>).responseObject as T;
+  }
+  return value as T;
+}
+
+function resolveCheckoutCacheKey(session: Record<string, unknown>): string | undefined {
+  const orderId = session.orderId;
+  if (typeof orderId === 'string' && orderId.length > 0) {
+    return orderId;
+  }
+
+  const id = session.id;
+  if (typeof id === 'string' && id.length > 0) {
+    return id;
+  }
+
+  const nestedSession = session.session;
+  if (typeof nestedSession === 'object' && nestedSession !== null) {
+    const nestedId = (nestedSession as Record<string, unknown>).id;
+    if (typeof nestedId === 'string' && nestedId.length > 0) {
+      return nestedId;
+    }
+  }
+
+  return undefined;
+}
+
+function normalizeMetadata(value: unknown, description: unknown): Record<string, string> | undefined {
+  const rawMetadata = value
+    ? parseJsonInput(ensureString(value, 'metadata'), 'metadata')
+    : {};
+  const metadata = Object.fromEntries(
+    Object.entries(rawMetadata as Record<string, unknown>).map(([key, entry]) => [
+      key,
+      typeof entry === 'string' ? entry : JSON.stringify(entry),
+    ]),
+  );
+
+  if (description) {
+    metadata.description = ensureString(description, 'description');
+  }
+
+  return Object.keys(metadata).length > 0 ? metadata : undefined;
 }
 
 async function readCheckoutCache(
@@ -32,11 +91,11 @@ async function upsertCheckoutCache(
   session: Record<string, unknown>,
 ): Promise<void> {
   const cache = await readCheckoutCache(context);
-  const orderId = session.orderId;
-  if (typeof orderId !== 'string' || orderId.length === 0) {
+  const cacheKey = resolveCheckoutCacheKey(session);
+  if (!cacheKey) {
     return;
   }
-  cache.sessions[orderId] = session;
+  cache.sessions[cacheKey] = session;
   await context.writeJsonFile(getCheckoutCachePath(), cache);
 }
 
@@ -57,6 +116,19 @@ function normalizeCheckoutStatus(value: unknown): string | undefined {
     completed: 'fulfilled',
   };
   return aliases[status] ?? status;
+}
+
+async function resolvePayMerchant(
+  context: Parameters<NonNullable<CommandDefinition['handler']>>[1],
+  apiKey: string,
+): Promise<PayMerchantProfile> {
+  const response = await context.requestJson<PayEnvelope<PayMerchantProfile>>(
+    new URL('/api/merchants/me', context.config.payBaseUrl).toString(),
+    {
+      headers: payHeaders(apiKey),
+    },
+  );
+  return unwrapPayEnvelope<PayMerchantProfile>(response);
 }
 
 function buildApiMutationPreview(endpoint: string, payload: Record<string, unknown>) {
@@ -94,42 +166,44 @@ export const checkoutDefinitions: CommandDefinition[] = [
     handler: async (input, context) => {
       const apiKey = requirePayApiKey(context.config.payApiKey);
       const { client, walletClient } = await context.getClient({ requireWallet: false });
+      const merchant = !input.merchantId || !input.recipient
+        ? await resolvePayMerchant(context, apiKey)
+        : undefined;
       const recipient = input.recipient
         ? ensureAddress(input.recipient, 'recipient')
-        : walletClient.account?.address;
+        : walletClient.account?.address ?? merchant?.defaultAddress ?? undefined;
       if (!recipient) {
         throw createError('AUTH_REQUIRED', 'Provide --recipient when no wallet is configured.');
       }
 
-      const metadata = {
-        ...(input.metadata ? parseJsonInput(ensureString(input.metadata, 'metadata'), 'metadata') : {}),
-        ...(input.description ? { description: ensureString(input.description, 'description') } : {}),
-      };
-
+      const metadata = normalizeMetadata(input.metadata, input.description);
       const paymentPlatforms = parseCsv(input.platforms as string | undefined);
       const payload = {
-        ...(input.merchantId ? { merchantId: ensureString(input.merchantId, 'merchantId') } : {}),
+        merchantId: input.merchantId ? ensureString(input.merchantId, 'merchantId') : ensureString(merchant?.id, 'merchantId'),
         amountUsdc: ensurePositiveNumber(input.amount, 'amount').toFixed(2),
         destinationChainId: ensureNumber(input.chainId ?? DEFAULT_CHAIN_ID, 'chainId'),
         destinationToken: input.token ? ensureAddress(input.token, 'token') : ensureAddress(client.getUsdcAddress(), 'token'),
         recipientAddress: recipient,
-        fiatCurrency: ensureString(input.currency ?? 'USD', 'currency'),
-        ...(paymentPlatforms ? { paymentPlatforms } : {}),
-        ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
-        ...(input.callbackUrl ? { callbackUrl: ensureString(input.callbackUrl, 'callbackUrl') } : {}),
+        ...(paymentPlatforms ? { enabledPaymentPlatforms: paymentPlatforms } : {}),
+        ...(metadata ? { metadata } : {}),
+        ...(input.callbackUrl ? { successUrl: ensureString(input.callbackUrl, 'callbackUrl') } : {}),
       };
-      const endpoint = new URL('/v1/checkout/session', context.config.payBaseUrl).toString();
+      const endpoint = new URL('/api/checkout/sessions', context.config.payBaseUrl).toString();
 
       return context.runPrepared({
-        description: `Create a checkout session for ${payload.amountUsdc} ${payload.fiatCurrency}.`,
+        description: `Create a checkout session for ${payload.amountUsdc} USDC.`,
         prepare: async () => buildApiMutationPreview(endpoint, payload),
         execute: async () => {
-          const session = await context.requestJson<Record<string, unknown>>(endpoint, {
+          const response = await context.requestJson<PayEnvelope<Record<string, unknown>>>(endpoint, {
             method: 'POST',
             headers: payHeaders(apiKey),
             body: JSON.stringify(payload),
           });
-          await upsertCheckoutCache(context, session);
+          const session = unwrapPayEnvelope<Record<string, unknown>>(response);
+          const cacheSession = typeof session.session === 'object' && session.session !== null
+            ? session.session as Record<string, unknown>
+            : session;
+          await upsertCheckoutCache(context, cacheSession);
           return session;
         },
       });
@@ -150,7 +224,10 @@ export const checkoutDefinitions: CommandDefinition[] = [
         const cache = await readCheckoutCache(context);
         const sessions = Object.values(cache.sessions).filter((item) => {
           if (!status || typeof item !== 'object' || item === null) return true;
-          return (item as Record<string, unknown>).status === status || (item as Record<string, unknown>).state === status;
+          const record = item as Record<string, unknown>;
+          const currentStatus = typeof record.status === 'string' ? record.status.toLowerCase() : record.status;
+          const currentState = typeof record.state === 'string' ? record.state.toLowerCase() : record.state;
+          return currentStatus === status || currentState === status;
         });
         return {
           source: 'cache',
@@ -158,14 +235,15 @@ export const checkoutDefinitions: CommandDefinition[] = [
         };
       }
 
-      const url = appendSearchParams(new URL('/v1/checkout/sessions', context.config.payBaseUrl), {
+      const url = appendSearchParams(new URL('/api/merchants/me/sessions', context.config.payBaseUrl), {
         status,
         page: ensureNumber(input.page ?? 1, 'page'),
-        pageSize: ensureNumber(input.pageSize ?? 25, 'pageSize'),
+        limit: ensureNumber(input.pageSize ?? 25, 'pageSize'),
       });
-      return context.requestJson(url.toString(), {
+      const response = await context.requestJson<PayEnvelope<Record<string, unknown>>>(url.toString(), {
         headers: payHeaders(context.config.payApiKey),
       });
+      return unwrapPayEnvelope<Record<string, unknown>>(response);
     },
   },
   {

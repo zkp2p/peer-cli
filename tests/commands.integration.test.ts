@@ -577,6 +577,11 @@ describe('registry-backed command handlers', () => {
         data: { url: 'https://market.example/v1/market/summary?platform=wise&currency=USD&limit=200' },
       });
 
+      await expect(run(['market', 'orderbook'], { currency: 'EUR', platform: 'wise', minSize: 100 }, runtime)).resolves.toMatchObject({
+        ok: true,
+        data: { url: 'https://market.example/v1/orderbook?currency=EUR&platform=wise&minSize=100' },
+      });
+
       const compare = await run(['market', 'compare'], { from: 'USD', amount: 10 }, runtime);
       expect(compare).toMatchObject({
         ok: true,

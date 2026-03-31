@@ -47,6 +47,28 @@ export const marketDefinitions: CommandDefinition[] = [
     },
   },
   {
+    path: ['market', 'orderbook'],
+    description: 'Fetch the live P2P orderbook from Peerlytics.',
+    readOnly: true,
+    options: [
+      { name: 'currency', flags: '--currency <value>', description: 'Fiat currency code.', schema: { type: 'string', description: 'Fiat currency.' } },
+      { name: 'platform', flags: '--platform <value>', description: 'Comma-separated payment platforms.', schema: { type: 'string', description: 'Payment platforms.' } },
+      { name: 'minSize', flags: '--min-size <value>', description: 'Minimum liquidity per level in USD.', schema: { type: 'number', description: 'Minimum size.' }, defaultValue: 50 },
+    ],
+    handler: async (input, context) => {
+      const currencies = ensureSupportedCurrencyList(parseCsv(input.currency as string | undefined), 'currency');
+      const platforms = ensureSupportedPlatformList(parseCsv(input.platform as string | undefined), 'platform');
+      const url = appendSearchParams(new URL('v1/orderbook', context.config.marketBaseUrl), {
+        currency: currencies?.[0],
+        platform: platforms?.join(','),
+        minSize: ensureNumber(input.minSize ?? 50, 'minSize'),
+      });
+      return context.requestJson(url.toString(), {
+        headers: marketHeaders(context.config.marketApiKey),
+      });
+    },
+  },
+  {
     path: ['market', 'compare'],
     description: 'Compare live quote availability across platforms using the published SDK quote route.',
     readOnly: true,

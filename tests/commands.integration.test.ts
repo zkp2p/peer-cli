@@ -589,7 +589,7 @@ describe('registry-backed command handlers', () => {
 
       await expect(run(['market', 'volume'], { platform: 'wise', currency: 'USD', range: 'mtd' }, runtime)).resolves.toMatchObject({
         ok: true,
-        data: { url: 'https://market.example/v1/analytics/period?range=mtd&platform=wise&currency=USD' },
+        data: { url: 'https://market.example/v1/analytics/overview?range=mtd&platform=wise&currency=USD' },
       });
 
       await expect(run(['market', 'leaderboard'], {}, runtime)).resolves.toMatchObject({
@@ -604,19 +604,9 @@ describe('registry-backed command handlers', () => {
 
       // --- New Peerlytics commands ---
 
-      await expect(run(['market', 'analytics'], { slice: 'overview' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/analytics/overview?limit=50&offset=0' },
-      });
-
       await expect(run(['market', 'vaults'], {}, runtime)).resolves.toMatchObject({
         ok: true,
         data: { url: 'https://market.example/v1/analytics/vaults?limit=50&offset=0' },
-      });
-
-      await expect(run(['market', 'attribution'], {}, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/analytics/attribution' },
       });
 
       await expect(run(['market', 'explorer', 'address'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({

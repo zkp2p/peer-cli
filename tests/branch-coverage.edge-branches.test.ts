@@ -22,7 +22,7 @@ describe('branch coverage quote, market, intent, and delegate edge branches', ()
       code: 'AUTH_REQUIRED',
     });
     await expect(lookup(['market', 'volume']).handler({ range: '3mtd' }, quoteRuntime.context)).resolves.toEqual({
-      url: 'https://market.example/v1/analytics/period?range=3mtd',
+      url: 'https://market.example/v1/analytics/overview?range=3mtd',
     });
 
     const runtime = makeContext({ yes: true });

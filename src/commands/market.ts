@@ -91,7 +91,7 @@ export const marketDefinitions: CommandDefinition[] = [
       const range = ensureOneOf(input.range ?? 'mtd', 'range', SUPPORTED_MARKET_PERIODS);
       const platforms = ensureSupportedPlatformList(parseCsv(input.platform as string | undefined), 'platform');
       const currencies = ensureSupportedCurrencyList(parseCsv(input.currency as string | undefined), 'currency');
-      const url = appendSearchParams(new URL('v1/analytics/period', context.config.marketBaseUrl), {
+      const url = appendSearchParams(new URL('v1/analytics/overview', context.config.marketBaseUrl), {
         range,
         platform: platforms?.join(','),
         currency: currencies?.join(','),
@@ -134,28 +134,6 @@ export const marketDefinitions: CommandDefinition[] = [
   // --- Analytics extensions ---
 
   {
-    path: ['market', 'analytics'],
-    description: 'Fetch Peerlytics analytics by dimension slice.',
-    readOnly: true,
-    args: [
-      { name: 'slice', description: 'Analytics slice: by-platform, by-currency, by-maker, etc.', schema: { type: 'string', description: 'Dimension slice.' }, optionFlags: ['--slice <value>'] },
-    ],
-    options: [
-      { name: 'limit', flags: '--limit <value>', description: 'Maximum entries.', schema: { type: 'number', description: 'Result limit.' }, defaultValue: 50 },
-      { name: 'offset', flags: '--offset <value>', description: 'Pagination offset.', schema: { type: 'number', description: 'Offset.' }, defaultValue: 0 },
-    ],
-    handler: async (input, context) => {
-      const slice = ensureString(input.slice, 'slice');
-      const url = appendSearchParams(new URL(`v1/analytics/${encodeURIComponent(slice)}`, context.config.marketBaseUrl), {
-        limit: ensureNumber(input.limit ?? 50, 'limit'),
-        offset: ensureNumber(input.offset ?? 0, 'offset'),
-      });
-      return context.requestJson(url.toString(), {
-        headers: marketHeaders(context.config.marketApiKey),
-      });
-    },
-  },
-  {
     path: ['market', 'vaults'],
     description: 'Fetch Peerlytics vault analytics.',
     readOnly: true,
@@ -168,17 +146,6 @@ export const marketDefinitions: CommandDefinition[] = [
         limit: ensureNumber(input.limit ?? 50, 'limit'),
         offset: ensureNumber(input.offset ?? 0, 'offset'),
       });
-      return context.requestJson(url.toString(), {
-        headers: marketHeaders(context.config.marketApiKey),
-      });
-    },
-  },
-  {
-    path: ['market', 'attribution'],
-    description: 'Fetch Peerlytics attribution analytics.',
-    readOnly: true,
-    handler: async (_input, context) => {
-      const url = new URL('v1/analytics/attribution', context.config.marketBaseUrl);
       return context.requestJson(url.toString(), {
         headers: marketHeaders(context.config.marketApiKey),
       });

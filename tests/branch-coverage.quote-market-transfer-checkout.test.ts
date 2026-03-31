@@ -25,7 +25,7 @@ describe('branch coverage quote, market, transfer, and checkout branches', () =>
 
     await expect(lookup(['quote']).handler({ from: 'USD' }, runtime.context)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
     await expect(lookup(['market', 'volume']).handler({ range: 'mtd' }, runtime.context)).resolves.toEqual({
-      url: 'https://market.example/v1/analytics/period?range=mtd',
+      url: 'https://market.example/v1/analytics/overview?range=mtd',
     });
     await expect(lookup(['market', 'volume']).handler({ range: 'bad' }, runtime.context)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
 

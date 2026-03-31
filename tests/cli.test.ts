@@ -233,18 +233,6 @@ describe('in-process cli runner', () => {
   it('accepts named aliases for positional market and intent reads', async () => {
     const address = '0x1111111111111111111111111111111111111111';
 
-    const analyticsRuntime = createMockRuntime();
-    const analyticsResult = await runCliInProcess(
-      ['node', 'peer', 'market', 'analytics', '--slice', 'by-platform'],
-      analyticsRuntime.deps,
-    );
-    expect(analyticsResult.exitCode).toBeUndefined();
-    expect(analyticsResult.stderr).toBe('');
-    expect(analyticsRuntime.requestJson).toHaveBeenCalledWith(
-      'https://peerlytics.xyz/api/v1/analytics/by-platform?limit=50&offset=0',
-      expect.any(Object),
-    );
-
     const historyRuntime = createMockRuntime();
     const historyResult = await runCliInProcess(
       ['node', 'peer', 'market', 'taker-history', '--address', address],

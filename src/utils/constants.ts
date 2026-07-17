@@ -16,7 +16,7 @@ export const SUPPORTED_CURRENCIES = [
   'THB', 'TRY', 'UGX', 'USD', 'VND', 'ZAR',
 ] as const;
 export const SUPPORTED_PLATFORMS = [
-  'wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'chime', 'luxon', 'n26',
+  'wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime',
 ] as const;
 export const DUMMY_PRIVATE_KEY =
   '0x59c6995e998f97a5a0044966f0945383f0d7d1f5eb53d3d16c23f0a3077ec12e' as const;

@@ -411,7 +411,7 @@ describe('registry-backed command handlers', () => {
   });
 
   it('enriches direct deposit reads with readable payment method and currency metadata', async () => {
-    const paymentMethodHash = '0x617f88ab82b5c1b014c539f7e75121427f0bb50a4c58b187a238531e7d58605d';
+    const paymentMethodHash = '0xaea63ef983458674f54ee50cdaa7b09d80a5c6c03ed505f51c90b0f2b54abb01';
     const currencyHash = '0xc4ae21aac0c6549d71dd96035b7e0bdb6c79ebdba8891b666115bc976d16a29e';
     const depositPayload = {
       depositId: '1',
@@ -442,7 +442,7 @@ describe('registry-backed command handlers', () => {
         paymentMethods: [
           {
             paymentMethod: paymentMethodHash,
-            paymentMethodName: 'revolut',
+            paymentMethodName: 'luxon',
             currencies: [
               {
                 code: currencyHash,
@@ -461,7 +461,7 @@ describe('registry-backed command handlers', () => {
       data: {
         paymentMethods: [
           {
-            paymentMethodName: 'revolut',
+            paymentMethodName: 'luxon',
             currencies: [{ currencyName: 'USD', minConversionRateDecimal: '1.02' }],
           },
         ],
@@ -474,7 +474,7 @@ describe('registry-backed command handlers', () => {
         {
           paymentMethods: [
             {
-              paymentMethodName: 'revolut',
+              paymentMethodName: 'luxon',
               currencies: [{ currencyName: 'USD', minConversionRateDecimal: '1.02' }],
             },
           ],

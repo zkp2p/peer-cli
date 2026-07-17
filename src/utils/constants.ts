@@ -18,5 +18,7 @@ export const SUPPORTED_CURRENCIES = [
 export const SUPPORTED_PLATFORMS = [
   'wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime',
 ] as const;
+export const LEGACY_PLATFORMS = ['luxon', 'n26'] as const;
+export const KNOWN_PLATFORMS = [...SUPPORTED_PLATFORMS, ...LEGACY_PLATFORMS] as const;
 export const DUMMY_PRIVATE_KEY =
   '0x59c6995e998f97a5a0044966f0945383f0d7d1f5eb53d3d16c23f0a3077ec12e' as const;

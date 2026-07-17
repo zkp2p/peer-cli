@@ -13,10 +13,10 @@ import {
   parseCsv,
 } from '../utils/validation.js';
 import { asBigInt, parseJsonArray, parseJsonObject } from '../utils/parsing.js';
-import { SUPPORTED_CURRENCIES, SUPPORTED_PLATFORMS } from '../utils/constants.js';
+import { KNOWN_PLATFORMS, SUPPORTED_CURRENCIES } from '../utils/constants.js';
 
 const PLATFORM_NAME_BY_HASH = new Map(
-  SUPPORTED_PLATFORMS.map((platform) => [keccak256(stringToHex(platform)).toLowerCase(), platform]),
+  KNOWN_PLATFORMS.map((platform) => [keccak256(stringToHex(platform)).toLowerCase(), platform]),
 );
 
 const CURRENCY_NAME_BY_HASH = new Map(

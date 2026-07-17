@@ -75,6 +75,7 @@ describe('validation utils', () => {
     expect(() => ensureArray({}, 'field')).toThrow('field must be an array.');
     expect(() => ensureOneOf('bad', 'env', ['production', 'staging'] as const)).toThrow('env must be one of: production, staging.');
     expect(() => ensureSupportedCurrency('invalid', 'currency')).toThrow('Unsupported currency: INVALID.');
+    expect(() => ensureSupportedPlatform('luxon', 'platform')).toThrow('Unsupported platform: luxon.');
     expect(() => ensureSupportedPlatform('invalid', 'platform')).toThrow('Unsupported platform: invalid.');
   });
 

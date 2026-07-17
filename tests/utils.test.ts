@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getPaymentMethodsCatalog } from '@zkp2p/sdk';
 import { requestJson } from '../src/utils/http.js';
 import { logDebug, setDebugEnabled } from '../src/utils/logger.js';
+import { DEFAULT_CHAIN_ID, SUPPORTED_PLATFORMS } from '../src/utils/constants.js';
 import {
   amountToUnits,
   ensureAddress,
@@ -31,6 +33,11 @@ afterEach(() => {
 });
 
 describe('validation utils', () => {
+  it('keeps supported platforms aligned with the SDK active catalog', () => {
+    const activePlatforms = Object.keys(getPaymentMethodsCatalog(DEFAULT_CHAIN_ID, 'production'));
+    expect([...SUPPORTED_PLATFORMS].sort()).toEqual(activePlatforms.sort());
+  });
+
   it('parses csv and json input', () => {
     expect(parseCsv(undefined)).toBeUndefined();
     expect(parseCsv(' a, b ,, c ')).toEqual(['a', 'b', 'c']);
@@ -68,6 +75,7 @@ describe('validation utils', () => {
     expect(() => ensureArray({}, 'field')).toThrow('field must be an array.');
     expect(() => ensureOneOf('bad', 'env', ['production', 'staging'] as const)).toThrow('env must be one of: production, staging.');
     expect(() => ensureSupportedCurrency('invalid', 'currency')).toThrow('Unsupported currency: INVALID.');
+    expect(() => ensureSupportedPlatform('luxon', 'platform')).toThrow('Unsupported platform: luxon.');
     expect(() => ensureSupportedPlatform('invalid', 'platform')).toThrow('Unsupported platform: invalid.');
   });
 

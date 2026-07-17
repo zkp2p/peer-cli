@@ -91,6 +91,16 @@ describe('registry-backed command handlers', () => {
       paymentPlatforms: ['wise', 'venmo'],
     });
 
+    const defaultQuote = await executeDefinition(definition(['quote']), {
+      from: 'USD',
+      amount: 25,
+    }, {}, runtime.deps);
+
+    expect(defaultQuote).toMatchObject({ ok: true });
+    expect(runtime.calls.filter((entry) => entry.path === 'getQuote').at(-1)?.args[0]).toMatchObject({
+      paymentPlatforms: ['wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime'],
+    });
+
     const payee = await executeDefinition(definition(['payee', 'register']), {
       processors: 'wise,venmo',
       depositData: '[{"email":"one@example.com"},{"handle":"maker"}]',
@@ -401,7 +411,7 @@ describe('registry-backed command handlers', () => {
   });
 
   it('enriches direct deposit reads with readable payment method and currency metadata', async () => {
-    const paymentMethodHash = '0x617f88ab82b5c1b014c539f7e75121427f0bb50a4c58b187a238531e7d58605d';
+    const paymentMethodHash = '0xaea63ef983458674f54ee50cdaa7b09d80a5c6c03ed505f51c90b0f2b54abb01';
     const currencyHash = '0xc4ae21aac0c6549d71dd96035b7e0bdb6c79ebdba8891b666115bc976d16a29e';
     const depositPayload = {
       depositId: '1',
@@ -432,7 +442,7 @@ describe('registry-backed command handlers', () => {
         paymentMethods: [
           {
             paymentMethod: paymentMethodHash,
-            paymentMethodName: 'revolut',
+            paymentMethodName: 'luxon',
             currencies: [
               {
                 code: currencyHash,
@@ -451,7 +461,7 @@ describe('registry-backed command handlers', () => {
       data: {
         paymentMethods: [
           {
-            paymentMethodName: 'revolut',
+            paymentMethodName: 'luxon',
             currencies: [{ currencyName: 'USD', minConversionRateDecimal: '1.02' }],
           },
         ],
@@ -464,7 +474,7 @@ describe('registry-backed command handlers', () => {
         {
           paymentMethods: [
             {
-              paymentMethodName: 'revolut',
+              paymentMethodName: 'luxon',
               currencies: [{ currencyName: 'USD', minConversionRateDecimal: '1.02' }],
             },
           ],
@@ -780,7 +790,10 @@ describe('registry-backed command handlers', () => {
       expect(show).toMatchObject({ ok: true, data: expect.objectContaining({ resolved: expect.any(Object) }) });
 
       const platforms = await run(['config', 'platforms'], {}, runtime);
-      expect(platforms).toMatchObject({ ok: true, data: expect.arrayContaining(['wise', 'venmo']) });
+      expect(platforms).toMatchObject({
+        ok: true,
+        data: ['wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime'],
+      });
 
       const currencies = await run(['config', 'currencies'], {}, runtime);
       expect(currencies).toMatchObject({ ok: true, data: expect.arrayContaining(['USD', 'EUR']) });

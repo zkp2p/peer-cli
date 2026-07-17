@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",
-    "@zkp2p/sdk": "^0.8.1",
+    "@zkp2p/sdk": "^0.9.0",
     "commander": "^14.0.1",
     "viem": "^2.38.2",
     "zod": "^4.1.11"

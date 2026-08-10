@@ -97,7 +97,6 @@ const DEFAULT_DEPS: RuntimeDeps = {
 
 const GROUP_DESCRIPTIONS: Record<string, string> = {
   quote: 'Quote operations',
-  taker: 'Taker operations',
   deposit: 'Deposit management',
   intent: 'Intent operations',
   vault: 'Vault management',

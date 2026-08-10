@@ -34,6 +34,7 @@ export interface MockRuntimeHarness {
 }
 
 const DEFAULT_ADDRESS = '0x1111111111111111111111111111111111111111';
+export const ORCHESTRATOR_V3_ADDRESS = '0x3333333333333333333333333333333333333333';
 
 function createProxy(root: string, behaviors: Record<string, unknown>, calls: ProxyCall[], account?: { address: `0x${string}` }) {
   const callable = function noop() {};
@@ -99,10 +100,13 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): MockRuntime
   const accountAddress = options.accountAddress ?? DEFAULT_ADDRESS;
   const behaviors = {
     getUsdcAddress: () => DEFAULT_ADDRESS,
-    getDeployedAddresses: () => ({ escrowV2: DEFAULT_ADDRESS, escrow: DEFAULT_ADDRESS }),
+    getDeployedAddresses: () => ({
+      escrowV2: DEFAULT_ADDRESS,
+      escrow: DEFAULT_ADDRESS,
+      orchestratorV3: ORCHESTRATOR_V3_ADDRESS,
+    }),
     supportsInlineOracleRateConfig: () => true,
     getQuote: () => [{ route: 'fast', price: '1.23' }],
-    getTakerTier: () => ({ responseObject: { tier: 'standard' } }),
     getAccountDeposits: () => [{ id: '1' }],
     getDeposits: () => [{ id: '1' }],
     getAccountIntents: () => [{ hash: '0x1' }],

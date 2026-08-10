@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { executeDefinition } from '../src/commands/framework.js';
 import { commandDefinitions } from '../src/commands/registry.js';
 import { writeStoredConfig } from '../src/sdk/config.js';
-import { createMockRuntime } from './helpers/mock-runtime.js';
+import { createMockRuntime, ORCHESTRATOR_V3_ADDRESS } from './helpers/mock-runtime.js';
 
 const sdkMocks = vi.hoisted(() => ({
   getRateManagerContracts: vi.fn(() => ({ addresses: { registry: '0x2222222222222222222222222222222222222222' } })),
@@ -65,6 +65,13 @@ async function withTempHome<T>(fn: (home: string) => Promise<T>): Promise<T> {
 }
 
 describe('registry-backed command handlers', () => {
+  it('does not register SDK 0.11 surfaces that no longer control current intents', () => {
+    const registered = new Set(commandDefinitions.map((entry) => entry.path.join(' ')));
+    expect(registered.has('taker tier')).toBe(false);
+    expect(registered.has('intent-hook whitelist set')).toBe(false);
+    expect(registered.has('intent-hook whitelist get')).toBe(false);
+  });
+
   it('handles quote and payee commands', async () => {
     const runtime = createMockRuntime({
       behaviors: {
@@ -112,11 +119,6 @@ describe('registry-backed command handlers', () => {
       paymentMethodHash: '0xabc',
     }, {}, runtime.deps);
     expect(resolved).toMatchObject({ ok: true, data: { path: 'resolvePayeeHash' } });
-
-    const takerTier = await executeDefinition(definition(['taker', 'tier']), {
-      address: '0x1111111111111111111111111111111111111111',
-    }, {}, runtime.deps);
-    expect(takerTier).toMatchObject({ ok: true, data: { responseObject: { tier: 'standard' } } });
   });
 
   it('normalizes common platform-prefixed payee detail aliases before SDK calls', async () => {
@@ -145,39 +147,6 @@ describe('registry-backed command handlers', () => {
     expect(depositRuntime.calls.find((entry) => entry.path === 'prepareCreateDeposit')?.args[0]).toMatchObject({
       processorNames: ['wise'],
       depositData: [{ email: 'maker@example.com' }],
-    });
-  });
-
-  it('auto-resolves taker tier address from the configured wallet when omitted', async () => {
-    const runtime = createMockRuntime({
-      accountAddress: '0x2222222222222222222222222222222222222222',
-    });
-
-    const takerTier = await executeDefinition(definition(['taker', 'tier']), {}, {}, runtime.deps);
-
-    expect(takerTier).toMatchObject({ ok: true, data: { responseObject: { tier: 'standard' } } });
-    expect(runtime.calls.find((entry) => entry.path === 'getTakerTier')?.args[0]).toMatchObject({
-      owner: '0x2222222222222222222222222222222222222222',
-      chainId: 8453,
-    });
-  });
-
-  it('requires an explicit address for taker tier when no wallet is configured', async () => {
-    const runtime = createMockRuntime();
-    runtime.deps.createClient = vi.fn(async () => ({
-      client: runtime.bundle.client,
-      publicClient: runtime.bundle.publicClient,
-      walletClient: { account: undefined } as typeof runtime.bundle.walletClient,
-    }));
-
-    const takerTier = await executeDefinition(definition(['taker', 'tier']), {}, {}, runtime.deps);
-
-    expect(takerTier).toMatchObject({
-      ok: false,
-      error: {
-        code: 'AUTH_REQUIRED',
-        message: 'Provide --address when no wallet is configured.',
-      },
     });
   });
 
@@ -504,8 +473,18 @@ describe('registry-backed command handlers', () => {
       precomputedAttestation: '{"attested":true}',
     }, runtime)).resolves.toMatchObject({ executed: true });
 
+    await expect(call(['intent', 'cleanup-orphaned'], { hashes: '["0xhash"]' }, runtime)).resolves.toMatchObject({ executed: true });
     await expect(call(['intent-hook', 'pre', 'set'], { id: '1', hook: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({ executed: true });
     await expect(call(['intent-hook', 'pre', 'get'], { depositId: '1' }, runtime)).resolves.toMatchObject({ path: 'getDepositPreIntentHook' });
+    expect(runtime.calls.find((entry) => entry.path === 'cleanupOrphanedIntents')?.args[0]).toMatchObject({
+      orchestratorAddress: ORCHESTRATOR_V3_ADDRESS,
+    });
+    expect(runtime.calls.find((entry) => entry.path === 'setDepositPreIntentHook')?.args[0]).toMatchObject({
+      orchestratorAddress: ORCHESTRATOR_V3_ADDRESS,
+    });
+    expect(runtime.calls.find((entry) => entry.path === 'getDepositPreIntentHook')?.args[1]).toEqual({
+      orchestratorAddress: ORCHESTRATOR_V3_ADDRESS,
+    });
     await expect(call(['indexer', 'intents', 'by-deposit-ids'], { depositIds: '["1"]' }, runtime)).resolves.toMatchObject({ path: 'indexer.getIntentsForDeposits' });
   });
 

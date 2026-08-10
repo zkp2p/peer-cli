@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runCliInProcess } from './helpers/cli-runner.js';
-import { createMockRuntime } from './helpers/mock-runtime.js';
+import { createMockRuntime, ORCHESTRATOR_V3_ADDRESS } from './helpers/mock-runtime.js';
 import { isMainModule, inferCommand } from '../src/cli.js';
 
 type MockPreparedMethod = ReturnType<typeof vi.fn> & {
@@ -262,6 +262,9 @@ describe('in-process cli runner', () => {
     expect(hookResult.exitCode).toBeUndefined();
     expect(hookResult.stderr).toBe('');
     expect(hookRuntime.calls.find((entry) => entry.path === 'getDepositPreIntentHook')?.args[0]).toBe(7n);
+    expect(hookRuntime.calls.find((entry) => entry.path === 'getDepositPreIntentHook')?.args[1]).toEqual({
+      orchestratorAddress: ORCHESTRATOR_V3_ADDRESS,
+    });
   });
 
   it('wraps invalid global env values in the json error envelope', async () => {

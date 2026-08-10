@@ -23,6 +23,7 @@ export const { getRateManagerContracts, resolveFiatCurrencyBytes32, resolvePayme
 
 export const DEFAULT_ADDRESS = '0x1111111111111111111111111111111111111111';
 export const ALT_TOKEN = '0x2222222222222222222222222222222222222222';
+const ORCHESTRATOR_V3_ADDRESS = '0x3333333333333333333333333333333333333333';
 
 export type QuoteResult = Array<{
   args: Array<{ amount?: string; isExactFiat?: boolean; destinationToken?: string }>;
@@ -95,7 +96,11 @@ export function makeContext(options: {
   const client = {
     getQuote: async (...args: unknown[]) => [{ route: 'fast', args }],
     getUsdcAddress: options.getUsdcAddress ?? (() => DEFAULT_ADDRESS),
-    getDeployedAddresses: () => ({ escrowV2: DEFAULT_ADDRESS, escrow: DEFAULT_ADDRESS }),
+    getDeployedAddresses: () => ({
+      escrowV2: DEFAULT_ADDRESS,
+      escrow: DEFAULT_ADDRESS,
+      orchestratorV3: ORCHESTRATOR_V3_ADDRESS,
+    }),
     ensureAllowance: async (...args: unknown[]) => ({ path: 'ensureAllowance', args }),
     getAccountDeposits: async (owner: string) => [{ owner }],
     getDeposits: async () => [{ id: 'all' }],
@@ -113,9 +118,7 @@ export function makeContext(options: {
     getFulfillIntentInputs: async (...args: unknown[]) => ({ path: 'getFulfillIntentInputs', args }),
     cleanupOrphanedIntents: makePreparedMethod('cleanupOrphanedIntents'),
     setDepositPreIntentHook: makePreparedMethod('setDepositPreIntentHook'),
-    setDepositWhitelistHook: makePreparedMethod('setDepositWhitelistHook'),
     getDepositPreIntentHook: async (...args: unknown[]) => ({ path: 'getDepositPreIntentHook', args }),
-    getDepositWhitelistHook: async (...args: unknown[]) => ({ path: 'getDepositWhitelistHook', args }),
     createRateManager: makePreparedMethod('createRateManager'),
     supportsInlineOracleRateConfig: () => true,
     setVaultMinRate: makePreparedMethod('setVaultMinRate'),

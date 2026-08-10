@@ -118,35 +118,6 @@
     "read_only": true
   },
   {
-    "name": "peer taker tier",
-    "path": [
-      "taker",
-      "tier"
-    ],
-    "description": "Fetch taker caps and cooldown state for an address.",
-    "parameter_schema": {
-      "type": "object",
-      "properties": {
-        "address": {
-          "type": "string",
-          "description": "Taker wallet address."
-        },
-        "chainId": {
-          "type": "number",
-          "description": "Chain ID to evaluate.",
-          "default": 8453
-        },
-        "params": {
-          "type": "object",
-          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
-        }
-      }
-    },
-    "auth_required": false,
-    "dangerous": false,
-    "read_only": true
-  },
-  {
     "name": "peer deposit ensure-allowance",
     "path": [
       "deposit",
@@ -190,27 +161,27 @@
       "properties": {
         "amount": {
           "type": "number",
-          "description": "USDC amount to deposit."
+          "description": "Required. USDC amount to deposit."
         },
         "min": {
           "type": "number",
-          "description": "Minimum intent size in USDC."
+          "description": "Required. Minimum intent size in USDC."
         },
         "max": {
           "type": "number",
-          "description": "Maximum intent size in USDC."
+          "description": "Required. Maximum intent size in USDC."
         },
         "platforms": {
           "type": "string",
-          "description": "Comma-separated payment platforms."
+          "description": "Required. Comma-separated payment platforms."
         },
         "currencies": {
           "type": "string",
-          "description": "Comma-separated fiat currencies."
+          "description": "Required when --conversion-rates is omitted. Comma-separated fiat currencies."
         },
         "rate": {
           "type": "number",
-          "description": "Default conversion rate if conversionRates JSON is omitted."
+          "description": "Required when --conversion-rates is omitted. Default conversion rate."
         },
         "conversionRates": {
           "type": "array",
@@ -218,7 +189,7 @@
         },
         "depositData": {
           "type": "array",
-          "description": "JSON array of payee detail payloads."
+          "description": "Required when --platforms is set. JSON array with one platform-specific detail object per platform."
         },
         "delegate": {
           "type": "string",
@@ -374,7 +345,7 @@
       }
     },
     "auth_required": true,
-    "dangerous": false,
+    "dangerous": true,
     "read_only": false
   },
   {
@@ -383,7 +354,7 @@
       "deposit",
       "withdraw"
     ],
-    "description": "Withdraw and close a deposit.",
+    "description": "Withdraw and close a deposit. This is irreversible.",
     "parameter_schema": {
       "type": "object",
       "properties": {
@@ -398,7 +369,7 @@
       }
     },
     "auth_required": true,
-    "dangerous": false,
+    "dangerous": true,
     "read_only": false
   },
   {
@@ -1610,35 +1581,6 @@
     "read_only": false
   },
   {
-    "name": "peer intent-hook whitelist set",
-    "path": [
-      "intent-hook",
-      "whitelist",
-      "set"
-    ],
-    "description": "Set the whitelist hook for a deposit.",
-    "parameter_schema": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Deposit ID."
-        },
-        "hook": {
-          "type": "string",
-          "description": "Hook contract address."
-        },
-        "params": {
-          "type": "object",
-          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
-        }
-      }
-    },
-    "auth_required": true,
-    "dangerous": false,
-    "read_only": false
-  },
-  {
     "name": "peer intent-hook pre get",
     "path": [
       "intent-hook",
@@ -1646,34 +1588,6 @@
       "get"
     ],
     "description": "Get the pre-intent hook for a deposit.",
-    "parameter_schema": {
-      "type": "object",
-      "properties": {
-        "depositId": {
-          "type": "string",
-          "description": "Deposit ID."
-        },
-        "params": {
-          "type": "object",
-          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
-        }
-      },
-      "required": [
-        "depositId"
-      ]
-    },
-    "auth_required": false,
-    "dangerous": false,
-    "read_only": true
-  },
-  {
-    "name": "peer intent-hook whitelist get",
-    "path": [
-      "intent-hook",
-      "whitelist",
-      "get"
-    ],
-    "description": "Get the whitelist hook for a deposit.",
     "parameter_schema": {
       "type": "object",
       "properties": {
@@ -2014,13 +1928,27 @@
     "parameter_schema": {
       "type": "object",
       "properties": {
+        "manager": {
+          "type": "string",
+          "description": "Filter by manager address."
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum vaults to return.",
+          "default": 50
+        },
+        "offset": {
+          "type": "number",
+          "description": "Pagination offset.",
+          "default": 0
+        },
         "pagination": {
           "type": "object",
-          "description": "JSON pagination object."
+          "description": "Raw JSON pagination object (advanced)."
         },
         "filter": {
           "type": "object",
-          "description": "JSON filter object."
+          "description": "Raw JSON filter object (advanced)."
         },
         "params": {
           "type": "object",
@@ -2038,17 +1966,13 @@
       "vault",
       "show"
     ],
-    "description": "Show vault details via the indexer.",
+    "description": "Show vault details by rateManagerId.",
     "parameter_schema": {
       "type": "object",
       "properties": {
         "rateManagerId": {
           "type": "string",
-          "description": "Vault rateManagerId."
-        },
-        "options": {
-          "type": "object",
-          "description": "JSON detail options."
+          "description": "Vault rateManagerId (bytes32 hash)."
         },
         "params": {
           "type": "object",
@@ -2221,9 +2145,19 @@
           "type": "string",
           "description": "Vault rateManagerId."
         },
+        "limit": {
+          "type": "number",
+          "description": "Maximum delegations.",
+          "default": 50
+        },
+        "offset": {
+          "type": "number",
+          "description": "Pagination offset.",
+          "default": 0
+        },
         "pagination": {
           "type": "object",
-          "description": "JSON pagination object."
+          "description": "Raw JSON pagination object (advanced)."
         },
         "params": {
           "type": "object",
@@ -2252,9 +2186,14 @@
           "type": "string",
           "description": "Vault rateManagerId."
         },
+        "limit": {
+          "type": "number",
+          "description": "Maximum snapshots.",
+          "default": 30
+        },
         "options": {
           "type": "object",
-          "description": "JSON snapshot options."
+          "description": "Raw JSON snapshot options (advanced)."
         },
         "params": {
           "type": "object",
@@ -2283,9 +2222,14 @@
           "type": "string",
           "description": "Vault rateManagerId."
         },
+        "limit": {
+          "type": "number",
+          "description": "Maximum entries.",
+          "default": 50
+        },
         "options": {
           "type": "object",
-          "description": "JSON query options."
+          "description": "Raw JSON query options (advanced)."
         },
         "params": {
           "type": "object",
@@ -2314,9 +2258,14 @@
           "type": "string",
           "description": "Vault rateManagerId."
         },
+        "limit": {
+          "type": "number",
+          "description": "Maximum entries.",
+          "default": 50
+        },
         "options": {
           "type": "object",
-          "description": "JSON query options."
+          "description": "Raw JSON query options (advanced)."
         },
         "params": {
           "type": "object",
@@ -2656,6 +2605,39 @@
     "read_only": true
   },
   {
+    "name": "peer market orderbook",
+    "path": [
+      "market",
+      "orderbook"
+    ],
+    "description": "Fetch the live P2P orderbook from Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "currency": {
+          "type": "string",
+          "description": "Fiat currency code."
+        },
+        "platform": {
+          "type": "string",
+          "description": "Comma-separated payment platforms."
+        },
+        "minSize": {
+          "type": "number",
+          "description": "Minimum liquidity per level in USD.",
+          "default": 50
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
     "name": "peer market compare",
     "path": [
       "market",
@@ -2766,6 +2748,603 @@
       "protocol-stats"
     ],
     "description": "Fetch aggregate Peerlytics protocol statistics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market vaults",
+    "path": [
+      "market",
+      "vaults"
+    ],
+    "description": "Fetch Peerlytics vault analytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "number",
+          "description": "Maximum entries.",
+          "default": 50
+        },
+        "offset": {
+          "type": "number",
+          "description": "Pagination offset.",
+          "default": 0
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market explorer address",
+    "path": [
+      "market",
+      "explorer",
+      "address"
+    ],
+    "description": "Look up a wallet address profile on Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "Wallet address."
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum linked entries.",
+          "default": 100
+        },
+        "offset": {
+          "type": "number",
+          "description": "Pagination offset.",
+          "default": 0
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "address"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market explorer deposit",
+    "path": [
+      "market",
+      "explorer",
+      "deposit"
+    ],
+    "description": "Look up a deposit on Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deposit ID (numeric or composite 0x..._123)."
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum linked entries.",
+          "default": 100
+        },
+        "offset": {
+          "type": "number",
+          "description": "Pagination offset.",
+          "default": 0
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market explorer intent",
+    "path": [
+      "market",
+      "explorer",
+      "intent"
+    ],
+    "description": "Look up an intent on Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "hash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "hash"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market explorer maker",
+    "path": [
+      "market",
+      "explorer",
+      "maker"
+    ],
+    "description": "Look up a maker profile on Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "Maker wallet address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "address"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market explorer verifier",
+    "path": [
+      "market",
+      "explorer",
+      "verifier"
+    ],
+    "description": "Look up a verifier profile on Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "Verifier address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "address"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market explorer vault",
+    "path": [
+      "market",
+      "explorer",
+      "vault"
+    ],
+    "description": "Look up a vault on Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Vault ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market explorer search",
+    "path": [
+      "market",
+      "explorer",
+      "search"
+    ],
+    "description": "Search across addresses, deposits, intents, and vaults on Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Search query (address, hash, deposit ID, etc.)."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "query"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market deposits",
+    "path": [
+      "market",
+      "deposits"
+    ],
+    "description": "Query deposits from Peerlytics with filtering.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "depositor": {
+          "type": "string",
+          "description": "Filter by depositor address."
+        },
+        "delegate": {
+          "type": "string",
+          "description": "Filter by delegate address."
+        },
+        "platform": {
+          "type": "string",
+          "description": "Comma-separated payment platforms."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Comma-separated fiat currencies."
+        },
+        "status": {
+          "type": "string",
+          "description": "ACTIVE or CLOSED."
+        },
+        "accepting": {
+          "type": "boolean",
+          "description": "Only show deposits accepting intents."
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum deposits to return.",
+          "default": 50
+        },
+        "offset": {
+          "type": "number",
+          "description": "Pagination offset.",
+          "default": 0
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market intents",
+    "path": [
+      "market",
+      "intents"
+    ],
+    "description": "Query intents from Peerlytics with filtering.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Filter by intent owner address."
+        },
+        "recipient": {
+          "type": "string",
+          "description": "Filter by recipient address."
+        },
+        "depositId": {
+          "type": "string",
+          "description": "Comma-separated deposit IDs."
+        },
+        "status": {
+          "type": "string",
+          "description": "Comma-separated statuses (FULFILLED, COMPLETED, PRUNED, SIGNALED, EXPIRED)."
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum intents to return.",
+          "default": 50
+        },
+        "offset": {
+          "type": "number",
+          "description": "Pagination offset.",
+          "default": 0
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market activity",
+    "path": [
+      "market",
+      "activity"
+    ],
+    "description": "Fetch recent protocol activity from Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Comma-separated event types (intent_signaled, intent_fulfilled, deposit_created, etc.)."
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum events.",
+          "default": 100
+        },
+        "since": {
+          "type": "string",
+          "description": "Unix timestamp or ISO date to start from."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market taker-history",
+    "path": [
+      "market",
+      "taker-history"
+    ],
+    "description": "Fetch taker activity history for an address from Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "Taker wallet address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "address"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market maker-history",
+    "path": [
+      "market",
+      "maker-history"
+    ],
+    "description": "Fetch maker activity history for an address from Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "Maker wallet address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "address"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market meta platforms",
+    "path": [
+      "market",
+      "meta",
+      "platforms"
+    ],
+    "description": "List supported payment platforms from Peerlytics with method hashes.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market meta currencies",
+    "path": [
+      "market",
+      "meta",
+      "currencies"
+    ],
+    "description": "List supported currencies from Peerlytics.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market api-key list",
+    "path": [
+      "market",
+      "api-key",
+      "list"
+    ],
+    "description": "List Peerlytics API keys for the authenticated account.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer market api-key create",
+    "path": [
+      "market",
+      "api-key",
+      "create"
+    ],
+    "description": "Create a new Peerlytics API key.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Optional label for the new key."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer market api-key rotate",
+    "path": [
+      "market",
+      "api-key",
+      "rotate"
+    ],
+    "description": "Rotate an existing Peerlytics API key.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "The API key to rotate."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "key"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer market api-key delete",
+    "path": [
+      "market",
+      "api-key",
+      "delete"
+    ],
+    "description": "Delete a Peerlytics API key.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "The API key to delete."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "key"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": true,
+    "read_only": false
+  },
+  {
+    "name": "peer market credits",
+    "path": [
+      "market",
+      "credits"
+    ],
+    "description": "Check Peerlytics API credit balance and usage.",
     "parameter_schema": {
       "type": "object",
       "properties": {
@@ -2984,7 +3563,7 @@
       ]
     },
     "auth_required": false,
-    "dangerous": false,
+    "dangerous": true,
     "read_only": false
   },
   {
@@ -3034,6 +3613,53 @@
         "key",
         "value"
       ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer config unset",
+    "path": [
+      "config",
+      "unset"
+    ],
+    "description": "Remove a persisted config value from ~/.peer/config.json.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Config key to remove."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "key"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer config reset",
+    "path": [
+      "config",
+      "reset"
+    ],
+    "description": "Clear all persisted config values from ~/.peer/config.json.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
     },
     "auth_required": false,
     "dangerous": false,

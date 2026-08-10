@@ -1,6 +1,5 @@
 import type { CommandDefinition } from './framework.js';
 import { quoteDefinitions } from './quote.js';
-import { takerDefinitions } from './taker.js';
 import { depositDefinitions } from './deposit.js';
 import { intentDefinitions } from './intent.js';
 import { vaultDefinitions } from './vault.js';
@@ -13,7 +12,6 @@ import { mcpDefinitions } from './mcp.js';
 
 export const commandDefinitions: CommandDefinition[] = [
   ...quoteDefinitions,
-  ...takerDefinitions,
   ...depositDefinitions,
   ...intentDefinitions,
   ...vaultDefinitions,

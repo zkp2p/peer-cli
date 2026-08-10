@@ -1,6 +1,7 @@
 import { createError } from '../output/errors.js';
 import type { PreparedTransaction } from '@zkp2p/sdk';
 import type { CommandExecutionContext } from './framework.js';
+import type { ClientBundle } from '../sdk/client.js';
 import { logDebug } from '../utils/logger.js';
 
 type AsyncCallable = (...args: unknown[]) => Promise<unknown>;
@@ -44,13 +45,17 @@ function unwrapPreparedTransaction(result: PreparedTransaction | { prepared: Pre
 
 export function sdkReadHandler(
   path: readonly string[],
-  buildArgs: (input: Record<string, unknown>, context: CommandExecutionContext) => Promise<unknown[]> | unknown[],
+  buildArgs: (
+    input: Record<string, unknown>,
+    context: CommandExecutionContext,
+    client: ClientBundle['client'],
+  ) => Promise<unknown[]> | unknown[],
   options: { requireWallet?: boolean } = {},
 ) {
   return async (input: Record<string, unknown>, context: CommandExecutionContext): Promise<unknown> => {
     const { client } = await context.getClient({ requireWallet: options.requireWallet });
     const { parent, method } = resolveMethod(client, path);
-    const args = await buildArgs(input, context);
+    const args = await buildArgs(input, context, client);
     const methodName = path.join('.');
     const startedAt = Date.now();
     logDebug('SDK read call', { command: context.command, method: methodName, args });
@@ -67,7 +72,11 @@ export function sdkReadHandler(
 
 export function sdkWriteHandler(
   path: readonly string[],
-  buildParams: (input: Record<string, unknown>, context: CommandExecutionContext) => Promise<Record<string, unknown>> | Record<string, unknown>,
+  buildParams: (
+    input: Record<string, unknown>,
+    context: CommandExecutionContext,
+    client: ClientBundle['client'],
+  ) => Promise<Record<string, unknown>> | Record<string, unknown>,
   options: { description?: (input: Record<string, unknown>) => string; requireWallet?: boolean } = {},
 ) {
   return async (input: Record<string, unknown>, context: CommandExecutionContext): Promise<unknown> => {
@@ -75,7 +84,7 @@ export function sdkWriteHandler(
     const { parent, method } = resolveMethod(client, path);
     const prepareable = asPrepareable(method, path);
 
-    const params = await buildParams(input, context);
+    const params = await buildParams(input, context, client);
     const methodName = path.join('.');
     return context.runPrepared({
       description: options.description?.(input),

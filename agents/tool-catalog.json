@@ -1581,35 +1581,6 @@
     "read_only": false
   },
   {
-    "name": "peer intent-hook whitelist set",
-    "path": [
-      "intent-hook",
-      "whitelist",
-      "set"
-    ],
-    "description": "Set the whitelist hook for a deposit.",
-    "parameter_schema": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Deposit ID."
-        },
-        "hook": {
-          "type": "string",
-          "description": "Hook contract address."
-        },
-        "params": {
-          "type": "object",
-          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
-        }
-      }
-    },
-    "auth_required": true,
-    "dangerous": false,
-    "read_only": false
-  },
-  {
     "name": "peer intent-hook pre get",
     "path": [
       "intent-hook",
@@ -1617,34 +1588,6 @@
       "get"
     ],
     "description": "Get the pre-intent hook for a deposit.",
-    "parameter_schema": {
-      "type": "object",
-      "properties": {
-        "depositId": {
-          "type": "string",
-          "description": "Deposit ID."
-        },
-        "params": {
-          "type": "object",
-          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
-        }
-      },
-      "required": [
-        "depositId"
-      ]
-    },
-    "auth_required": false,
-    "dangerous": false,
-    "read_only": true
-  },
-  {
-    "name": "peer intent-hook whitelist get",
-    "path": [
-      "intent-hook",
-      "whitelist",
-      "get"
-    ],
-    "description": "Get the whitelist hook for a deposit.",
     "parameter_schema": {
       "type": "object",
       "properties": {

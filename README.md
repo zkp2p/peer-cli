@@ -192,8 +192,6 @@ Commands that need a signer require one of:
 - `peer intent cleanup-orphaned`
 - `peer intent-hook pre set`
 - `peer intent-hook pre get`
-- `peer intent-hook whitelist set`
-- `peer intent-hook whitelist get`
 
 ### Vaults, oracle, and delegation
 - `peer vault create`

@@ -1,6 +1,8 @@
 import { parseUnits } from 'viem';
+import type { Zkp2pClient } from '@zkp2p/sdk';
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler, sdkWriteHandler } from './helpers.js';
+import { createError } from '../output/errors.js';
 import {
   ensureAddress,
   ensureNumber,
@@ -13,6 +15,14 @@ import { asBigInt, parseJsonArray, parseJsonObject } from '../utils/parsing.js';
 
 function parseConversionRate(value: unknown): string {
   return parseUnits(ensurePositiveNumber(value, 'conversionRate').toString(), 18).toString();
+}
+
+function currentOrchestratorV3(client: Zkp2pClient): `0x${string}` {
+  const orchestrator = client.getDeployedAddresses().orchestratorV3;
+  if (!orchestrator) {
+    throw createError('UNSUPPORTED_OPERATION', 'OrchestratorV3 is not available for the selected environment.');
+  }
+  return orchestrator;
 }
 
 export const intentDefinitions: CommandDefinition[] = [
@@ -105,7 +115,10 @@ export const intentDefinitions: CommandDefinition[] = [
     readOnly: false,
     requireWallet: true,
     options: [{ name: 'hashes', flags: '--hashes <json>', description: 'JSON array of intent hashes.', schema: { type: 'array', description: 'Intent hashes.' } }],
-    handler: sdkWriteHandler(['cleanupOrphanedIntents'], async (input) => ({ intentHashes: parseJsonArray(input.hashes, 'hashes') })),
+    handler: sdkWriteHandler(['cleanupOrphanedIntents'], async (input, _context, client) => ({
+      intentHashes: parseJsonArray(input.hashes, 'hashes'),
+      orchestratorAddress: currentOrchestratorV3(client),
+    })),
   },
   {
     path: ['intent-hook', 'pre', 'set'],
@@ -116,32 +129,21 @@ export const intentDefinitions: CommandDefinition[] = [
       { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
       { name: 'hook', flags: '--hook <address>', description: 'Hook contract address.', schema: { type: 'string', description: 'Hook address.' } },
     ],
-    handler: sdkWriteHandler(['setDepositPreIntentHook'], async (input) => ({ depositId: asBigInt(input.id, 'id'), preIntentHook: ensureAddress(input.hook, 'hook') })),
-  },
-  {
-    path: ['intent-hook', 'whitelist', 'set'],
-    description: 'Set the whitelist hook for a deposit.',
-    readOnly: false,
-    requireWallet: true,
-    options: [
-      { name: 'id', flags: '--id <depositId>', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' } },
-      { name: 'hook', flags: '--hook <address>', description: 'Hook contract address.', schema: { type: 'string', description: 'Hook address.' } },
-    ],
-    handler: sdkWriteHandler(['setDepositWhitelistHook'], async (input) => ({ depositId: asBigInt(input.id, 'id'), whitelistHook: ensureAddress(input.hook, 'hook') })),
+    handler: sdkWriteHandler(['setDepositPreIntentHook'], async (input, _context, client) => ({
+      depositId: asBigInt(input.id, 'id'),
+      preIntentHook: ensureAddress(input.hook, 'hook'),
+      orchestratorAddress: currentOrchestratorV3(client),
+    })),
   },
   {
     path: ['intent-hook', 'pre', 'get'],
     description: 'Get the pre-intent hook for a deposit.',
     readOnly: true,
     args: [{ name: 'depositId', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' }, optionFlags: ['--id <depositId>'] }],
-    handler: sdkReadHandler(['getDepositPreIntentHook'], async (input) => [asBigInt(input.depositId, 'depositId')]),
-  },
-  {
-    path: ['intent-hook', 'whitelist', 'get'],
-    description: 'Get the whitelist hook for a deposit.',
-    readOnly: true,
-    args: [{ name: 'depositId', description: 'Deposit ID.', schema: { type: 'string', description: 'Deposit ID.' }, optionFlags: ['--id <depositId>'] }],
-    handler: sdkReadHandler(['getDepositWhitelistHook'], async (input) => [asBigInt(input.depositId, 'depositId')]),
+    handler: sdkReadHandler(['getDepositPreIntentHook'], async (input, _context, client) => [
+      asBigInt(input.depositId, 'depositId'),
+      { orchestratorAddress: currentOrchestratorV3(client) },
+    ]),
   },
   {
     path: ['pv', 'intent', 'list-owner'],

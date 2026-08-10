@@ -22,7 +22,7 @@ Config precedence: CLI flags > environment variables > `~/.peer/config.json` > d
 - `peer indexer delegations by-deposit`
 
 - `peer intent create/list/show/cancel/fulfill/release/fulfill-inputs/cleanup-orphaned`
-- `peer intent-hook pre set/get`, `whitelist set/get`
+- `peer intent-hook pre set/get`
 
 - `peer vault create/list/show/set-rate/set-rates/set-fee/set-config/delegates/snapshots/manual-rate-updates/oracle-config-updates/manager-fee/effective-rate`
 - `peer oracle supports-inline`, `validate-feeds`

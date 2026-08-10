@@ -119,9 +119,7 @@ Maintenance command for stale intent sets.
 
 ```text
 peer intent-hook pre set
-peer intent-hook whitelist set
 peer intent-hook pre get
-peer intent-hook whitelist get
 ```
 
-These are deposit-adjacent enforcement hooks and should be treated as governance/operator controls rather than day-to-day user actions.
+These are deposit-adjacent OrchestratorV3 hooks and should be treated as governance/operator controls rather than day-to-day user actions. SDK 0.11's V2-only whitelist-hook helpers are not exposed; use its `accessPolicy` API for current whitelist policy management.

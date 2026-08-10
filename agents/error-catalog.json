@@ -76,7 +76,7 @@
     "category": "internal",
     "retryable": false,
     "retry_after_ms": null,
-    "suggestion": "Inspect the stack trace in --debug mode and fix the local command or adapter bug.",
+    "suggestion": "Inspect the stack trace in debug mode and fix the local command or adapter bug.",
     "docs_url": null
   }
 ]

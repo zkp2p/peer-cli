@@ -11,7 +11,6 @@ Config precedence: CLI flags > environment variables > `~/.peer/config.json` > d
 ## Command reference
 
 - `peer quote` - fiat to USDC quotes.
-- `peer taker tier` - taker caps and cooldown state.
 - `peer payee register` - register payee details with the curator API.
 - `peer payee resolve-hash` - resolve a payee hash from on-chain deposit data.
 

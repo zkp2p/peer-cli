@@ -102,7 +102,6 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): MockRuntime
     getDeployedAddresses: () => ({ escrowV2: DEFAULT_ADDRESS, escrow: DEFAULT_ADDRESS }),
     supportsInlineOracleRateConfig: () => true,
     getQuote: () => [{ route: 'fast', price: '1.23' }],
-    getTakerTier: () => ({ responseObject: { tier: 'standard' } }),
     getAccountDeposits: () => [{ id: '1' }],
     getDeposits: () => [{ id: '1' }],
     getAccountIntents: () => [{ hash: '0x1' }],

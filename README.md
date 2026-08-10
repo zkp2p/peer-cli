@@ -127,7 +127,6 @@ Commands that need a signer require one of:
 
 ### Quotes and payee helpers
 - `peer quote` - Get fiat-to-USDC exchange quotes.
-- `peer taker tier` - Fetch taker caps and cooldown state.
 - `peer payee register` - Register payee details with the curator API.
 - `peer payee resolve-hash` - Resolve a payee hash from on-chain deposit data.
 

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 const FALLBACK_VERSION = '0.1.0';
@@ -8,7 +8,8 @@ const MAX_LOOKUP_DEPTH = 4;
 function* candidatePackagePaths(): Generator<string> {
   const startDirs = new Set<string>([process.cwd()]);
   if (process.argv[1]) {
-    startDirs.add(dirname(resolve(process.argv[1])));
+    const entryPath = resolve(process.argv[1]);
+    startDirs.add(dirname(existsSync(entryPath) ? realpathSync(entryPath) : entryPath));
   }
 
   for (const startDir of startDirs) {

@@ -1,6 +1,6 @@
 {
   "name": "peer-protocol-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Agent-first CLI and MCP server for the Peer (ZKP2P) protocol and Peer Cash",
   "bin": {
     "peer": "dist/cli.cjs"

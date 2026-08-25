@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Fixed version discovery when the installed `peer` binary is invoked through
+  npm's symlink from outside the package directory.
+
 ## 0.1.1
 
 - Fixed the installed `peer` binary so npm-created symlinks execute the CLI.

@@ -14,7 +14,7 @@ broadcasts.
 Configure the host to run:
 
 ```bash
-npx -y peer-protocol-cli@0.1.1 mcp --profile cash
+npx -y peer-protocol-cli@0.1.2 mcp --profile cash
 ```
 
 Keep optional `PEER_CASH_*` values in the host's secret or MCP configuration,

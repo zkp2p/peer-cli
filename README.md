@@ -17,6 +17,10 @@ second command list in documentation.
 
 Node.js 22 or newer is required.
 
+The current pinned install requires GitHub access to the private canonical
+repository. Public npm distribution is not live; do not install the unrelated
+unscoped `peer-cli` package.
+
 ```bash
 npm install --global github:zkp2p/peer-cli#v0.1.0
 peer --help

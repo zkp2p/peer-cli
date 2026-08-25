@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "peer",
+  "version": "0.1.0",
+  "description": "Operate the Peer protocol and prepare custody-separated Peer Cash transactions through one CLI and MCP server.",
+  "author": {
+    "name": "Peer",
+    "url": "https://peer.xyz"
+  },
+  "homepage": "https://agents.peer.xyz",
+  "repository": "https://github.com/zkp2p/peer-cli",
+  "license": "MIT",
+  "keywords": ["payments", "offramp", "usdc", "base", "mcp", "agent-skills"]
+}

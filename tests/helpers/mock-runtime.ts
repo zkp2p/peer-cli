@@ -192,7 +192,7 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): MockRuntime
       ...baseConfig,
       env: globalOptions.env ?? baseConfig.env,
       format: globalOptions.format ?? baseConfig.format,
-      yes: Boolean(globalOptions.yes ?? globalOptions.execute ?? baseConfig.yes),
+      yes: Boolean(globalOptions.yes ?? baseConfig.yes),
       debug: Boolean(globalOptions.debug ?? baseConfig.debug),
       privateKey: globalOptions.privateKey ?? baseConfig.privateKey,
       walletPath: globalOptions.walletPath ?? baseConfig.walletPath,

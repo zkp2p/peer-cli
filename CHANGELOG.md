@@ -2,7 +2,15 @@
 
 ## Unreleased
 
-- Bumped `@zkp2p/sdk` to `0.11.2`, routed cleanup and pre-intent hooks to OrchestratorV3, and removed `peer taker tier` plus the V2-only whitelist-hook commands.
+- Consolidated the standalone Peer Cash MCP server, portable skill, plugin, and
+  registry manifests into `@zkp2p/peer-cli`.
+- Added explicit `read-only`, `cash`, and `full` MCP profiles. The MCP launcher
+  is no longer exposed recursively as a tool.
+- Added a generated runtime manifest, a public library entry point, owner-only
+  local state, broader debug redaction, and a zero-advisory dependency tree.
+- Removed the retired `--execute` alias; `--yes` is the single execution flag.
+- Moved the `agents.peer.xyz` documentation application to
+  `zkp2p-clients/clients/agents`.
 
 ## 0.1.0
 

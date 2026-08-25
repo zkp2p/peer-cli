@@ -35,7 +35,7 @@ export async function createProgram(deps?: RuntimeDeps): Promise<Command> {
   program.option('--market-base-url <url>', 'Peerlytics base URL override.');
   program.option('--pay-base-url <url>', 'Pay API base URL override.');
   program.option('--format <value>', 'Output format: json or table.', 'json');
-  program.option('--yes', 'Skip dry-run previews and execute immediately. Write commands also accept legacy --execute as an alias.');
+  program.option('--yes', 'Skip dry-run previews and execute immediately.');
   program.option('--debug', 'Enable verbose debug logging.');
   program.configureOutput({
     writeErr: () => undefined,

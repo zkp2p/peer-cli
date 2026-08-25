@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { chmod, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type { Command } from 'commander';
 import type { PreparedTransaction } from '@zkp2p/sdk';
@@ -59,6 +59,7 @@ export interface CommandDefinition {
   authRequired?: boolean;
   requireWallet?: boolean;
   passthrough?: boolean;
+  exposeInMcp?: boolean;
   args?: CliArgumentDefinition[];
   options?: CliOptionDefinition[];
   examples?: string[];
@@ -223,8 +224,10 @@ export async function executeDefinition(
       readJsonFile: parseJsonFile,
       readTextFile: async (path) => readFile(path, 'utf8'),
       writeJsonFile: async (path, value) => {
-        await mkdir(dirname(path), { recursive: true });
-        await writeFile(path, JSON.stringify(value, null, 2));
+        await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+        await chmod(dirname(path), 0o700);
+        await writeFile(path, JSON.stringify(value, null, 2), { mode: 0o600 });
+        await chmod(path, 0o600);
       },
       runPrepared: async (plan) => {
         logDebug('Preparing write operation', { command, description: plan.description });
@@ -239,7 +242,7 @@ export async function executeDefinition(
         logDebug('Prepared write operation', { command, preview, previewData });
 
         if (!config.yes) {
-          logDebug('Write execution skipped because --yes/--execute was not set', { command });
+          logDebug('Write execution skipped because --yes was not set', { command });
           return {
             executed: false,
             preview,
@@ -290,10 +293,6 @@ function commandLeafName(spec: CommandDefinition): string {
   return spec.path.at(-1) ?? 'unknown';
 }
 
-function isWriteCommand(spec: CommandDefinition): boolean {
-  return !spec.readOnly;
-}
-
 function applyDefinition(command: Command, spec: CommandDefinition, deps: RuntimeDeps): void {
   for (const arg of spec.args ?? []) {
     const optional = arg.required === false || (arg.optionFlags?.length ?? 0) > 0;
@@ -312,10 +311,6 @@ function applyDefinition(command: Command, spec: CommandDefinition, deps: Runtim
 
   command.option('--params <json>', 'Raw JSON params object to merge under typed flags.');
   command.option('--params-file <path>', 'Read a raw JSON params object from a file path.');
-  if (isWriteCommand(spec)) {
-    command.option('--execute', 'Alias for global --yes. Skip preview and execute immediately.');
-  }
-
   command.action(async (...args: unknown[]) => {
     const commandInstance = args.at(-1) as Command;
     const optionBag = args.at(-2) as Record<string, unknown>;

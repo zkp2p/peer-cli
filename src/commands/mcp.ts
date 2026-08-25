@@ -1,6 +1,9 @@
 import type { CommandDefinition } from './framework.js';
 import { startPeerMcpServer } from '../mcp/server.js';
 import { readPackageVersion } from '../utils/package.js';
+import { ensureOneOf } from '../utils/validation.js';
+
+const MCP_PROFILES = ['read-only', 'cash', 'full'] as const;
 
 export const mcpDefinitions: CommandDefinition[] = [
   {
@@ -8,13 +11,19 @@ export const mcpDefinitions: CommandDefinition[] = [
     description: 'Start the peer-cli MCP server over stdio.',
     readOnly: true,
     passthrough: true,
+    exposeInMcp: false,
     options: [
-      { name: 'full', flags: '--full', description: 'Expose write-capable tools as well as read-only tools.', schema: { type: 'boolean', description: 'Expose all tools.' } },
-      { name: 'readOnly', flags: '--read-only', description: 'Force read-only tool registration.', schema: { type: 'boolean', description: 'Expose read-only tools only.' } },
+      {
+        name: 'profile',
+        flags: '--profile <profile>',
+        description: 'Tool profile: read-only, cash, or full.',
+        defaultValue: 'read-only',
+        schema: { type: 'string', description: 'MCP tool profile.', enum: MCP_PROFILES },
+      },
     ],
     handler: async (input, context) => {
       await startPeerMcpServer({
-        full: Boolean(input.full) && !Boolean(input.readOnly),
+        profile: ensureOneOf(input.profile ?? 'read-only', 'profile', MCP_PROFILES),
         globalOptions: context.globalOptions,
         deps: context.deps,
         version: readPackageVersion(),

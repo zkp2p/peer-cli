@@ -117,9 +117,22 @@ describe('tool registration', () => {
 
 describe('mcp server lifecycle', () => {
   it('constructs the server with the requested version and full flag', async () => {
-    createPeerMcpServer({ full: true, version: '9.9.9', globalOptions: { format: 'json' } });
+    createPeerMcpServer({ profile: 'full', version: '9.9.9', globalOptions: { format: 'json' } });
     expect(mocks.mcpServerCtor).toHaveBeenCalledWith({ name: 'peer-cli', version: '9.9.9' });
     expect(mocks.server.registerTool).toHaveBeenCalled();
+  });
+
+  it('keeps the MCP launcher out of the MCP tool surface', () => {
+    createPeerMcpServer({ profile: 'full', version: '1.2.3' });
+    const names = mocks.server.registerTool.mock.calls.map(([name]) => name);
+    expect(names).not.toContain('peer_mcp');
+  });
+
+  it('registers only Peer Cash tools in the cash profile', () => {
+    createPeerMcpServer({ profile: 'cash', version: '1.2.3' });
+    const names = mocks.server.registerTool.mock.calls.map(([name]) => name);
+    expect(names).toHaveLength(9);
+    expect(names.every((name) => String(name).startsWith('peer_cash_'))).toBe(true);
   });
 
   it('connects a stdio transport when started', async () => {

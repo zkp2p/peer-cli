@@ -1,6 +1,6 @@
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createError } from '../output/errors.js';
 import {
   DEFAULT_BASE_API_URL,
@@ -38,7 +38,6 @@ export interface GlobalOptions {
   payBaseUrl?: string;
   format?: OutputFormat;
   yes?: boolean;
-  execute?: boolean;
   debug?: boolean;
 }
 
@@ -91,9 +90,16 @@ export async function readStoredConfig(): Promise<StoredConfig> {
 
 export async function writeStoredConfig(patch: Partial<StoredConfig>): Promise<StoredConfig> {
   const next = { ...(await readStoredConfig()), ...patch };
-  await mkdir(dirname(getPeerConfigPath()), { recursive: true });
-  await writeFile(getPeerConfigPath(), JSON.stringify(next, null, 2));
+  await replaceStoredConfig(next);
   return next;
+}
+
+export async function replaceStoredConfig(config: StoredConfig): Promise<void> {
+  const configPath = getPeerConfigPath();
+  await mkdir(dirname(configPath), { recursive: true, mode: 0o700 });
+  await chmod(dirname(configPath), 0o700);
+  await writeFile(configPath, JSON.stringify(config, null, 2), { mode: 0o600 });
+  await chmod(configPath, 0o600);
 }
 
 export async function resolveConfig(globalOptions: GlobalOptions = {}): Promise<ResolvedConfig> {
@@ -117,7 +123,7 @@ export async function resolveConfig(globalOptions: GlobalOptions = {}): Promise<
   const resolved = {
     env,
     format,
-    yes: Boolean(globalOptions.yes ?? globalOptions.execute),
+    yes: Boolean(globalOptions.yes),
     debug: Boolean(globalOptions.debug),
     privateKey: globalOptions.privateKey ?? process.env.PEER_PRIVATE_KEY ?? stored.privateKey,
     walletPath: globalOptions.walletPath ?? process.env.PEER_WALLET_PATH ?? stored.walletPath,

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "package": "@zkp2p/peer-cli",
+  "source": {
+    "commands": "src/commands/registry.ts",
+    "cash_tools": "src/mcp/cash.ts",
+    "errors": "src/output/errors.ts"
+  },
+  "cli": {
+    "commands": 121,
+    "read_only": 72,
+    "write": 49
+  },
+  "mcp": {
+    "profiles": {
+      "read-only": {
+        "tools": 76,
+        "signs_or_broadcasts": false
+      },
+      "cash": {
+        "tools": 9,
+        "signs_or_broadcasts": false
+      },
+      "full": {
+        "tools": 129,
+        "signs_or_broadcasts": "only when the MCP process starts with --yes"
+      }
+    }
+  }
+}

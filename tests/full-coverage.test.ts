@@ -26,11 +26,13 @@ describe('logger sanitizeForDebug coverage', () => {
   it('sanitizes Error objects', () => {
     const spy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     setDebugEnabled(true);
-    const err = new Error('boom');
+    const err = Object.assign(new Error('boom'), { authorizationToken: 'bearer-secret' });
     logDebug('error test', { error: err });
     const output = String(spy.mock.calls.at(-1)?.[0]);
     expect(output).toContain('boom');
     expect(output).toContain('"name":"Error"');
+    expect(output).not.toContain('bearer-secret');
+    expect(output).toContain('[redacted]');
   });
 
   it('sanitizes Headers objects', () => {

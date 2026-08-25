@@ -4,7 +4,7 @@ export function setDebugEnabled(enabled: boolean): void {
   debugEnabled = enabled;
 }
 
-const SENSITIVE_KEY_PATTERN = /^(private.?key|api.?key|indexer.?key|market.?api.?key|pay.?api.?key|authorization|cookie|set-cookie|x-api-key)$/i;
+const SENSITIVE_KEY_PATTERN = /(private.?key|api.?key|authorization|token|secret|password|cookie)/i;
 
 function sanitizeForDebug(value: unknown, seen = new WeakSet<object>()): unknown {
   if (typeof value === 'bigint') {
@@ -12,7 +12,10 @@ function sanitizeForDebug(value: unknown, seen = new WeakSet<object>()): unknown
   }
 
   if (value instanceof Error) {
-    const extra = value as unknown as Record<string, unknown>;
+    const extra = sanitizeForDebug(
+      Object.fromEntries(Object.entries(value)),
+      seen,
+    ) as Record<string, unknown>;
     return {
       name: value.name,
       message: value.message,

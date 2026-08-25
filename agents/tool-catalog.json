@@ -3714,13 +3714,15 @@
     "parameter_schema": {
       "type": "object",
       "properties": {
-        "full": {
-          "type": "boolean",
-          "description": "Expose write-capable tools as well as read-only tools."
-        },
-        "readOnly": {
-          "type": "boolean",
-          "description": "Force read-only tool registration."
+        "profile": {
+          "type": "string",
+          "description": "Tool profile: read-only, cash, or full.",
+          "enum": [
+            "read-only",
+            "cash",
+            "full"
+          ],
+          "default": "read-only"
         },
         "params": {
           "type": "object",

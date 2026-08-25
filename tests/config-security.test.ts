@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp } from 'node:fs/promises';
+import { mkdtemp, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { executeDefinition } from '../src/commands/framework.js';
@@ -31,6 +31,17 @@ async function withTempHome<T>(fn: (home: string) => Promise<T>): Promise<T> {
 }
 
 describe('config output safety', () => {
+  it('stores config in an owner-only directory and file', async () => {
+    await withTempHome(async (home) => {
+      await run(['config', 'set'], { key: 'apiKey', value: 'local-api-key' });
+
+      const directoryMode = (await stat(join(home, '.peer'))).mode & 0o777;
+      const fileMode = (await stat(join(home, '.peer', 'config.json'))).mode & 0o777;
+      expect(directoryMode).toBe(0o700);
+      expect(fileMode).toBe(0o600);
+    });
+  });
+
   it('masks secrets in config set response', async () => {
     await withTempHome(async () => {
       const result = await run(['config', 'set'], { key: 'apiKey', value: 'super-secret-api-key-12345' });

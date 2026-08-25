@@ -1,389 +1,174 @@
-# @peer/cli
+# @zkp2p/peer-cli
 
-`peer-cli` is the JSON-first CLI and MCP wrapper for the Peer (ZKP2P) protocol. It shares one command registry across the CLI, MCP tools, and generated agent catalogs, so the runtime surface and the docs stay aligned.
+The canonical agent interface for Peer: one JSON-first CLI, one stdio MCP
+server, and one generated contract for protocol, indexer, market, checkout, and
+Peer Cash workflows.
 
-It can:
-- Quote fiat to USDC.
-- Manage deposits, intents, vaults, delegation, and oracle configuration.
-- Query the indexer, ProtocolViewer, Peerlytics market data, and Pay checkout sessions.
-- Run as an MCP server over stdio for agent workflows.
+- Docs and agent-readable text: <https://agents.peer.xyz>
+- Exact CLI schemas: [`agents/tool-catalog.json`](agents/tool-catalog.json)
+- Error contract: [`agents/error-catalog.json`](agents/error-catalog.json)
+- Runtime profiles and counts:
+  [`agents/runtime-manifest.json`](agents/runtime-manifest.json)
 
-## Setup
+The generated files come from the runtime registries. Do not hand-maintain a
+second command list in documentation.
 
-### Requirements
-- Node.js 18 or newer
-- npm
-- Wallet material and API keys for write commands
+## Install
 
-### Install and build
-
-```bash
-npm install
-npm run build
-```
-
-`npm run build` regenerates `agents/tool-catalog.json` and `agents/error-catalog.json` before bundling the CLI into `dist/`.
-
-### Run from source
+Node.js 22 or newer is required.
 
 ```bash
-npm run dev -- quote --from USD --amount 100 --platform wise
+npm install --global @zkp2p/peer-cli
+peer --help
 ```
 
-### Helpful wrappers
+Run without a global install:
 
-- `scripts/build.sh` wraps `npm run build`
-- `scripts/test-staging.sh` wraps `npm run test:e2e`
+```bash
+npx -y @zkp2p/peer-cli quote --from USD --amount 100 --platform wise
+```
+
+Successful output is JSON by default. Errors always use the canonical JSON
+error envelope on stderr. `--format table` changes successful human-facing
+output only.
+
+## Safety model
+
+Read commands execute immediately. Commands that can mutate state return a
+transaction or API preview first and execute only when the process receives
+`--yes`.
+
+Signer material resolves from `PEER_PRIVATE_KEY` or `--wallet-path`. Passing a
+private key on the command line is supported but visible in process listings;
+prefer the environment or an owner-readable wallet file. Persistent config and
+checkout caches are written with owner-only permissions.
+
+Never start a write-capable MCP process with `--yes` unless every write tool in
+that process is intentionally allowed to broadcast without a second CLI
+preview.
+
+## MCP profiles
+
+`peer mcp` requires one of three explicit profiles:
+
+- `read-only` — default protocol reads plus Peer Cash reads. No signing or
+  broadcasting.
+- `cash` — the complete custody-separated `peer_cash_*` surface. It prepares
+  unsigned transaction plans but never accepts a private key, signs, or
+  broadcasts.
+- `full` — every generic CLI-backed MCP tool plus Peer Cash. Generic write tools
+  still preview unless the MCP process was started with global `--yes`.
+
+The current tool counts are generated in `agents/runtime-manifest.json`.
+
+```json
+{
+  "mcpServers": {
+    "peer": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@zkp2p/peer-cli@0.1.0",
+        "mcp",
+        "--profile",
+        "read-only"
+      ]
+    }
+  }
+}
+```
+
+Use `--profile cash` for the portable Peer Cash workflow or `--profile full`
+for the complete operator surface.
+
+## Peer Cash
+
+The retired standalone `peer-cash-mcp` server now lives here. Its tool names and
+custody boundary are unchanged:
+
+1. `peer_cash_capabilities` — fetch live rails, currencies, tokens, and bounds.
+2. `peer_cash_estimate` — estimate fiat received at the current oracle rate.
+3. `peer_cash_prepare` — return ordered unsigned approval and deposit
+   transactions.
+4. `peer_cash_finalize` — resolve a confirmed receipt into a durable
+   `depositId`.
+5. `peer_cash_order` / `peer_cash_orders` — resume and inspect orders.
+6. `peer_cash_prepare_access_policy`, `peer_cash_prepare_withdraw`, and
+   `peer_cash_prepare_top_up` — prepare follow-up transactions.
+
+Base USDC amounts are decimal strings in 6-decimal base units: 100 USDC is
+`100000000`. Estimates are not locked quotes; the binding Chainlink rate
+resolves when a buyer fills.
+
+Install the packaged portable skill from
+[`skills/peer-cash/SKILL.md`](skills/peer-cash/SKILL.md) when the agent host
+supports Agent Skills.
 
 ## Configuration
 
-`peer-cli` resolves configuration in this order:
+Configuration resolves in this order:
+
 1. CLI flags
-2. Environment variables
-3. Stored config in `~/.peer/config.json`
-4. Built-in defaults
+2. environment variables
+3. `~/.peer/config.json`
+4. runtime defaults
 
-### Global flags
+Common settings:
 
-| Flag | Purpose |
-| --- | --- |
-| `--env <production|preproduction|staging>` | Select the runtime environment. |
-| `--private-key <hex>` | Provide a hex private key directly. Warning: visible in process listings; prefer `PEER_PRIVATE_KEY`. |
-| `--wallet-path <path>` | Read a private key from a file. |
-| `--rpc-url <url>` | Override the Base RPC URL. |
-| `--api-key <value>` | Curator API key for SDK-backed authenticated routes. |
-| `--indexer-key <value>` | Indexer API key. |
-| `--indexer-url <url>` | Indexer base URL override. |
-| `--market-api-key <value>` | Peerlytics API key. |
-| `--pay-api-key <value>` | Pay API key. |
-| `--base-api-url <url>` | Base API URL override. |
-| `--market-base-url <url>` | Peerlytics base URL override. |
-| `--pay-base-url <url>` | Pay API base URL override. |
-| `--format <json|table>` | Choose JSON or table output for successful CLI commands. |
-| `--yes` | Skip the preview step and execute prepared writes immediately. |
-| `--execute` | Alias for `--yes`. |
-| `--debug` | Emit verbose debug logs to stderr. |
+- `PEER_ENV`: `production`, `preproduction`, or `staging`
+- `PEER_PRIVATE_KEY` / `PEER_WALLET_PATH`: signer material for generic write
+  commands
+- `PEER_RPC_URL`: Base RPC override
+- `PEER_API_KEY`: Curator API key when required
+- `PEER_INDEXER_API_KEY` / `PEER_INDEXER_URL`: indexer overrides
+- `PEER_MARKET_API_KEY` / `PEER_MARKET_BASE_URL`: Peerlytics access
+- `PEER_PAY_API_KEY` / `PEER_PAY_BASE_URL`: hosted checkout access
+- `PEER_BASE_API_URL`: Curator override; production defaults to
+  `https://api.zkp2p.xyz`
+- `PEER_CASH_RPC_URL`, `PEER_CASH_API_KEY`, `PEER_CASH_REFERRAL_CODE`, and
+  `PEER_CASH_REFERRER`: cash-profile overrides
 
-### Environment variables
+Use `peer config show`, `set`, `unset`, and `reset` for persistent local
+settings. `peer config show` masks secret values. Prefer environment variables
+for credentials.
 
-| Variable | Purpose |
-| --- | --- |
-| `PEER_ENV` | Runtime environment. |
-| `PEER_PRIVATE_KEY` | Hex private key. |
-| `PEER_WALLET_PATH` | Path to a file containing a private key. |
-| `PEER_RPC_URL` | Base RPC URL override. |
-| `PEER_API_KEY` | Curator API key. |
-| `PEER_INDEXER_API_KEY` | Indexer API key. |
-| `PEER_INDEXER_URL` | Indexer base URL override. |
-| `PEER_MARKET_API_KEY` | Peerlytics API key. |
-| `PEER_PAY_API_KEY` | Pay API key. |
-| `PEER_BASE_API_URL` | Base API URL override. |
-| `PEER_MARKET_BASE_URL` | Peerlytics base URL override. |
-| `PEER_PAY_BASE_URL` | Pay API base URL override. |
+## Command families
 
-### Stored config
+The CLI covers:
 
-The persistent config file lives at `~/.peer/config.json`. The checkout cache is stored at `~/.peer/checkout-sessions.json`.
+- quotes, payee registration, and payee-hash resolution
+- deposit lifecycle, payment methods, currencies, oracle configuration, and
+  batch updates
+- intents, pre-intent hooks, fulfillment, release, and cleanup
+- ProtocolViewer and indexer reads, including a raw GraphQL escape hatch
+- vaults, rate managers, delegation, fees, and snapshots
+- Peerlytics market, explorer, history, attribution, and API-key operations
+- USDC balances and transfers
+- hosted checkout creation, reads, cancellation, and local resume cache
+- local config and environment inspection
 
-Use `peer config set` to update stored values and `peer config unset` to remove them. Supported keys include `env`, `walletPath`, `apiKey`, `marketApiKey`, `payApiKey`, `rpcUrl`, `indexerUrl`, and `indexerKey`, plus their common dashed aliases.
+Run `peer --help`, `peer <family> --help`, or inspect the generated tool catalog
+for the exact current paths, flags, schemas, auth requirements, and danger
+markers.
 
-### Common config commands
+Every command also accepts `--params <json>` and `--params-file <path>`. Typed
+flags override raw values.
 
-```bash
-peer config show
-peer config set env staging
-peer config set walletPath /path/to/wallet.txt
-peer config set payApiKey $PEER_PAY_API_KEY
-peer config unset marketApiKey
-peer config reset
-```
+## Development
 
-### Raw params override
-
-Every command accepts `--params <json>` and `--params-file <path>` to merge a raw JSON object underneath typed flags. Explicit flags always win.
+This repository uses npm and its committed `package-lock.json`.
 
 ```bash
-peer deposit create --amount 250 --params '{"retainOnEmpty":true}'
+npm install
+npm run dev -- quote --from USD --amount 100 --platform wise
+npm run check
 ```
 
-## Command Model
+`npm run build` regenerates all agent catalogs before bundling `peer` and the
+public MCP library entry point. Run `npm run test:e2e` after changing networked
+flows or checkout behavior.
 
-The general shape is:
-
-```bash
-peer [global flags] <command> [command flags]
-```
-
-Read commands return structured data immediately. Write commands prepare a transaction or API action and preview the result first. Add `--yes` or `--execute` to broadcast prepared writes immediately.
-
-Typed flags are merged over `--params` or `--params-file`, so explicit flags win when both are present.
-
-Commands that need a signer require one of:
-- `--private-key`
-- `PEER_PRIVATE_KEY`
-- `walletPath` in `~/.peer/config.json`
-
-## Command Reference
-
-### Quotes and payee helpers
-- `peer quote` - Get fiat-to-USDC exchange quotes.
-- `peer payee register` - Register payee details with the curator API.
-- `peer payee resolve-hash` - Resolve a payee hash from on-chain deposit data.
-
-### Deposits
-- `peer deposit ensure-allowance`
-- `peer deposit create`
-- `peer deposit list`
-- `peer deposit show`
-- `peer deposit show-many`
-- `peer deposit add-funds`
-- `peer deposit remove-funds`
-- `peer deposit withdraw`
-- `peer deposit pause`
-- `peer deposit resume`
-- `peer deposit set-range`
-- `peer deposit set-rate`
-- `peer deposit set-retain-on-empty`
-- `peer deposit set-delegate`
-- `peer deposit remove-delegate`
-- `peer deposit payment-method add`
-- `peer deposit payment-method set-active`
-- `peer deposit payment-method remove`
-- `peer deposit currency add`
-- `peer deposit currency deactivate`
-- `peer deposit currency remove`
-- `peer deposit prune-intents`
-- `peer deposit oracle set`
-- `peer deposit oracle remove`
-- `peer deposit oracle set-batch`
-- `peer deposit currency-config update-batch`
-- `peer deposit currency deactivate-batch`
-
-### ProtocolViewer and indexer reads
-- `peer pv deposit show`
-- `peer pv deposit show-many`
-- `peer pv deposit list-owner`
-- `peer indexer deposits list`
-- `peer indexer deposits list-relations`
-- `peer indexer deposits show`
-- `peer indexer deposits by-ids`
-- `peer indexer deposits by-ids-relations`
-- `peer indexer deposits fund-activities`
-- `peer indexer makers fund-activities`
-- `peer indexer deposits snapshots`
-- `peer indexer query` - Raw GraphQL passthrough; use sparingly. Use PascalCase root fields like `Deposit` / `Intent`, or introspect with `__schema`.
-- `peer indexer intents by-deposit-ids`
-- `peer indexer intents by-owner`
-- `peer indexer intents show`
-- `peer indexer intents expired`
-- `peer indexer intents fulfilled-events`
-- `peer indexer intents fulfillment-amounts`
-- `peer indexer intents fulfillment-and-payment`
-- `peer indexer delegations by-deposit`
-
-### Intents and hooks
-- `peer intent create`
-- `peer intent list`
-- `peer intent show`
-- `peer intent cancel`
-- `peer intent fulfill`
-- `peer intent release`
-- `peer intent fulfill-inputs`
-- `peer intent cleanup-orphaned`
-- `peer intent-hook pre set`
-- `peer intent-hook pre get`
-
-### Vaults, oracle, and delegation
-- `peer vault create`
-- `peer vault list`
-- `peer vault show`
-- `peer vault set-rate`
-- `peer vault set-rates`
-- `peer vault set-fee`
-- `peer vault set-config`
-- `peer vault delegates`
-- `peer vault snapshots`
-- `peer vault manual-rate-updates`
-- `peer vault oracle-config-updates`
-- `peer vault manager-fee`
-- `peer vault effective-rate`
-- `peer oracle supports-inline`
-- `peer oracle validate-feeds`
-- `peer delegate set`
-- `peer undelegate`
-- `peer delegate show`
-- `peer delegate set-direct`
-- `peer delegate clear-direct`
-
-### Market and transfer tools
-- `peer market spreads`
-- `peer market compare`
-- `peer market volume`
-- `peer market leaderboard`
-- `peer market protocol-stats`
-- `peer market analytics <slice>` - Fetch analytics by dimension (overview, liquidity, volume, activity, flows, performance).
-- `peer market vaults`
-- `peer market attribution`
-- `peer market explorer address|deposit|intent|maker|verifier|vault|search` - Look up entities on Peerlytics.
-- `peer market deposits` - Query deposits with filtering.
-- `peer market intents` - Query intents with filtering.
-- `peer market activity` - Fetch recent protocol events.
-- `peer market taker-history <address>`
-- `peer market maker-history <address>`
-- `peer market meta platforms|currencies` - List supported platforms and currencies from Peerlytics.
-- `peer market api-key list|create|rotate|delete` - Manage Peerlytics API keys.
-- `peer market credits` - Check API credit balance.
-- `peer transfer`
-- `peer balance`
-
-### Checkout and config
-- `peer checkout create` - Previews the Pay API request and only creates the session with `--yes`.
-- `peer checkout list`
-- `peer checkout show`
-- `peer checkout cancel` - Previews the cancel action and only executes with `--yes`.
-- `peer config show`
-- `peer config set`
-- `peer config unset` - Remove a stored config value.
-- `peer config reset` - Clear all stored config.
-- `peer config platforms`
-- `peer config currencies` - List the 34 supported fiat currencies from the CLI source-of-truth catalog.
-
-### MCP
-- `peer mcp`
-
-See `agents/tool-catalog.json` for the exact generated input schemas and read/write flags.
-
-## MCP
-
-`peer mcp` starts the MCP server over stdio with the server name `peer-cli`.
-
-- By default it exposes read-only tools only.
-- Pass `--full` to include write-capable tools.
-- Pass `--read-only` to force read-only registration even if `--full` is present.
-
-The generated tool catalog lives in `agents/tool-catalog.json` and is derived from the same command registry as the CLI.
-
-Example:
-
-```bash
-peer mcp --read-only
-peer mcp --full
-```
-
-## Output and Errors
-
-CLI commands return a JSON envelope by default:
-
-```json
-{
-  "ok": true,
-  "data": {},
-  "meta": {
-    "command": "peer quote",
-    "env": "production",
-    "chain": "base",
-    "timestamp": "2026-03-26T00:00:00.000Z",
-    "duration_ms": 12
-  }
-}
-```
-
-Failures use the same envelope shape with `ok: false` and an error body:
-
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "category": "validation",
-    "message": "Either --amount or --token-amount is required.",
-    "retryable": false,
-    "suggestion": "Inspect the command arguments and re-run with valid values."
-  },
-  "meta": {
-    "command": "peer quote",
-    "env": "production",
-    "chain": "base",
-    "timestamp": "2026-03-26T00:00:00.000Z",
-    "duration_ms": 8
-  }
-}
-```
-
-### Output formats
-- `--format json` prints the JSON envelope unchanged.
-- `--format table` renders successful objects and arrays as text tables.
-- Errors still emit JSON to stderr, even when `--format table` is selected.
-
-### Error fields
-- `code`
-- `category`
-- `message`
-- `retryable`
-- `suggestion`
-- `details`
-
-Common error categories include validation, auth, config, network, rate_limit, contract, timeout, unsupported, api, and internal.
-
-### Debug logging
-
-Enable `--debug` to print prefixed diagnostics to stderr:
-
-```text
-[peer-cli] message {"details":"..."}
-```
-
-## Testing
-
-Run the repo checks before handoff:
-
-```bash
-npm run lint
-npm run typecheck
-npm run test
-npm run test:coverage
-```
-
-Run end-to-end coverage when you touch networked flows or command wiring that depends on live services:
-
-```bash
-npm run test:e2e
-```
-
-## Examples
-
-Quote a swap in table form:
-
-```bash
-npm run dev -- quote --from USD --amount 150 --platform wise --format table
-```
-
-Preview a deposit creation before broadcasting:
-
-```bash
-npm run dev -- deposit create \
-  --amount 250 \
-  --min 50 \
-  --max 250 \
-  --platforms wise,venmo \
-  --currencies USD,EUR \
-  --rate 1.02
-```
-
-Execute a prepared write immediately:
-
-```bash
-npm run dev -- deposit create --amount 250 --min 50 --max 250 --platforms wise --currencies USD --rate 1.02 --yes
-```
-
-Create a Pay checkout session and cache it locally:
-
-```bash
-npm run dev -- checkout create --amount 25 --currency USD --description "Test order"
-```
-
-Run the MCP server in read-only mode:
-
-```bash
-npm run dev -- mcp --read-only
-```
+The documentation application for `agents.peer.xyz` is owned by
+`zkp2p/zkp2p-clients` at `clients/agents`; this repository owns the executable
+runtime, package manifests, portable skill, and generated contracts it
+documents.

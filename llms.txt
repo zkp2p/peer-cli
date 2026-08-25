@@ -1,47 +1,58 @@
-# @peer/cli
+# @zkp2p/peer-cli
 
-`peer-cli` is the JSON-first CLI wrapper for `@zkp2p/sdk` and a stdio MCP server.
+Canonical agent interface for the Peer protocol and Peer Cash.
 
-## Global flags
+## Machine-readable contracts
 
-`--env <production|preproduction|staging>`, `--private-key` (warning: visible in process listings), `--wallet-path`, `--rpc-url`, `--api-key`, `--indexer-key`, `--indexer-url`, `--market-api-key`, `--pay-api-key`, `--base-api-url`, `--market-base-url`, `--pay-base-url`, `--format <json|table>`, `--yes`, `--execute`, `--debug`, `--params`, `--params-file`
+- agents/tool-catalog.json: exact CLI paths, schemas, auth, danger, and read/write classification
+- agents/error-catalog.json: canonical error codes, categories, retryability, and remediation
+- agents/runtime-manifest.json: current CLI and MCP profile counts
+- skills/peer-cash/SKILL.md: custody-separated cash-out procedure
+- https://agents.peer.xyz/llms-full.txt: complete rendered documentation corpus
 
-Config precedence: CLI flags > environment variables > `~/.peer/config.json` > defaults.
+The registries under src/commands and src/mcp own runtime behavior. Generated
+catalogs own enumerations; prose must not duplicate a command inventory.
 
-## Command reference
+## Execution contract
 
-- `peer quote` - fiat to USDC quotes.
-- `peer payee register` - register payee details with the curator API.
-- `peer payee resolve-hash` - resolve a payee hash from on-chain deposit data.
+- Output is JSON by default. Errors always emit canonical JSON to stderr.
+- Read commands execute immediately.
+- State-changing commands preview first and broadcast only with global --yes.
+- Config precedence is CLI flags, environment, ~/.peer/config.json, defaults.
+- Use PEER_PRIVATE_KEY or an owner-readable PEER_WALLET_PATH for generic signed
+  writes. Never place signer material in prompts.
 
-- `peer deposit ensure-allowance`, `create`, `list`, `show`, `show-many`, `add-funds`, `remove-funds`, `withdraw`, `pause`, `resume`, `set-range`, `set-rate`, `set-retain-on-empty`, `set-delegate`, `remove-delegate`, `payment-method add/set-active/remove`, `currency add/deactivate/remove`, `prune-intents`, `oracle set/remove/set-batch`, `currency-config update-batch`, `currency deactivate-batch`
+## MCP
 
-- `peer pv deposit show`, `show-many`, `list-owner`
-- `peer indexer deposits list/list-relations/show/by-ids/by-ids-relations/fund-activities`, `makers fund-activities`, `deposits snapshots`, `query` (raw GraphQL passthrough)
-- `peer indexer intents by-deposit-ids/by-owner/show/expired/fulfilled-events/fulfillment-amounts/fulfillment-and-payment`
-- `peer indexer delegations by-deposit`
+Run `npx -y @zkp2p/peer-cli@0.1.0 mcp --profile <profile>`.
 
-- `peer intent create/list/show/cancel/fulfill/release/fulfill-inputs/cleanup-orphaned`
-- `peer intent-hook pre set/get`
+- read-only: generic and Peer Cash reads; no signing or broadcasting
+- cash: complete peer_cash_* surface; prepares unsigned plans and never accepts
+  a private key, signs, or broadcasts
+- full: all generic and cash tools; generic writes preview unless the MCP
+  process itself received global --yes
 
-- `peer vault create/list/show/set-rate/set-rates/set-fee/set-config/delegates/snapshots/manual-rate-updates/oracle-config-updates/manager-fee/effective-rate`
-- `peer oracle supports-inline`, `validate-feeds`
-- `peer delegate set/undelegate/show/set-direct/clear-direct`
+Never start a full MCP process with --yes unless automatic broadcasting is an
+explicit operator decision.
 
-- `peer market spreads/compare/volume/leaderboard/protocol-stats/analytics/vaults/attribution`
-- `peer market explorer address/deposit/intent/maker/verifier/vault/search`
-- `peer market deposits/intents/activity/taker-history/maker-history`
-- `peer market meta platforms/currencies`
-- `peer market api-key list/create/rotate/delete`, `peer market credits`
-- `peer transfer`, `peer balance`
+## Peer Cash order flow
 
-- `peer checkout create/list/show/cancel` (`create` and `cancel` preview first; execute with `--yes`)
-- `peer config show/set/unset/reset/platforms/currencies`
-- `peer mcp`
+1. peer_cash_capabilities
+2. peer_cash_estimate
+3. peer_cash_prepare
+4. host approval and ordered wallet submission
+5. peer_cash_finalize after the confirmed createDeposit receipt
+6. peer_cash_prepare_access_policy when required
+7. persist depositId and resume with peer_cash_order
 
-## Behavior notes
+Base USDC uses 6 decimals. Treat estimates as approximate. Retry read failures
+as reads; never retry an uncertain transaction without hash, wallet, and order
+inspection.
 
-- Read commands return structured data immediately.
-- Write commands preview transactions first and only broadcast with `--yes` or `--execute`.
-- `peer mcp` is read-only by default; pass `--full` to register write tools or `--read-only` to force the read-only surface.
-- Generated catalogs live in `agents/tool-catalog.json` and `agents/error-catalog.json`.
+## Live ownership
+
+- Curator API: https://api.zkp2p.xyz
+- Indexer GraphQL: https://indexer.zkp2p.xyz/v1/graphql
+- Agent docs: https://agents.peer.xyz
+- Runtime source: https://github.com/zkp2p/peer-cli
+- Docs source: https://github.com/zkp2p/zkp2p-clients/tree/main/clients/agents

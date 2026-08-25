@@ -1,8 +1,6 @@
 import { privateKeyToAccount } from 'viem/accounts';
 import type { CommandDefinition } from './framework.js';
-import { getPeerConfigPath, readStoredConfig, writeStoredConfig } from '../sdk/config.js';
-import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { readStoredConfig, replaceStoredConfig, writeStoredConfig } from '../sdk/config.js';
 import { SUPPORTED_CURRENCIES, SUPPORTED_ENVS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
 import { createError } from '../output/errors.js';
 import { ensureHexPrivateKey, ensureOneOf, ensureString } from '../utils/validation.js';
@@ -124,9 +122,7 @@ export const configDefinitions: CommandDefinition[] = [
       const stored = await readStoredConfig();
       const { [key]: _, ...rest } = stored as Record<string, unknown>;
       void _;
-      const configPath = getPeerConfigPath();
-      await mkdir(dirname(configPath), { recursive: true });
-      await writeFile(configPath, JSON.stringify(rest, null, 2));
+      await replaceStoredConfig(rest);
       return sanitizeConfigShape(rest);
     },
   },
@@ -135,9 +131,7 @@ export const configDefinitions: CommandDefinition[] = [
     description: 'Clear all persisted config values from ~/.peer/config.json.',
     readOnly: false,
     handler: async () => {
-      const configPath = getPeerConfigPath();
-      await mkdir(dirname(configPath), { recursive: true });
-      await writeFile(configPath, '{}');
+      await replaceStoredConfig({});
       return {};
     },
   },

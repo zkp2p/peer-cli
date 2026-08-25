@@ -30,7 +30,7 @@ export function registerCommandTools(
   full = false,
 ): void {
   for (const spec of definitions) {
-    if (!full && !spec.readOnly) {
+    if (spec.exposeInMcp === false || (!full && !spec.readOnly)) {
       continue;
     }
 

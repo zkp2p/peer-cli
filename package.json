@@ -1,11 +1,22 @@
 {
-  "name": "@peer/cli",
+  "name": "@zkp2p/peer-cli",
   "version": "0.1.0",
-  "description": "CLI for AI agents to interact with the Peer (ZKP2P) protocol",
+  "description": "Agent-first CLI and MCP server for the Peer (ZKP2P) protocol and Peer Cash",
   "bin": {
     "peer": "./dist/cli.cjs"
   },
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.cts",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
+    },
+    "./agents/*": "./agents/*"
+  },
   "type": "module",
+  "sideEffects": false,
   "files": [
     "dist",
     "agents",
@@ -14,8 +25,16 @@
     "CHANGELOG.md",
     "AGENTS.md",
     "CLAUDE.md",
-    "llms.txt"
+    "llms.txt",
+    "mcp.json",
+    "plugin.json",
+    "server.json",
+    "skills"
   ],
+  "mcpName": "io.github.zkp2p/peer-cli",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "prebuild": "tsx scripts/generate-catalogs.ts",
     "build": "tsup",
@@ -29,7 +48,9 @@
     "docs:dev": "npm --prefix docs run dev",
     "docs:build": "npm --prefix docs run build",
     "docs:lint": "npm --prefix docs run lint",
-    "docs:typecheck": "npm --prefix docs run types:check"
+    "check": "npm run lint && npm run typecheck && npm run test:coverage && npm run build",
+    "audit": "npm audit --omit=dev",
+    "prepack": "npm run check"
   },
   "keywords": [
     "peer",
@@ -37,6 +58,8 @@
     "cli",
     "agent",
     "mcp",
+    "peer-cash",
+    "offramp",
     "fiat",
     "crypto",
     "usdc"
@@ -44,17 +67,22 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zkp2p/peer-cli"
+    "url": "git+https://github.com/zkp2p/peer-cli.git"
   },
+  "bugs": {
+    "url": "https://github.com/zkp2p/peer-cli/issues"
+  },
+  "homepage": "https://agents.peer.xyz",
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.28.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@zkp2p/cash": "^0.4.10",
     "@zkp2p/sdk": "^0.12.1",
-    "commander": "^14.0.1",
-    "viem": "^2.38.2",
-    "zod": "^4.1.11"
+    "commander": "^14.0.3",
+    "viem": "^2.55.19",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^24.5.2",
@@ -66,5 +94,8 @@
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "esbuild": "0.28.2"
   }
 }

@@ -107,7 +107,7 @@ describe('in-process cli runner', () => {
     expect(addFunds).not.toHaveBeenCalled();
 
     const executed = await runCliInProcess(
-      ['node', 'peer', 'deposit', 'add-funds', '--id', '7', '--amount', '2', '--execute'],
+      ['node', 'peer', '--yes', 'deposit', 'add-funds', '--id', '7', '--amount', '2'],
       runtime.deps,
     );
     expect(executed.stdout).toContain('"executed": true');
@@ -311,14 +311,14 @@ describe('in-process cli runner', () => {
     expect(result.stderr).toContain('"ok": false');
   });
 
-  it('documents --execute as an alias for --yes in command help', async () => {
+  it('uses one canonical --yes execution flag', async () => {
     const result = await runCliInProcess(
       ['node', 'peer', 'deposit', 'add-funds', '--help'],
     );
 
     expect(result.exitCode).toBeUndefined();
     expect(result.stderr).toBe('');
-    expect(result.stdout).toContain('--execute');
-    expect(result.stdout).toContain('Alias for global --yes');
+    expect(result.stdout).not.toContain('--execute');
+    expect(result.stdout).not.toContain('Alias for global --yes');
   });
 });

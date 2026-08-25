@@ -2,30 +2,43 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { commandDefinitions } from '../commands/registry.js';
 import type { RuntimeDeps } from '../commands/framework.js';
+import { registerPeerCashTools, type PeerCashMcpConfig } from './cash.js';
 import { registerCommandTools } from './tools.js';
 import type { GlobalOptions } from '../sdk/config.js';
 import { readPackageVersion } from '../utils/package.js';
 
 export interface PeerMcpOptions {
-  full?: boolean;
+  profile?: PeerMcpProfile;
   globalOptions?: GlobalOptions;
   deps?: RuntimeDeps;
+  cash?: PeerCashMcpConfig;
   version?: string;
 }
 
+export type PeerMcpProfile = 'read-only' | 'cash' | 'full';
+
 export function createPeerMcpServer(options: PeerMcpOptions = {}): McpServer {
+  const profile = options.profile ?? 'read-only';
   const server = new McpServer({
     name: 'peer-cli',
     version: options.version ?? readPackageVersion(),
   });
 
-  registerCommandTools(
-    server,
-    commandDefinitions,
-    options.globalOptions ?? {},
-    options.deps,
-    Boolean(options.full),
-  );
+  if (profile !== 'cash') {
+    registerCommandTools(
+      server,
+      commandDefinitions,
+      options.globalOptions ?? {},
+      options.deps,
+      profile === 'full',
+    );
+  }
+
+  registerPeerCashTools(server, {
+    config: options.cash,
+    globalOptions: options.globalOptions,
+    includeWrites: profile !== 'read-only',
+  });
 
   return server;
 }

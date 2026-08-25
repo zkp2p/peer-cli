@@ -123,7 +123,7 @@ describe('mcp.ts coverage', () => {
     // Mock the server module to avoid actual stdio
     const serverModule = await import('../src/mcp/server.js');
     vi.spyOn(serverModule, 'startPeerMcpServer').mockResolvedValue(undefined as never);
-    const result = await handler({ full: true, readOnly: false }, runtime.context);
+    const result = await handler({ profile: 'full' }, runtime.context);
     expect(result).toBeUndefined();
   });
 });

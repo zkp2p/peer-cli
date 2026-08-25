@@ -17,19 +17,18 @@ second command list in documentation.
 
 Node.js 22 or newer is required.
 
-The current pinned install requires GitHub access to the private canonical
-repository. Public npm distribution is not live; do not install the unrelated
+The published package is `peer-protocol-cli`; do not install the unrelated
 unscoped `peer-cli` package.
 
 ```bash
-npm install --global github:zkp2p/peer-cli#v0.1.0
+npm install --global peer-protocol-cli@0.1.0
 peer --help
 ```
 
 Run without a global install:
 
 ```bash
-npx -y github:zkp2p/peer-cli#v0.1.0 quote --from USD --amount 100 --platform wise
+npx -y peer-protocol-cli@0.1.0 quote --from USD --amount 100 --platform wise
 ```
 
 Successful output is JSON by default. Errors always use the canonical JSON
@@ -72,7 +71,7 @@ The current tool counts are generated in `agents/runtime-manifest.json`.
       "command": "npx",
       "args": [
         "-y",
-        "github:zkp2p/peer-cli#v0.1.0",
+        "peer-protocol-cli@0.1.0",
         "mcp",
         "--profile",
         "read-only"

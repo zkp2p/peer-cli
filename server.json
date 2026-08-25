@@ -10,7 +10,7 @@
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "@zkp2p/peer-cli",
+      "identifier": "peer-protocol-cli",
       "version": "0.1.0",
       "packageArguments": [
         { "type": "positional", "value": "mcp" },

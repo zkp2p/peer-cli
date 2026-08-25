@@ -1,4 +1,4 @@
-# @zkp2p/peer-cli
+# peer-cli
 
 The canonical agent interface for Peer: one JSON-first CLI, one stdio MCP
 server, and one generated contract for protocol, indexer, market, checkout, and
@@ -18,14 +18,14 @@ second command list in documentation.
 Node.js 22 or newer is required.
 
 ```bash
-npm install --global @zkp2p/peer-cli
+npm install --global peer-protocol-cli
 peer --help
 ```
 
 Run without a global install:
 
 ```bash
-npx -y @zkp2p/peer-cli quote --from USD --amount 100 --platform wise
+npx -y peer-protocol-cli quote --from USD --amount 100 --platform wise
 ```
 
 Successful output is JSON by default. Errors always use the canonical JSON
@@ -68,7 +68,7 @@ The current tool counts are generated in `agents/runtime-manifest.json`.
       "command": "npx",
       "args": [
         "-y",
-        "@zkp2p/peer-cli@0.1.0",
+        "peer-protocol-cli@0.1.0",
         "mcp",
         "--profile",
         "read-only"

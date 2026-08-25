@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Consolidated the standalone Peer Cash MCP server, portable skill, plugin, and
-  registry manifests into `@zkp2p/peer-cli`.
+  registry manifests into the `peer-protocol-cli` package.
 - Added explicit `read-only`, `cash`, and `full` MCP profiles. The MCP launcher
   is no longer exposed recursively as a tool.
 - Added a generated runtime manifest, a public library entry point, owner-only

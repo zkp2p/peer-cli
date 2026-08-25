@@ -5,7 +5,7 @@ description: Cash out Base USDC to fiat with custody-separated Peer MCP tools. U
 
 # Peer Cash
 
-Use the `peer_cash_*` tools from `@zkp2p/peer-cli`. The cash profile prepares
+Use the `peer_cash_*` tools from `peer-protocol-cli`. The cash profile prepares
 transactions and reads protocol state; it never accepts private keys, signs, or
 broadcasts.
 
@@ -14,7 +14,7 @@ broadcasts.
 Configure the host to run:
 
 ```bash
-npx -y @zkp2p/peer-cli@0.1.0 mcp --profile cash
+npx -y peer-protocol-cli@0.1.0 mcp --profile cash
 ```
 
 Keep optional `PEER_CASH_*` values in the host's secret or MCP configuration,

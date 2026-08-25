@@ -43,7 +43,7 @@ async function main(): Promise<void> {
   ).length;
   const runtimeManifest = {
     schema_version: 1,
-    package: '@zkp2p/peer-cli',
+    package: 'peer-protocol-cli',
     source: {
       commands: 'src/commands/registry.ts',
       cash_tools: 'src/mcp/cash.ts',

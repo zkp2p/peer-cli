@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 const FALLBACK_VERSION = '0.1.0';
-const PACKAGE_NAME = '@zkp2p/peer-cli';
+const PACKAGE_NAME = 'peer-protocol-cli';
 const MAX_LOOKUP_DEPTH = 4;
 
 function* candidatePackagePaths(): Generator<string> {

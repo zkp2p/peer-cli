@@ -1,4 +1,4 @@
-# @zkp2p/peer-cli
+# peer-cli
 
 Canonical agent interface for the Peer protocol and Peer Cash.
 
@@ -24,7 +24,7 @@ catalogs own enumerations; prose must not duplicate a command inventory.
 
 ## MCP
 
-Run `npx -y @zkp2p/peer-cli@0.1.0 mcp --profile <profile>`.
+Run `npx -y peer-protocol-cli@0.1.0 mcp --profile <profile>`.
 
 - read-only: generic and Peer Cash reads; no signing or broadcasting
 - cash: complete peer_cash_* surface; prepares unsigned plans and never accepts

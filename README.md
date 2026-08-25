@@ -21,14 +21,14 @@ The published package is `peer-protocol-cli`; do not install the unrelated
 unscoped `peer-cli` package.
 
 ```bash
-npm install --global peer-protocol-cli@0.1.0
+npm install --global peer-protocol-cli@0.1.1
 peer --help
 ```
 
 Run without a global install:
 
 ```bash
-npx -y peer-protocol-cli@0.1.0 quote --from USD --amount 100 --platform wise
+npx -y peer-protocol-cli@0.1.1 quote --from USD --amount 100 --platform wise
 ```
 
 Successful output is JSON by default. Errors always use the canonical JSON
@@ -71,7 +71,7 @@ The current tool counts are generated in `agents/runtime-manifest.json`.
       "command": "npx",
       "args": [
         "-y",
-        "peer-protocol-cli@0.1.0",
+        "peer-protocol-cli@0.1.1",
         "mcp",
         "--profile",
         "read-only"

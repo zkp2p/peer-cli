@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Command, CommanderError } from 'commander';
 import { registerDefinitions, type RuntimeDeps } from './commands/framework.js';
@@ -9,7 +10,7 @@ import { readPackageVersion } from './utils/package.js';
 
 export function isMainModule(): boolean {
   const entry = process.argv[1];
-  return entry !== undefined && /(?:^|[/\\])(?:src[/\\]cli\.ts|dist[/\\]cli\.(?:cjs|js))$/.test(resolve(entry));
+  return entry !== undefined && /(?:^|[/\\])(?:src[/\\]cli\.ts|dist[/\\]cli\.(?:cjs|js))$/.test(realpathSync(resolve(entry)));
 }
 
 export async function createProgram(deps?: RuntimeDeps): Promise<Command> {

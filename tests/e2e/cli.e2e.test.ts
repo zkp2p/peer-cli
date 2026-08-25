@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -14,9 +14,9 @@ const repoRoot = process.cwd();
 const tsxCliPath = join(repoRoot, 'node_modules', 'tsx', 'dist', 'cli.mjs');
 const tempHomes: string[] = [];
 
-async function runPeer(args: string[], homeDir: string): Promise<PeerRunResult> {
+async function runPeer(args: string[], homeDir: string, entryPath = join(repoRoot, 'src', 'cli.ts')): Promise<PeerRunResult> {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [tsxCliPath, 'src/cli.ts', ...args], {
+    const child = spawn(process.execPath, [tsxCliPath, entryPath, ...args], {
       cwd: repoRoot,
       env: {
         ...process.env,
@@ -65,6 +65,19 @@ describe('peer cli e2e', () => {
     expect(result.stdout).toContain('Usage: peer');
     expect(result.stdout).toContain('quote');
     expect(result.stdout).toContain('mcp');
+  }, 15_000);
+
+  it('runs through an installed peer bin symlink', async () => {
+    const homeDir = await makeHomeDir();
+    const binDir = await makeHomeDir();
+    const binPath = join(binDir, 'peer');
+    await symlink(join(repoRoot, 'src', 'cli.ts'), binPath);
+
+    const result = await runPeer(['--help'], homeDir, binPath);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Usage: peer');
   }, 15_000);
 
   it('persists config in an isolated HOME directory', async () => {

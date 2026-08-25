@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.1.1
+
+- Fixed the installed `peer` binary so npm-created symlinks execute the CLI.
+- Switched packaged install references to the public npm release.
+
+## 0.1.0
 
 - Consolidated the standalone Peer Cash MCP server, portable skill, and plugin
   manifests into `peer-cli`.
@@ -11,7 +16,4 @@
 - Removed the retired `--execute` alias; `--yes` is the single execution flag.
 - Moved the `agents.peer.xyz` documentation application to
   `zkp2p-clients/clients/agents`.
-
-## 0.1.0
-
-- Initial `peer-cli` implementation.
+- Shipped the initial `peer-cli` implementation.

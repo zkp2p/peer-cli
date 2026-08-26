@@ -6,7 +6,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "peer-protocol-cli@0.3.0",
+        "https://github.com/zkp2p/peer-cli/releases/download/v0.3.0/peer-protocol-cli-0.3.0.tgz",
         "mcp",
         "--profile",
         "cash"

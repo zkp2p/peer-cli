@@ -10,7 +10,7 @@
 - Expanded every MCP profile with Peer Cash fill analytics, cross-chain source
   discovery and quoting, Relay status, and buyer history while preserving the
   existing authority boundaries.
-- Switched install examples to the public npm package.
+- Updated install examples to the signed v0.3.0 release artifact.
 
 ## 0.2.0
 

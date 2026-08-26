@@ -14,7 +14,7 @@ broadcasts.
 Configure the host to run:
 
 ```bash
-npx -y peer-protocol-cli@0.3.0 mcp --profile cash
+npx -y https://github.com/zkp2p/peer-cli/releases/download/v0.3.0/peer-protocol-cli-0.3.0.tgz mcp --profile cash
 ```
 
 Keep optional `PEER_CASH_*` values in the host's secret or MCP configuration,

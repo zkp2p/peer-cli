@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "slug": "peer",
+  "provider": "Peer",
+  "providerUrl": "https://peer.xyz",
+  "logo": "https://peer.xyz/logo512.png",
+  "demo": {
+    "title": "peer-workflow.sh",
+    "language": "bash",
+    "code": "# Live fiat<>USDC quote - no credentials needed\nnpx -y peer-protocol-cli quote --from USD --amount 100 --platform wise\n\n# Market data\nnpx -y peer-protocol-cli market spreads\nnpx -y peer-protocol-cli market volume\n\n# Cash out USDC to fiat: run the cash MCP profile\nnpx -y peer-protocol-cli mcp --profile cash\n# peer_cash_estimate -> peer_cash_prepare -> sign with your wallet -> peer_cash_finalize"
+  },
+  "setup": [
+    "No install or credentials for reads: `npx -y peer-protocol-cli quote --from USD --amount 100 --platform wise`",
+    "Remote read-only MCP (97 tools, no auth): https://mcp.peer.xyz/mcp",
+    "Cash-outs: run `npx -y peer-protocol-cli mcp --profile cash`; it prepares unsigned Base transactions your wallet signs and submits"
+  ],
+  "install": {
+    "type": "bankr",
+    "repoPath": "peer",
+    "command": "install the peer skill from https://github.com/BankrBot/skills/tree/main/peer"
+  }
+}

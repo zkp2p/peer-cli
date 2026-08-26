@@ -1,0 +1,19 @@
+name: peer
+type: remote
+dynamic:
+  tools: true
+meta:
+  category: finance
+  tags:
+    - finance
+    - payments
+    - crypto
+    - base
+    - remote
+about:
+  title: Peer
+  description: Read live data from Peer (formerly ZKP2P), the non-custodial peer-to-peer fiat<>crypto marketplace on Base - fiat<>USDC quotes, orderbook and spread data, deposits, intents, protocol stats, and Peer Cash cash-out data. 97 read-only tools, no auth.
+  icon: https://peer.xyz/logo512.png
+remote:
+  transport_type: streamable-http
+  url: https://mcp.peer.xyz/mcp

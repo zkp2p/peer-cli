@@ -1,6 +1,8 @@
 export {
   createPeerMcpServer,
+  startPeerMcpHttpServer,
   startPeerMcpServer,
+  type PeerMcpHttpOptions,
   type PeerMcpOptions,
   type PeerMcpProfile,
 } from './mcp/server.js';

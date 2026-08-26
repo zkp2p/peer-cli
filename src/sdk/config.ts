@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createError } from '../output/errors.js';
 import {
-  DEFAULT_BASE_API_URL,
+  DEFAULT_BASE_API_URLS,
   DEFAULT_MARKET_API_URL,
   DEFAULT_PAY_API_URL,
   DEFAULT_RPC_URL,
@@ -133,7 +133,11 @@ export async function resolveConfig(globalOptions: GlobalOptions = {}): Promise<
     indexerUrl: globalOptions.indexerUrl ?? process.env.PEER_INDEXER_URL ?? stored.indexerUrl,
     marketApiKey: globalOptions.marketApiKey ?? process.env.PEER_MARKET_API_KEY ?? stored.marketApiKey,
     payApiKey: globalOptions.payApiKey ?? process.env.PEER_PAY_API_KEY ?? stored.payApiKey,
-    baseApiUrl: globalOptions.baseApiUrl ?? process.env.PEER_BASE_API_URL ?? stored.baseApiUrl ?? DEFAULT_BASE_API_URL,
+    baseApiUrl:
+      globalOptions.baseApiUrl ??
+      process.env.PEER_BASE_API_URL ??
+      stored.baseApiUrl ??
+      DEFAULT_BASE_API_URLS[env],
     marketBaseUrl: ensureTrailingSlash(
       globalOptions.marketBaseUrl ?? process.env.PEER_MARKET_BASE_URL ?? stored.marketBaseUrl ?? DEFAULT_MARKET_API_URL,
     ),

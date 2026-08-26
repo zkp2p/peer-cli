@@ -12,6 +12,7 @@ const sdkMocks = vi.hoisted(() => ({
   resolvePaymentMethodHash: vi.fn(() => '0x3333333333333333333333333333333333333333'),
   resolveFiatCurrencyBytes32: vi.fn(() => '0x4444444444444444444444444444444444444444'),
   validateOracleFeedsOnChain: vi.fn(async () => ['feed-ok']),
+  startPeerMcpHttpServer: vi.fn(async () => ({ started: true })),
   startPeerMcpServer: vi.fn(async () => ({ started: true })),
 }));
 
@@ -23,6 +24,7 @@ vi.mock('@zkp2p/sdk', () => ({
 }));
 
 vi.mock('../src/mcp/server.js', () => ({
+  startPeerMcpHttpServer: sdkMocks.startPeerMcpHttpServer,
   startPeerMcpServer: sdkMocks.startPeerMcpServer,
 }));
 

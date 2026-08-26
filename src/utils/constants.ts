@@ -1,7 +1,11 @@
 export const DEFAULT_CHAIN_ID = 8453;
 export const DEFAULT_CHAIN_NAME = 'base';
 export const DEFAULT_RPC_URL = 'https://mainnet.base.org';
-export const DEFAULT_BASE_API_URL = 'https://api.zkp2p.xyz';
+export const DEFAULT_BASE_API_URLS = {
+  production: 'https://api.zkp2p.xyz',
+  preproduction: 'https://api-preprod.zkp2p.xyz',
+  staging: 'https://api-staging.zkp2p.xyz',
+} as const;
 export const DEFAULT_PAY_API_URL = 'https://api.pay.zkp2p.xyz';
 export const DEFAULT_MARKET_API_URL = 'https://peerlytics.xyz/api/';
 export const PEER_CONFIG_DIR = '.peer';

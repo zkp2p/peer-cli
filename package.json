@@ -1,6 +1,6 @@
 {
   "name": "peer-protocol-cli",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Agent-first CLI and MCP server for the Peer (ZKP2P) protocol and Peer Cash",
   "bin": {
     "peer": "dist/cli.cjs"
@@ -28,6 +28,7 @@
     "llms.txt",
     "mcp.json",
     "plugin.json",
+    "server.json",
     "skills"
   ],
   "publishConfig": {
@@ -37,6 +38,7 @@
     "prebuild": "tsx scripts/generate-catalogs.ts",
     "build": "tsup",
     "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.cjs mcp --transport http --profile read-only --host 0.0.0.0",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -81,6 +83,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^24.5.2",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",

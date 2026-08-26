@@ -6,7 +6,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "peer-protocol-cli@0.1.2",
+        "peer-protocol-cli@0.2.0",
         "mcp",
         "--profile",
         "cash"

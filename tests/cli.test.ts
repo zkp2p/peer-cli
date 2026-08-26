@@ -128,6 +128,19 @@ describe('in-process cli runner', () => {
     expect(failed.stdout).toBe('');
   });
 
+  it('prints startup errors from passthrough MCP commands', async () => {
+    const runtime = createMockRuntime();
+    const failed = await runCliInProcess(
+      ['node', 'peer', 'mcp', '--transport', 'http', '--port', '70000'],
+      runtime.deps,
+    );
+
+    expect(failed.exitCode).toBe(1);
+    expect(failed.stdout).toBe('');
+    expect(failed.stderr).toContain('"code": "VALIDATION_ERROR"');
+    expect(failed.stderr).toContain('port must be an integer from 1 through 65535');
+  });
+
   it('mentions all missing required quote inputs in cli validation errors', async () => {
     const runtime = createMockRuntime();
 

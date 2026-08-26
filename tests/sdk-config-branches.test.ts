@@ -62,8 +62,18 @@ describe('config precedence branches', () => {
         rpcUrl: 'https://env-rpc',
       });
 
+      delete process.env.PEER_BASE_API_URL;
       await expect(resolveConfig({ env: 'preproduction' })).resolves.toMatchObject({
         env: 'preproduction',
+        baseApiUrl: 'https://api-preprod.zkp2p.xyz',
+      });
+      await expect(resolveConfig({ env: 'staging' })).resolves.toMatchObject({
+        env: 'staging',
+        baseApiUrl: 'https://api-staging.zkp2p.xyz',
+      });
+      await expect(resolveConfig({ env: 'production' })).resolves.toMatchObject({
+        env: 'production',
+        baseApiUrl: 'https://api.zkp2p.xyz',
       });
     });
   });

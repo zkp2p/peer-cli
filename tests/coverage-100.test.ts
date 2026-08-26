@@ -117,14 +117,42 @@ describe('package.ts coverage', () => {
 describe('mcp.ts coverage', () => {
   it('calls startPeerMcpServer when handler is invoked', async () => {
     const runtime = makeContext();
-    // The mcp handler calls startPeerMcpServer which tries to start stdio transport.
-    // We just need to verify the handler is callable and exercises the function body.
     const handler = lookup(['mcp']).handler;
-    // Mock the server module to avoid actual stdio
     const serverModule = await import('../src/mcp/server.js');
     vi.spyOn(serverModule, 'startPeerMcpServer').mockResolvedValue(undefined as never);
     const result = await handler({ profile: 'full' }, runtime.context);
     expect(result).toBeUndefined();
+  });
+
+  it('starts read-only Streamable HTTP with validated bind options', async () => {
+    const runtime = makeContext();
+    const handler = lookup(['mcp']).handler;
+    const serverModule = await import('../src/mcp/server.js');
+    const startHttp = vi
+      .spyOn(serverModule, 'startPeerMcpHttpServer')
+      .mockResolvedValue(undefined as never);
+
+    await expect(
+      handler(
+        { profile: 'read-only', transport: 'http', host: '0.0.0.0', port: 8787 },
+        runtime.context,
+      ),
+    ).resolves.toBeUndefined();
+    expect(startHttp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        profile: 'read-only',
+        host: '0.0.0.0',
+        port: 8787,
+      }),
+    );
+  });
+
+  it('rejects invalid HTTP ports before starting the server', async () => {
+    const runtime = makeContext();
+    const handler = lookup(['mcp']).handler;
+    await expect(
+      handler({ profile: 'read-only', transport: 'http', port: 70_000 }, runtime.context),
+    ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
   });
 });
 

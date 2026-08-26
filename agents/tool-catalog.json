@@ -3710,7 +3710,7 @@
     "path": [
       "mcp"
     ],
-    "description": "Start the peer-cli MCP server over stdio.",
+    "description": "Start the peer-cli MCP server over stdio or Streamable HTTP.",
     "parameter_schema": {
       "type": "object",
       "properties": {
@@ -3723,6 +3723,24 @@
             "full"
           ],
           "default": "read-only"
+        },
+        "transport": {
+          "type": "string",
+          "description": "Transport: stdio or http.",
+          "enum": [
+            "stdio",
+            "http"
+          ],
+          "default": "stdio"
+        },
+        "host": {
+          "type": "string",
+          "description": "HTTP bind host.",
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "type": "number",
+          "description": "HTTP port. Defaults to PORT or 3000."
         },
         "params": {
           "type": "object",

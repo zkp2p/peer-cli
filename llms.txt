@@ -24,7 +24,7 @@ catalogs own enumerations; prose must not duplicate a command inventory.
 
 ## MCP
 
-Run `npx -y peer-protocol-cli@0.1.2 mcp --profile <profile>`.
+Run `npx -y peer-protocol-cli@0.2.0 mcp --profile <profile>`.
 
 - read-only: generic and Peer Cash reads; no signing or broadcasting
 - cash: complete peer_cash_* surface; prepares unsigned plans and never accepts
@@ -34,6 +34,10 @@ Run `npx -y peer-protocol-cli@0.1.2 mcp --profile <profile>`.
 
 Never start a full MCP process with --yes unless automatic broadcasting is an
 explicit operator decision.
+
+The hosted read-only Streamable HTTP endpoint is
+https://peer-cli-production.up.railway.app/mcp. Cash and full authority remain
+local stdio profiles.
 
 ## Peer Cash order flow
 

@@ -1,8 +1,10 @@
+<!-- mcp-name: io.github.zkp2p/peer -->
+
 # peer-cli
 
-The canonical agent interface for Peer: one JSON-first CLI, one stdio MCP
-server, and one generated contract for protocol, indexer, market, checkout, and
-Peer Cash workflows.
+The canonical agent interface for Peer: one JSON-first CLI, local and hosted MCP
+servers, and one generated contract for protocol, indexer, market, checkout,
+and Peer Cash workflows.
 
 - Docs and agent-readable text: <https://agents.peer.xyz>
 - Exact CLI schemas: [`agents/tool-catalog.json`](agents/tool-catalog.json)
@@ -21,14 +23,14 @@ The published package is `peer-protocol-cli`; do not install the unrelated
 unscoped `peer-cli` package.
 
 ```bash
-npm install --global peer-protocol-cli@0.1.2
+npm install --global peer-protocol-cli@0.2.0
 peer --help
 ```
 
 Run without a global install:
 
 ```bash
-npx -y peer-protocol-cli@0.1.2 quote --from USD --amount 100 --platform wise
+npx -y peer-protocol-cli@0.2.0 quote --from USD --amount 100 --platform wise
 ```
 
 Successful output is JSON by default. Errors always use the canonical JSON
@@ -71,7 +73,7 @@ The current tool counts are generated in `agents/runtime-manifest.json`.
       "command": "npx",
       "args": [
         "-y",
-        "peer-protocol-cli@0.1.2",
+        "peer-protocol-cli@0.2.0",
         "mcp",
         "--profile",
         "read-only"
@@ -83,6 +85,16 @@ The current tool counts are generated in `agents/runtime-manifest.json`.
 
 Use `--profile cash` for the portable Peer Cash workflow or `--profile full`
 for the complete operator surface.
+
+The hosted MCP server exposes only the `read-only` profile over Streamable HTTP:
+
+```text
+https://peer-cli-production.up.railway.app/mcp
+```
+
+Run the same transport yourself with `peer mcp --transport http`. HTTP refuses
+the `cash` and `full` profiles; those authority-bearing profiles remain local
+stdio processes.
 
 ## Peer Cash
 
@@ -126,8 +138,8 @@ Common settings:
 - `PEER_INDEXER_API_KEY` / `PEER_INDEXER_URL`: indexer overrides
 - `PEER_MARKET_API_KEY` / `PEER_MARKET_BASE_URL`: Peerlytics access
 - `PEER_PAY_API_KEY` / `PEER_PAY_BASE_URL`: hosted checkout access
-- `PEER_BASE_API_URL`: Curator override; production defaults to
-  `https://api.zkp2p.xyz`
+- `PEER_BASE_API_URL`: Curator override. Defaults follow `PEER_ENV`:
+  `api.zkp2p.xyz`, `api-preprod.zkp2p.xyz`, or `api-staging.zkp2p.xyz`.
 - `PEER_CASH_RPC_URL`, `PEER_CASH_API_KEY`, `PEER_CASH_REFERRAL_CODE`, and
   `PEER_CASH_REFERRER`: cash-profile overrides
 

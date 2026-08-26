@@ -346,7 +346,7 @@ function applyDefinition(command: Command, spec: CommandDefinition, deps: Runtim
       deps,
     );
 
-    if (!spec.passthrough) {
+    if (!spec.passthrough || !output.ok) {
       const format = (globalOptions.format ?? 'json') as OutputFormat;
       const rendered = renderOutput(output, format);
       const writer = output.ok ? process.stdout : process.stderr;

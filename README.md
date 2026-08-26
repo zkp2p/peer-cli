@@ -89,7 +89,7 @@ for the complete operator surface.
 The hosted MCP server exposes only the `read-only` profile over Streamable HTTP:
 
 ```text
-https://peer-cli-production.up.railway.app/mcp
+https://mcp.peer.xyz/mcp
 ```
 
 Run the same transport yourself with `peer mcp --transport http`. HTTP refuses

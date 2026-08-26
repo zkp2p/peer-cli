@@ -3706,6 +3706,734 @@
     "read_only": true
   },
   {
+    "name": "peer stake state",
+    "path": [
+      "stake",
+      "state"
+    ],
+    "description": "Read the authoritative StakeVault state for a staker and optional taker.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "staker": {
+          "type": "string",
+          "description": "Stake owner address."
+        },
+        "taker": {
+          "type": "string",
+          "description": "Optional taker address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "staker"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake indexed-state",
+    "path": [
+      "stake",
+      "indexed-state"
+    ],
+    "description": "Read indexed staking, authorization, claim, and risk-window state with freshness metadata.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "taker": {
+          "type": "string",
+          "description": "Taker address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "taker"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake balance",
+    "path": [
+      "stake",
+      "balance"
+    ],
+    "description": "Read total stake owned by an address.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Stake owner address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "owner"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake locked",
+    "path": [
+      "stake",
+      "locked"
+    ],
+    "description": "Read stake locked behind active chargeback windows.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Stake owner address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "owner"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake free",
+    "path": [
+      "stake",
+      "free"
+    ],
+    "description": "Read stake available for withdrawal or a new lock.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Stake owner address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "owner"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake claimable",
+    "path": [
+      "stake",
+      "claimable"
+    ],
+    "description": "Read non-stake USDC claimable by a beneficiary.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "beneficiary": {
+          "type": "string",
+          "description": "Claim beneficiary address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "beneficiary"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake owner",
+    "path": [
+      "stake",
+      "owner"
+    ],
+    "description": "Resolve the effective stake owner backing a taker.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "taker": {
+          "type": "string",
+          "description": "Taker address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "taker"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake selected-owner",
+    "path": [
+      "stake",
+      "selected-owner"
+    ],
+    "description": "Read the stake owner selected by a taker before authorization checks.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "taker": {
+          "type": "string",
+          "description": "Taker address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "taker"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake authorization",
+    "path": [
+      "stake",
+      "authorization"
+    ],
+    "description": "Read whether a stake owner authorizes a taker.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Stake owner address."
+        },
+        "taker": {
+          "type": "string",
+          "description": "Taker address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "owner",
+        "taker"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake admissions-paused",
+    "path": [
+      "stake",
+      "admissions-paused"
+    ],
+    "description": "Read whether chargebackable intent admissions are paused.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake risk-window",
+    "path": [
+      "stake",
+      "risk-window"
+    ],
+    "description": "Read the minimum collateral lock window for a payment method.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "paymentMethodHash": {
+          "type": "string",
+          "description": "Payment method bytes32 hash."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "paymentMethodHash"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake chargeback-enabled",
+    "path": [
+      "stake",
+      "chargeback-enabled"
+    ],
+    "description": "Read whether a deposit has chargeback coverage enabled.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "escrow": {
+          "type": "string",
+          "description": "Escrow address."
+        },
+        "depositId": {
+          "type": "string",
+          "description": "Numeric deposit ID."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "escrow",
+        "depositId"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer stake ensure-allowance",
+    "path": [
+      "stake",
+      "ensure-allowance"
+    ],
+    "description": "Approve StakeVault USDC spending if required.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "USDC amount to approve."
+        },
+        "maxApprove": {
+          "type": "boolean",
+          "description": "Approve MaxUint256 instead of the exact amount."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "amount"
+      ]
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer stake deposit",
+    "path": [
+      "stake",
+      "deposit"
+    ],
+    "description": "Deposit USDC into StakeVault.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "USDC amount to stake."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "amount"
+      ]
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer stake withdraw",
+    "path": [
+      "stake",
+      "withdraw"
+    ],
+    "description": "Withdraw free stake from StakeVault.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "USDC amount to withdraw."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "amount"
+      ]
+    },
+    "auth_required": true,
+    "dangerous": true,
+    "read_only": false
+  },
+  {
+    "name": "peer stake claim",
+    "path": [
+      "stake",
+      "claim"
+    ],
+    "description": "Withdraw the signer’s complete claimable USDC balance.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer stake authorize",
+    "path": [
+      "stake",
+      "authorize"
+    ],
+    "description": "Grant or revoke a taker’s access to the signer’s stake.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "taker": {
+          "type": "string",
+          "description": "Taker address."
+        },
+        "authorized": {
+          "type": "boolean",
+          "description": "Whether the taker is authorized."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "taker",
+        "authorized"
+      ]
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer stake select-owner",
+    "path": [
+      "stake",
+      "select-owner"
+    ],
+    "description": "Select the stake owner backing the signer as taker.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Stake owner address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "owner"
+      ]
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer stake clear-owner",
+    "path": [
+      "stake",
+      "clear-owner"
+    ],
+    "description": "Clear the signer’s selected stake owner and return to self-stake.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer stake release-matured",
+    "path": [
+      "stake",
+      "release-matured"
+    ],
+    "description": "Release one matured chargeback intent and unlock its stake cover.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "intentHash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "policy": {
+          "type": "string",
+          "description": "Optional snapshotted chargeback policy address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "intentHash"
+      ]
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer stake release-matured-batch",
+    "path": [
+      "stake",
+      "release-matured-batch"
+    ],
+    "description": "Release multiple matured chargeback intents in one transaction.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "intentHashes": {
+          "type": "array",
+          "description": "JSON array of intent hashes."
+        },
+        "policy": {
+          "type": "string",
+          "description": "Optional snapshotted chargeback policy address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "intentHashes"
+      ]
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
+    "name": "peer guardian available",
+    "path": [
+      "guardian",
+      "available"
+    ],
+    "description": "Check whether the selected environment has an IntentGuardian deployment.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer guardian policy",
+    "path": [
+      "guardian",
+      "policy"
+    ],
+    "description": "Read the live IntentGuardian fee and extension policy.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      }
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer guardian quote-extension",
+    "path": [
+      "guardian",
+      "quote-extension"
+    ],
+    "description": "Quote the authoritative on-chain cost to extend an intent.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "intentAmount": {
+          "type": "string",
+          "description": "Intent deposit-token amount in base units."
+        },
+        "additionalSeconds": {
+          "type": "string",
+          "description": "Requested extension in seconds."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "intentAmount",
+        "additionalSeconds"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer guardian payer-funding",
+    "path": [
+      "guardian",
+      "payer-funding"
+    ],
+    "description": "Read payer token balance and allowance available to IntentGuardian.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "payer": {
+          "type": "string",
+          "description": "Payer address."
+        },
+        "token": {
+          "type": "string",
+          "description": "Deposit token address."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "payer",
+        "token"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
+  },
+  {
+    "name": "peer guardian extend-intent",
+    "path": [
+      "guardian",
+      "extend-intent"
+    ],
+    "description": "Extend a live intent with an explicit maximum cost.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "escrow": {
+          "type": "string",
+          "description": "Escrow address."
+        },
+        "depositId": {
+          "type": "string",
+          "description": "Numeric deposit ID."
+        },
+        "intentHash": {
+          "type": "string",
+          "description": "Intent hash."
+        },
+        "additionalSeconds": {
+          "type": "string",
+          "description": "Requested extension in seconds."
+        },
+        "maxCost": {
+          "type": "string",
+          "description": "Maximum deposit-token cost in base units."
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "escrow",
+        "depositId",
+        "intentHash",
+        "additionalSeconds",
+        "maxCost"
+      ]
+    },
+    "auth_required": true,
+    "dangerous": false,
+    "read_only": false
+  },
+  {
     "name": "peer mcp",
     "path": [
       "mcp"

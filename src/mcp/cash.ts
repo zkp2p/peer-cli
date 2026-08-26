@@ -41,8 +41,13 @@ interface RegisterPeerCashToolsOptions {
 
 export const PEER_CASH_TOOL_NAMES = {
   capabilities: 'peer_cash_capabilities',
+  fillStats: 'peer_cash_fill_stats',
+  sourceCapabilities: 'peer_cash_source_capabilities',
+  quoteSource: 'peer_cash_quote_source',
+  relayStatus: 'peer_cash_relay_status',
   estimate: 'peer_cash_estimate',
   finalize: 'peer_cash_finalize',
+  buyer: 'peer_cash_buyer',
   order: 'peer_cash_order',
   orders: 'peer_cash_orders',
   prepare: 'peer_cash_prepare',
@@ -53,8 +58,13 @@ export const PEER_CASH_TOOL_NAMES = {
 
 export const PEER_CASH_READ_TOOL_NAMES = [
   PEER_CASH_TOOL_NAMES.capabilities,
+  PEER_CASH_TOOL_NAMES.fillStats,
+  PEER_CASH_TOOL_NAMES.sourceCapabilities,
+  PEER_CASH_TOOL_NAMES.quoteSource,
+  PEER_CASH_TOOL_NAMES.relayStatus,
   PEER_CASH_TOOL_NAMES.estimate,
   PEER_CASH_TOOL_NAMES.finalize,
+  PEER_CASH_TOOL_NAMES.buyer,
   PEER_CASH_TOOL_NAMES.order,
   PEER_CASH_TOOL_NAMES.orders,
 ] as const;
@@ -248,6 +258,73 @@ export function registerPeerCashTools(
   );
 
   server.registerTool(
+    PEER_CASH_TOOL_NAMES.fillStats,
+    {
+      title: 'Read Peer Cash fill statistics',
+      description:
+        'Return trailing 30-day fill counts and first-fill timing by payout platform and currency. Use this as historical routing evidence, never as a guarantee.',
+      inputSchema: {},
+      annotations: { readOnlyHint: true, idempotentHint: true },
+    },
+    () => handleTool(() => client.fillStats()),
+  );
+
+  server.registerTool(
+    PEER_CASH_TOOL_NAMES.sourceCapabilities,
+    {
+      title: 'Discover cross-chain source assets',
+      description:
+        'Return live Relay-supported EVM source chains and tokens that can route into Base USDC before a Peer Cash order.',
+      inputSchema: {},
+      annotations: { readOnlyHint: true, idempotentHint: true },
+    },
+    () => handleTool(() => client.sourceCapabilities()),
+  );
+
+  server.registerTool(
+    PEER_CASH_TOOL_NAMES.quoteSource,
+    {
+      title: 'Quote a source asset into Base USDC',
+      description:
+        'Quote a live Relay route from an EVM source asset into Base USDC. The response contains unsigned transaction data; this tool never signs or submits it.',
+      inputSchema: {
+        user: address.describe('Source-chain wallet address'),
+        amount: positiveInteger.describe('Source amount in the source token’s base units'),
+        sourceChainId: z.number().int().positive().describe('Relay source chain ID'),
+        sourceCurrency: z.string().min(1).describe('Source token address or native currency identifier'),
+        recipient: address.optional().describe('Base recipient; defaults to the source wallet'),
+        tradeType: z
+          .enum(['EXACT_INPUT', 'EXACT_OUTPUT', 'EXPECTED_OUTPUT'])
+          .optional()
+          .describe('Relay amount mode; defaults to EXACT_INPUT'),
+      },
+      annotations: { readOnlyHint: true, idempotentHint: false },
+    },
+    ({ user, amount, sourceChainId, sourceCurrency, recipient, tradeType }) =>
+      handleTool(() =>
+        client.quoteSource({
+          user,
+          amount: BigInt(amount),
+          source: { chainId: sourceChainId, currency: sourceCurrency },
+          ...(recipient ? { recipient } : {}),
+          ...(tradeType ? { tradeType } : {}),
+        }),
+      ),
+  );
+
+  server.registerTool(
+    PEER_CASH_TOOL_NAMES.relayStatus,
+    {
+      title: 'Read Relay execution status',
+      description:
+        'Track a previously submitted cross-chain source route by Relay request ID. Retry this read; never resubmit from an unknown status.',
+      inputSchema: { requestId: z.string().min(1) },
+      annotations: { readOnlyHint: true, idempotentHint: true },
+    },
+    ({ requestId }) => handleTool(() => client.relayStatus(requestId)),
+  );
+
+  server.registerTool(
     PEER_CASH_TOOL_NAMES.estimate,
     {
       title: 'Estimate fiat received',
@@ -294,6 +371,18 @@ export function registerPeerCashTools(
           logs: receipt.logs,
         });
       }),
+  );
+
+  server.registerTool(
+    PEER_CASH_TOOL_NAMES.buyer,
+    {
+      title: 'Read a Peer Cash buyer profile',
+      description:
+        'Return protocol history for the buyer that matched an order so an automation can assess delivery context without trusting display identity.',
+      inputSchema: { address },
+      annotations: { readOnlyHint: true, idempotentHint: true },
+    },
+    ({ address: buyerAddress }) => handleTool(() => client.buyer(buyerAddress)),
   );
 
   server.registerTool(

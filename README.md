@@ -23,14 +23,14 @@ The package is `peer-protocol-cli`; do not install the unrelated unscoped
 `peer-cli` package.
 
 ```bash
-npm install --global https://github.com/zkp2p/peer-cli/releases/download/v0.2.0/peer-protocol-cli-0.2.0.tgz
+npm install --global peer-protocol-cli@0.3.0
 peer --help
 ```
 
 Run without a global install:
 
 ```bash
-npx -y https://github.com/zkp2p/peer-cli/releases/download/v0.2.0/peer-protocol-cli-0.2.0.tgz quote --from USD --amount 100 --platform wise
+npx -y peer-protocol-cli@0.3.0 quote --from USD --amount 100 --platform wise
 ```
 
 Successful output is JSON by default. Errors always use the canonical JSON
@@ -73,7 +73,7 @@ The current tool counts are generated in `agents/runtime-manifest.json`.
       "command": "npx",
       "args": [
         "-y",
-        "https://github.com/zkp2p/peer-cli/releases/download/v0.2.0/peer-protocol-cli-0.2.0.tgz",
+        "peer-protocol-cli@0.3.0",
         "mcp",
         "--profile",
         "read-only"
@@ -101,14 +101,19 @@ stdio processes.
 The retired standalone `peer-cash-mcp` server now lives here. Its tool names and
 custody boundary are unchanged:
 
-1. `peer_cash_capabilities` — fetch live rails, currencies, tokens, and bounds.
-2. `peer_cash_estimate` — estimate fiat received at the current oracle rate.
-3. `peer_cash_prepare` — return ordered unsigned approval and deposit
+1. `peer_cash_capabilities` / `peer_cash_source_capabilities` — fetch live
+   payout rails and Relay-supported source chains and tokens.
+2. `peer_cash_fill_stats` / `peer_cash_buyer` — inspect historical fill
+   evidence and buyer protocol history.
+3. `peer_cash_quote_source` / `peer_cash_relay_status` — quote and track a
+   cross-chain route into Base USDC without granting signer authority.
+4. `peer_cash_estimate` — estimate fiat received at the current oracle rate.
+5. `peer_cash_prepare` — return ordered unsigned approval and deposit
    transactions.
-4. `peer_cash_finalize` — resolve a confirmed receipt into a durable
+6. `peer_cash_finalize` — resolve a confirmed receipt into a durable
    `depositId`.
-5. `peer_cash_order` / `peer_cash_orders` — resume and inspect orders.
-6. `peer_cash_prepare_access_policy`, `peer_cash_prepare_withdraw`, and
+7. `peer_cash_order` / `peer_cash_orders` — resume and inspect orders.
+8. `peer_cash_prepare_access_policy`, `peer_cash_prepare_withdraw`, and
    `peer_cash_prepare_top_up` — prepare follow-up transactions.
 
 Base USDC amounts are decimal strings in 6-decimal base units: 100 USDC is
@@ -155,6 +160,10 @@ The CLI covers:
 - deposit lifecycle, payment methods, currencies, oracle configuration, and
   batch updates
 - intents, pre-intent hooks, fulfillment, release, and cleanup
+- StakeVault deposits, withdrawals, authorization, indexed freshness, and
+  matured chargeback releases
+- IntentGuardian policy, live extension quotes, payer funding, and
+  preview-first intent extension
 - ProtocolViewer and indexer reads, including a raw GraphQL escape hatch
 - vaults, rate managers, delegation, fees, and snapshots
 - Peerlytics market, explorer, history, attribution, and API-key operations

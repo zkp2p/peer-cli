@@ -7,22 +7,22 @@
     "errors": "src/output/errors.ts"
   },
   "cli": {
-    "commands": 121,
-    "read_only": 72,
-    "write": 49
+    "commands": 147,
+    "read_only": 88,
+    "write": 59
   },
   "mcp": {
     "profiles": {
       "read-only": {
-        "tools": 76,
+        "tools": 97,
         "signs_or_broadcasts": false
       },
       "cash": {
-        "tools": 9,
+        "tools": 14,
         "signs_or_broadcasts": false
       },
       "full": {
-        "tools": 129,
+        "tools": 160,
         "signs_or_broadcasts": "only when the MCP process starts with --yes"
       }
     }

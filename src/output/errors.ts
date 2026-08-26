@@ -92,8 +92,54 @@ export function createError(
   return new PeerCliError(code, message, options);
 }
 
-function isErrorLike(value: unknown): value is { name?: string; message?: string; code?: string | number; details?: unknown } {
+function isErrorLike(value: unknown): value is {
+  name?: string;
+  message?: string;
+  shortMessage?: string;
+  code?: string | number;
+  status?: number;
+  details?: unknown;
+} {
   return typeof value === 'object' && value !== null;
+}
+
+function compactErrorMessage(error: {
+  message?: string;
+  shortMessage?: string;
+  details?: unknown;
+}): string {
+  const firstLine = error.message?.split('\n', 1)[0]?.trim();
+  const base = error.shortMessage?.trim() || firstLine || 'Unknown error';
+  const detail = typeof error.details === 'string' ? error.details.trim() : '';
+  if (!detail || base.toLowerCase().includes(detail.toLowerCase())) {
+    return base;
+  }
+  return `${base} ${detail}`;
+}
+
+function compactErrorDetails(
+  error: {
+    name?: string;
+    code?: string | number;
+    status?: number;
+    details?: unknown;
+  },
+  message: string,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries({
+      name: error.name,
+      message,
+      code: error.code,
+      status: error.status,
+      details:
+        typeof error.details === 'string' ||
+        typeof error.details === 'number' ||
+        typeof error.details === 'boolean'
+          ? error.details
+          : undefined,
+    }).filter(([, value]) => value !== undefined),
+  );
 }
 
 function serializeErrorDetails(error: { [key: string]: unknown; name?: string; message?: string; stack?: string }): Record<string, unknown> {
@@ -162,15 +208,23 @@ export function normalizeError(error: unknown, options: NormalizeErrorOptions = 
   }
 
   if (isErrorLike(error)) {
-    const message = error.message ?? 'Unknown error';
+    const sourceMessage = error.message ?? 'Unknown error';
+    const message = includeDebugDetails ? sourceMessage : compactErrorMessage(error);
     const code = typeof error.code === 'string' ? error.code : 'INTERNAL_ERROR';
     const catalogEntry = ERROR_CATALOG[code as ErrorCode];
-    const lowered = message.toLowerCase();
+    const lowered = [
+      sourceMessage,
+      typeof error.details === 'string' ? error.details : '',
+    ]
+      .join(' ')
+      .toLowerCase();
     const status = 'status' in error && typeof error.status === 'number' ? error.status : undefined;
-    const details = sanitizeErrorDetails(
-      serializeErrorDetails(error as { [key: string]: unknown; name?: string; message?: string; stack?: string }),
-      includeDebugDetails,
-    );
+    const details = includeDebugDetails
+      ? sanitizeErrorDetails(
+          serializeErrorDetails(error as { [key: string]: unknown; name?: string; message?: string; stack?: string }),
+          true,
+        )
+      : compactErrorDetails(error, message);
 
     if (error.name === 'APIError' || code === 'API') {
       if (status === 429) {

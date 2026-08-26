@@ -14,7 +14,7 @@ broadcasts.
 Configure the host to run:
 
 ```bash
-npx -y https://github.com/zkp2p/peer-cli/releases/download/v0.2.0/peer-protocol-cli-0.2.0.tgz mcp --profile cash
+npx -y peer-protocol-cli@0.3.0 mcp --profile cash
 ```
 
 Keep optional `PEER_CASH_*` values in the host's secret or MCP configuration,
@@ -25,6 +25,9 @@ without inspecting it and obtaining operator approval.
 
 1. Call `peer_cash_capabilities`; never name a rail, currency, asset, or amount
    bound from memory.
+   Use `peer_cash_source_capabilities` and `peer_cash_quote_source` before a
+   non-Base source route; track submitted Relay work with
+   `peer_cash_relay_status` rather than resubmitting an uncertain transfer.
 2. Call `peer_cash_estimate`. State that the Chainlink estimate is approximate;
    the binding rate resolves when a buyer fills.
 3. Call `peer_cash_prepare` with the Base USDC amount as a 6-decimal base-unit

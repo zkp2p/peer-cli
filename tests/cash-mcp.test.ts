@@ -8,9 +8,14 @@ function createHarness(includeWrites = false) {
   const registerTool = vi.fn();
   const client = {
     capabilities: vi.fn(async () => ({ minimum: 1n })),
+    fillStats: vi.fn(async () => ({ 'wise:USD': { fills: 12 } })),
+    sourceCapabilities: vi.fn(async () => ({ chains: [] })),
+    quoteSource: vi.fn(async () => ({ requestId: 'relay-1', txs: [] })),
+    relayStatus: vi.fn(async () => ({ requestId: 'relay-1', status: 'pending' })),
     estimate: vi.fn(async () => ({ amountFiat: '99.25' })),
     prepare: vi.fn(async () => ({ transactions: [{ value: 0n }] })),
     finalizePreparedCashout: vi.fn(async () => ({ depositId })),
+    buyer: vi.fn(async () => ({ address: '0x1111111111111111111111111111111111111111' })),
     prepareAccessPolicy: vi.fn(async () => ({ transactions: [] })),
     order: vi.fn(async () => ({ depositId, status: 'open' })),
     orders: vi.fn(async () => [{ depositId }]),
@@ -45,8 +50,13 @@ describe('Peer Cash MCP tools', () => {
     const { handlers } = createHarness();
     expect([...handlers.keys()]).toEqual([
       'peer_cash_capabilities',
+      'peer_cash_fill_stats',
+      'peer_cash_source_capabilities',
+      'peer_cash_quote_source',
+      'peer_cash_relay_status',
       'peer_cash_estimate',
       'peer_cash_finalize',
+      'peer_cash_buyer',
       'peer_cash_order',
       'peer_cash_orders',
     ]);
@@ -56,8 +66,13 @@ describe('Peer Cash MCP tools', () => {
     const { handlers } = createHarness(true);
     expect([...handlers.keys()]).toEqual([
       'peer_cash_capabilities',
+      'peer_cash_fill_stats',
+      'peer_cash_source_capabilities',
+      'peer_cash_quote_source',
+      'peer_cash_relay_status',
       'peer_cash_estimate',
       'peer_cash_finalize',
+      'peer_cash_buyer',
       'peer_cash_order',
       'peer_cash_orders',
       'peer_cash_prepare',
@@ -86,6 +101,41 @@ describe('Peer Cash MCP tools', () => {
       platform: 'wise',
     });
     expect(estimate.isError).not.toBe(true);
+  });
+
+  it('exposes live source routing and analytics inputs without signer authority', async () => {
+    const { client, handlers } = createHarness();
+    await handlers.get('peer_cash_fill_stats')!({});
+    await handlers.get('peer_cash_source_capabilities')!({});
+    await handlers.get('peer_cash_quote_source')!({
+      user: '0x1111111111111111111111111111111111111111',
+      amount: '2500000',
+      sourceChainId: 10,
+      sourceCurrency: '0x2222222222222222222222222222222222222222',
+      recipient: '0x3333333333333333333333333333333333333333',
+      tradeType: 'EXACT_INPUT',
+    });
+    await handlers.get('peer_cash_relay_status')!({ requestId: 'relay-1' });
+    await handlers.get('peer_cash_buyer')!({
+      address: '0x1111111111111111111111111111111111111111',
+    });
+
+    expect(client.fillStats).toHaveBeenCalledOnce();
+    expect(client.sourceCapabilities).toHaveBeenCalledOnce();
+    expect(client.quoteSource).toHaveBeenCalledWith({
+      user: '0x1111111111111111111111111111111111111111',
+      amount: 2500000n,
+      source: {
+        chainId: 10,
+        currency: '0x2222222222222222222222222222222222222222',
+      },
+      recipient: '0x3333333333333333333333333333333333333333',
+      tradeType: 'EXACT_INPUT',
+    });
+    expect(client.relayStatus).toHaveBeenCalledWith('relay-1');
+    expect(client.buyer).toHaveBeenCalledWith(
+      '0x1111111111111111111111111111111111111111',
+    );
   });
 
   it('finalizes only from the confirmed receipt returned by Base', async () => {

@@ -9,6 +9,7 @@ import { transferDefinitions } from './transfer.js';
 import { checkoutDefinitions } from './checkout.js';
 import { configDefinitions } from './config.js';
 import { mcpDefinitions } from './mcp.js';
+import { guardianDefinitions, stakeDefinitions } from './stake.js';
 
 export const commandDefinitions: CommandDefinition[] = [
   ...quoteDefinitions,
@@ -20,5 +21,7 @@ export const commandDefinitions: CommandDefinition[] = [
   ...transferDefinitions,
   ...checkoutDefinitions,
   ...configDefinitions,
+  ...stakeDefinitions,
+  ...guardianDefinitions,
   ...mcpDefinitions,
 ];

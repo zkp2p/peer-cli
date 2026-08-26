@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0
+
+- Added complete StakeVault and chargeback-protection CLI families, including
+  authoritative and indexed state, preview-first writes, and matured-intent
+  release operations.
+- Added IntentGuardian discovery, policy, live extension quotes, payer-funding
+  reads, and preview-first intent extension.
+- Expanded every MCP profile with Peer Cash fill analytics, cross-chain source
+  discovery and quoting, Relay status, and buyer history while preserving the
+  existing authority boundaries.
+- Switched install examples to the public npm package.
+
 ## 0.2.0
 
 - Added a read-only Streamable HTTP transport with a Railway health endpoint.

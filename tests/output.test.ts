@@ -138,6 +138,33 @@ describe('error normalization', () => {
     });
   });
 
+  it('keeps nested viem failures compact outside debug mode', () => {
+    const cause = Object.assign(new Error('RPC Request failed.\n\nRequest body: huge'), {
+      name: 'ContractFunctionExecutionError',
+      shortMessage: 'RPC Request failed.',
+      details: 'over rate limit',
+      code: -32016,
+      cause: { abi: Array.from({ length: 50 }, () => ({ type: 'function' })) },
+      abi: Array.from({ length: 50 }, () => ({ type: 'function' })),
+    });
+
+    const normalized = normalizeError(cause);
+    expect(normalized).toMatchObject({
+      code: 'RATE_LIMITED',
+      message: 'RPC Request failed. over rate limit',
+      details: {
+        name: 'ContractFunctionExecutionError',
+        code: -32016,
+        details: 'over rate limit',
+      },
+    });
+    expect(JSON.stringify(normalized)).not.toContain('"abi"');
+    expect(JSON.stringify(normalized)).not.toContain('Request body');
+
+    const debugNormalized = normalizeError(cause, { includeDebugDetails: true });
+    expect(JSON.stringify(debugNormalized)).toContain('"abi"');
+  });
+
   it('maps common error messages to catalog categories', () => {
     expect(normalizeError(new Error('timeout while fetching'))).toMatchObject({ code: 'TIMEOUT', category: 'timeout' });
     expect(normalizeError(new Error('Unauthorized api key'))).toMatchObject({ code: 'AUTH_REQUIRED', category: 'auth' });

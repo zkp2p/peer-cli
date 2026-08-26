@@ -3,7 +3,7 @@
   "name": "io.github.zkp2p/peer",
   "title": "Peer",
   "description": "Read Peer protocol, market, checkout, and Peer Cash data through one MCP server.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "websiteUrl": "https://agents.peer.xyz",
   "repository": {
     "url": "https://github.com/zkp2p/peer-cli",
@@ -12,7 +12,7 @@
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://peer-cli-production.up.railway.app/mcp"
+      "url": "https://mcp.peer.xyz/mcp"
     }
   ]
 }

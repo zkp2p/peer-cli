@@ -19,18 +19,18 @@ second command list in documentation.
 
 Node.js 22 or newer is required.
 
-The published package is `peer-protocol-cli`; do not install the unrelated
-unscoped `peer-cli` package.
+The package is `peer-protocol-cli`; do not install the unrelated unscoped
+`peer-cli` package.
 
 ```bash
-npm install --global peer-protocol-cli@0.2.0
+npm install --global https://github.com/zkp2p/peer-cli/releases/download/v0.2.0/peer-protocol-cli-0.2.0.tgz
 peer --help
 ```
 
 Run without a global install:
 
 ```bash
-npx -y peer-protocol-cli@0.2.0 quote --from USD --amount 100 --platform wise
+npx -y https://github.com/zkp2p/peer-cli/releases/download/v0.2.0/peer-protocol-cli-0.2.0.tgz quote --from USD --amount 100 --platform wise
 ```
 
 Successful output is JSON by default. Errors always use the canonical JSON
@@ -73,7 +73,7 @@ The current tool counts are generated in `agents/runtime-manifest.json`.
       "command": "npx",
       "args": [
         "-y",
-        "peer-protocol-cli@0.2.0",
+        "https://github.com/zkp2p/peer-cli/releases/download/v0.2.0/peer-protocol-cli-0.2.0.tgz",
         "mcp",
         "--profile",
         "read-only"

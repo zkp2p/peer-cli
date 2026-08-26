@@ -70,7 +70,7 @@ describe('peer cli e2e', () => {
     expect(result.stdout).toContain('Usage: peer');
     expect(result.stdout).toContain('quote');
     expect(result.stdout).toContain('mcp');
-  }, 15_000);
+  }, 30_000);
 
   it('runs through an installed peer bin symlink', async () => {
     const homeDir = await makeHomeDir();

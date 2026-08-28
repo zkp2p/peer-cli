@@ -14,7 +14,7 @@ broadcasts.
 Configure the host to run:
 
 ```bash
-npx -y https://github.com/zkp2p/peer-cli/releases/download/v0.3.0/peer-protocol-cli-0.3.0.tgz mcp --profile cash
+npx -y https://github.com/zkp2p/peer-cli/releases/download/v0.4.0/peer-protocol-cli-0.4.0.tgz mcp --profile cash
 ```
 
 Keep optional `PEER_CASH_*` values in the host's secret or MCP configuration,
@@ -36,9 +36,11 @@ without inspecting it and obtaining operator approval.
    purpose, and expected effect. Obtain explicit approval for that exact plan.
 5. Have the host wallet submit each transaction in order and confirm the
    `createDeposit` receipt.
-6. Call `peer_cash_finalize` with the confirmed transaction hash. If
-   `accessPolicyRequired` is true, prepare, approve, and submit the access-policy
-   transaction with the depositor wallet.
+6. Call `peer_cash_finalize` with the confirmed transaction hash. For every
+   method in the prepare result's `accessPolicyPaymentMethods`, call
+   `peer_cash_prepare_access_policy` with the finalized `depositId` and that
+   exact `paymentMethod`, then approve, submit, and confirm the transaction with
+   the depositor wallet.
 7. Persist the returned `depositId`; use `peer_cash_order` to resume.
 
 Use `peer_cash_orders` to list a maker's orders,

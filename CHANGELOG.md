@@ -1,8 +1,20 @@
 # Changelog
 
+## 0.4.0
+
+- Updated to `@zkp2p/sdk@0.12.2-rc.3` and `@zkp2p/cash@0.4.11-rc.3` for the
+  current method-scoped dispute-protection and Peer Cash access-policy APIs.
+- Replaced the retired chargeback-enabled read with
+  `stake dispute-protection-enabled`, including the required payment-method
+  hash, and updated matured-release calls to the current SDK names.
+- Fixed `peer_cash_prepare_access_policy` to require and forward the exact
+  payment method returned by `accessPolicyPaymentMethods`.
+- Updated the packaged skill, agent instructions, and generated catalogs for
+  the access-policy and Stake to Take cutovers.
+
 ## 0.3.0
 
-- Added complete StakeVault and chargeback-protection CLI families, including
+- Added complete StakeVault and dispute-protection CLI families, including
   authoritative and indexed state, preview-first writes, and matured-intent
   release operations.
 - Added IntentGuardian discovery, policy, live extension quotes, payer-funding

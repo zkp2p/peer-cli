@@ -6,6 +6,7 @@ import { createMockRuntime } from './helpers/mock-runtime.js';
 const OWNER = '0x1111111111111111111111111111111111111111';
 const TAKER = '0x2222222222222222222222222222222222222222';
 const POLICY = '0x3333333333333333333333333333333333333333';
+const PAYMENT_METHOD = `0x${'44'.repeat(32)}`;
 
 function definition(path: string[]) {
   const result = commandDefinitions.find((entry) => entry.path.join(' ') === path.join(' '));
@@ -21,6 +22,8 @@ describe('staking and guardian commands', () => {
     expect(names.has('stake ensure-allowance')).toBe(true);
     expect(names.has('stake deposit')).toBe(true);
     expect(names.has('stake withdraw')).toBe(true);
+    expect(names.has('stake dispute-protection-enabled')).toBe(true);
+    expect(names.has('stake chargeback-enabled')).toBe(false);
     expect(names.has('stake release-matured-batch')).toBe(true);
     expect(names.has('guardian quote-extension')).toBe(true);
     expect(names.has('guardian extend-intent')).toBe(true);
@@ -36,6 +39,11 @@ describe('staking and guardian commands', () => {
     expect(buildInputSchema(definition(['stake', 'deposit']))).toMatchObject({
       required: ['amount'],
     });
+    expect(
+      buildInputSchema(definition(['stake', 'dispute-protection-enabled'])),
+    ).toMatchObject({
+      required: ['escrow', 'depositId', 'paymentMethodHash'],
+    });
     expect(buildInputSchema(definition(['guardian', 'quote-extension']))).toMatchObject({
       required: ['intentAmount', 'additionalSeconds'],
     });
@@ -49,7 +57,7 @@ describe('staking and guardian commands', () => {
       behaviors: {
         getStakeOwner: () => OWNER,
         getStakeVaultContract: () => ({ address: TAKER, stakeToken: OWNER, abi: [] }),
-        getChargebackPolicyContract: () => ({ address: POLICY, abi: [] }),
+        getDisputeProtectionPolicyContract: () => ({ address: POLICY, abi: [] }),
         'indexer.getStakingState': (params: unknown) => ({ params, freshness: { indexedBlockNumber: '99' } }),
       },
     });
@@ -66,10 +74,30 @@ describe('staking and guardian commands', () => {
       chainId: 8453,
       environment: 'base',
       vaultAddress: TAKER,
-      chargebackPolicyAddress: POLICY,
+      disputeProtectionPolicyAddress: POLICY,
       taker: TAKER,
       stakeOwner: OWNER,
     });
+  });
+
+  it('reads method-scoped dispute protection with the current SDK call', async () => {
+    const runtime = createMockRuntime({
+      behaviors: { isDisputeProtectionEnabled: () => true },
+    });
+
+    const result = await executeDefinition(
+      definition(['stake', 'dispute-protection-enabled']),
+      { escrow: OWNER, depositId: '7', paymentMethodHash: PAYMENT_METHOD },
+      {},
+      runtime.deps,
+    );
+
+    expect(result).toMatchObject({ ok: true, data: true });
+    expect(
+      runtime.calls.find(
+        (entry) => entry.path === 'isDisputeProtectionEnabled',
+      )?.args,
+    ).toEqual([OWNER, 7n, PAYMENT_METHOD]);
   });
 
   it('previews stake and guardian writes until --yes is explicit', async () => {

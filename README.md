@@ -23,14 +23,14 @@ The package is `peer-protocol-cli`; do not install the unrelated unscoped
 `peer-cli` package.
 
 ```bash
-npm install --global peer-protocol-cli@0.3.0
+npm install --global peer-protocol-cli@0.4.0
 peer --help
 ```
 
 Run without a global install:
 
 ```bash
-npx -y peer-protocol-cli@0.3.0 quote --from USD --amount 100 --platform wise
+npx -y peer-protocol-cli@0.4.0 quote --from USD --amount 100 --platform wise
 ```
 
 Successful output is JSON by default. Errors always use the canonical JSON
@@ -73,7 +73,7 @@ The current tool counts are generated in `agents/runtime-manifest.json`.
       "command": "npx",
       "args": [
         "-y",
-        "peer-protocol-cli@0.3.0",
+        "peer-protocol-cli@0.4.0",
         "mcp",
         "--profile",
         "read-only"
@@ -115,6 +115,11 @@ custody boundary are unchanged:
 7. `peer_cash_order` / `peer_cash_orders` — resume and inspect orders.
 8. `peer_cash_prepare_access_policy`, `peer_cash_prepare_withdraw`, and
    `peer_cash_prepare_top_up` — prepare follow-up transactions.
+
+For every method returned by `peer_cash_prepare` in
+`accessPolicyPaymentMethods`, call `peer_cash_prepare_access_policy` after
+finalization with both the finalized `depositId` and that exact
+`paymentMethod`. Confirm every policy before presenting the order as ready.
 
 Base USDC amounts are decimal strings in 6-decimal base units: 100 USDC is
 `100000000`. Estimates are not locked quotes; the binding Chainlink rate
@@ -160,8 +165,8 @@ The CLI covers:
 - deposit lifecycle, payment methods, currencies, oracle configuration, and
   batch updates
 - intents, pre-intent hooks, fulfillment, release, and cleanup
-- StakeVault deposits, withdrawals, authorization, indexed freshness, and
-  matured chargeback releases
+- StakeVault deposits, withdrawals, shared-stake authorization, method-scoped
+  dispute-protection reads, indexed freshness, and matured releases
 - IntentGuardian policy, live extension quotes, payer funding, and
   preview-first intent extension
 - ProtocolViewer and indexer reads, including a raw GraphQL escape hatch

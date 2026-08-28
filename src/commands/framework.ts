@@ -113,7 +113,7 @@ const GROUP_DESCRIPTIONS: Record<string, string> = {
   oracle: 'Oracle helpers',
   pv: 'ProtocolViewer reads',
   indexer: 'Indexer reads',
-  stake: 'StakeVault and chargeback protection',
+  stake: 'StakeVault and dispute protection',
   guardian: 'Intent extension operations',
 };
 

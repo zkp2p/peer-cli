@@ -1,6 +1,6 @@
 {
   "name": "peer-protocol-cli",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "mcpName": "io.github.zkp2p/peer",
   "description": "Agent-first CLI and MCP server for the Peer (ZKP2P) protocol and Peer Cash",
   "bin": {
@@ -77,8 +77,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@zkp2p/cash": "^0.4.10",
-    "@zkp2p/sdk": "^0.12.1",
+    "@zkp2p/cash": "0.4.11-rc.3",
+    "@zkp2p/sdk": "0.12.2-rc.3",
     "commander": "^14.0.3",
     "viem": "^2.55.19",
     "zod": "^4.4.3"

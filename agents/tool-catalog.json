@@ -3796,7 +3796,7 @@
       "stake",
       "locked"
     ],
-    "description": "Read stake locked behind active chargeback windows.",
+    "description": "Read stake locked behind active dispute windows.",
     "parameter_schema": {
       "type": "object",
       "properties": {
@@ -3963,7 +3963,7 @@
       "stake",
       "admissions-paused"
     ],
-    "description": "Read whether chargebackable intent admissions are paused.",
+    "description": "Read whether dispute-protected intent admissions are paused.",
     "parameter_schema": {
       "type": "object",
       "properties": {
@@ -4005,12 +4005,12 @@
     "read_only": true
   },
   {
-    "name": "peer stake chargeback-enabled",
+    "name": "peer stake dispute-protection-enabled",
     "path": [
       "stake",
-      "chargeback-enabled"
+      "dispute-protection-enabled"
     ],
-    "description": "Read whether a deposit has chargeback coverage enabled.",
+    "description": "Read whether one deposit payment method has dispute protection enabled.",
     "parameter_schema": {
       "type": "object",
       "properties": {
@@ -4022,6 +4022,10 @@
           "type": "string",
           "description": "Numeric deposit ID."
         },
+        "paymentMethodHash": {
+          "type": "string",
+          "description": "Payment method bytes32 hash."
+        },
         "params": {
           "type": "object",
           "description": "Optional raw JSON params object merged underneath the typed CLI flags."
@@ -4029,7 +4033,8 @@
       },
       "required": [
         "escrow",
-        "depositId"
+        "depositId",
+        "paymentMethodHash"
       ]
     },
     "auth_required": false,
@@ -4226,7 +4231,7 @@
       "stake",
       "release-matured"
     ],
-    "description": "Release one matured chargeback intent and unlock its stake cover.",
+    "description": "Release one matured protected intent and unlock its stake cover.",
     "parameter_schema": {
       "type": "object",
       "properties": {
@@ -4236,7 +4241,7 @@
         },
         "policy": {
           "type": "string",
-          "description": "Optional snapshotted chargeback policy address."
+          "description": "Optional snapshotted dispute-protection policy address."
         },
         "params": {
           "type": "object",
@@ -4257,7 +4262,7 @@
       "stake",
       "release-matured-batch"
     ],
-    "description": "Release multiple matured chargeback intents in one transaction.",
+    "description": "Release multiple matured protected intents in one transaction.",
     "parameter_schema": {
       "type": "object",
       "properties": {
@@ -4267,7 +4272,7 @@
         },
         "policy": {
           "type": "string",
-          "description": "Optional snapshotted chargeback policy address."
+          "description": "Optional snapshotted dispute-protection policy address."
         },
         "params": {
           "type": "object",

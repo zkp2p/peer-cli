@@ -24,7 +24,7 @@ catalogs own enumerations; prose must not duplicate a command inventory.
 
 ## MCP
 
-Run `npx -y https://github.com/zkp2p/peer-cli/releases/download/v0.2.0/peer-protocol-cli-0.2.0.tgz mcp --profile <profile>`.
+Run `npx -y https://github.com/zkp2p/peer-cli/releases/download/v0.4.0/peer-protocol-cli-0.4.0.tgz mcp --profile <profile>`.
 
 - read-only: generic and Peer Cash reads; no signing or broadcasting
 - cash: complete peer_cash_* surface; prepares unsigned plans and never accepts
@@ -46,7 +46,8 @@ local stdio profiles.
 3. peer_cash_prepare
 4. host approval and ordered wallet submission
 5. peer_cash_finalize after the confirmed createDeposit receipt
-6. peer_cash_prepare_access_policy when required
+6. for every accessPolicyPaymentMethods entry, call
+   peer_cash_prepare_access_policy with depositId and that paymentMethod
 7. persist depositId and resume with peer_cash_order
 
 Base USDC uses 6 decimals. Treat estimates as approximate. Retry read failures

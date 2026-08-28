@@ -3,6 +3,7 @@ import { registerPeerCashTools } from '../src/mcp/cash.js';
 
 const depositId = '0x1111111111111111111111111111111111111111_7';
 const transactionHash = `0x${'ab'.repeat(32)}` as `0x${string}`;
+const paymentMethod = `0x${'cd'.repeat(32)}` as `0x${string}`;
 
 function createHarness(includeWrites = false) {
   const registerTool = vi.fn();
@@ -101,6 +102,20 @@ describe('Peer Cash MCP tools', () => {
       platform: 'wise',
     });
     expect(estimate.isError).not.toBe(true);
+  });
+
+  it('prepares access policy for the exact returned payment method', async () => {
+    const { client, handlers } = createHarness(true);
+
+    await handlers.get('peer_cash_prepare_access_policy')!({
+      depositId,
+      paymentMethod,
+    });
+
+    expect(client.prepareAccessPolicy).toHaveBeenCalledWith(
+      depositId,
+      paymentMethod,
+    );
   });
 
   it('exposes live source routing and analytics inputs without signer authority', async () => {

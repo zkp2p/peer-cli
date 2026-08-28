@@ -454,7 +454,7 @@ export function registerPeerCashTools(
     {
       title: 'Prepare an order access policy',
       description:
-        'Prepare one unsigned, method-scoped Peer Pay access-policy transaction required after finalizing a Venmo, Cash App, or PayPal order.',
+        'Prepare one unsigned, method-scoped Peer Pay access-policy transaction required after finalizing a Venmo or PayPal order.',
       inputSchema: { depositId, paymentMethod },
       annotations: {
         readOnlyHint: false,

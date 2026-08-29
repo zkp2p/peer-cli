@@ -10,6 +10,7 @@ import { checkoutDefinitions } from './checkout.js';
 import { configDefinitions } from './config.js';
 import { mcpDefinitions } from './mcp.js';
 import { guardianDefinitions, stakeDefinitions } from './stake.js';
+import { completionDefinitions } from './completion.js';
 
 export const commandDefinitions: CommandDefinition[] = [
   ...quoteDefinitions,
@@ -24,4 +25,5 @@ export const commandDefinitions: CommandDefinition[] = [
   ...stakeDefinitions,
   ...guardianDefinitions,
   ...mcpDefinitions,
+  ...completionDefinitions,
 ];

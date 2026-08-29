@@ -7,8 +7,8 @@
     "errors": "src/output/errors.ts"
   },
   "cli": {
-    "commands": 147,
-    "read_only": 88,
+    "commands": 148,
+    "read_only": 89,
     "write": 59
   },
   "mcp": {

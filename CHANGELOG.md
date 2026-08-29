@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Added `peer completion <bash|zsh|fish>`, a read-only generator that prints a
+  shell completion script derived from the command registry so it tracks the
+  live command tree.
+
 ## 0.3.0
 
 - Added complete StakeVault and chargeback-protection CLI families, including

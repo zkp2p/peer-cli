@@ -19,6 +19,8 @@ catalogs own enumerations; prose must not duplicate a command inventory.
 - Read commands execute immediately.
 - State-changing commands preview first and broadcast only with global --yes.
 - Config precedence is CLI flags, environment, ~/.peer/config.json, defaults.
+- `peer completion <bash|zsh|fish>` prints a shell completion script generated
+  from the command registry. It is read-only and prints to stdout.
 - Use PEER_PRIVATE_KEY or an owner-readable PEER_WALLET_PATH for generic signed
   writes. Never place signer material in prompts.
 

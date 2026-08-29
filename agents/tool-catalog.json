@@ -4479,5 +4479,36 @@
     "auth_required": false,
     "dangerous": false,
     "read_only": true
+  },
+  {
+    "name": "peer completion",
+    "path": [
+      "completion"
+    ],
+    "description": "Print a shell completion script generated from the command registry.",
+    "parameter_schema": {
+      "type": "object",
+      "properties": {
+        "shell": {
+          "type": "string",
+          "description": "Target shell for the completion script.",
+          "enum": [
+            "bash",
+            "zsh",
+            "fish"
+          ]
+        },
+        "params": {
+          "type": "object",
+          "description": "Optional raw JSON params object merged underneath the typed CLI flags."
+        }
+      },
+      "required": [
+        "shell"
+      ]
+    },
+    "auth_required": false,
+    "dangerous": false,
+    "read_only": true
   }
 ]

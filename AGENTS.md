@@ -6,6 +6,7 @@ These instructions apply to the `peer-cli` repo.
 ## Working Rules
 - Treat `src/commands/registry.ts`, `src/mcp/cash.ts`, and `src/output/errors.ts` as runtime sources of truth. The files under `agents/` are their generated agent contracts.
 - Do not hand-edit generated catalog files. Rebuild after changing command metadata.
+- Shell completion scripts (`peer completion <shell>`) are generated from the command registry at runtime; do not add a hand-written completion file.
 - Prefer dry-run previews for write paths. Use the single `--yes` execution flag only when immediate broadcast is intended.
 - Keep `peer mcp --profile read-only` as the default. The `cash` profile may prepare unsigned transactions but must never accept signer material, sign, or broadcast. Use `full` only for the complete operator surface.
 - Keep `package.json`, `mcp.json`, `plugin.json`, `server.json`, and packaged skill versions aligned for a release.

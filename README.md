@@ -170,6 +170,7 @@ The CLI covers:
 - USDC balances and transfers
 - hosted checkout creation, reads, cancellation, and local resume cache
 - local config and environment inspection
+- shell completion script generation
 
 Run `peer --help`, `peer <family> --help`, or inspect the generated tool catalog
 for the exact current paths, flags, schemas, auth requirements, and danger
@@ -177,6 +178,27 @@ markers.
 
 Every command also accepts `--params <json>` and `--params-file <path>`. Typed
 flags override raw values.
+
+## Shell completion
+
+`peer completion <bash|zsh|fish>` prints a completion script generated from the
+same command registry that backs the CLI, so it never drifts from the real
+command tree. It is a read-only generator: it prints to stdout and takes no
+signer material.
+
+```bash
+# bash
+source <(peer completion bash)
+
+# zsh (ensure `autoload -U compinit && compinit` runs first)
+source <(peer completion zsh)
+
+# fish
+peer completion fish | source
+```
+
+To install it permanently, write the output to the location your shell loads
+completions from, for example `peer completion bash > /etc/bash_completion.d/peer`.
 
 ## Development
 

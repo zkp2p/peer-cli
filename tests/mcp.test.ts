@@ -55,6 +55,8 @@ describe('mcp schema helpers', () => {
       ],
       options: [
         { name: 'flag', flags: '--flag', description: 'Flag', schema: { type: 'boolean', description: 'Flag' } },
+        { name: 'items', flags: '--items', description: 'Items', schema: { type: 'array', description: 'Items' } },
+        { name: 'config', flags: '--config', description: 'Config', schema: { type: 'object', description: 'Config' } },
       ],
       handler: async () => undefined,
     });
@@ -62,6 +64,8 @@ describe('mcp schema helpers', () => {
     expect(shape.owner!.safeParse('alice').success).toBe(true);
     expect(shape.optional!.safeParse(undefined).success).toBe(true);
     expect(shape.flag!.safeParse(true).success).toBe(true);
+    expect(shape.items!.safeParse(['one', { two: 2 }]).success).toBe(true);
+    expect(shape.config!.safeParse({ nested: ['value'] }).success).toBe(true);
     expect(shape.params!.safeParse({ raw: true }).success).toBe(true);
   });
 });

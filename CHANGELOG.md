@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+- Made free-form MCP inputs emit explicit recursive JSON schemas so strict MCP
+  clients no longer report portability warnings.
+- Added a GitHub OIDC publishing path for the official MCP Registry entry.
+
 ## 0.3.0
 
 - Added complete StakeVault and chargeback-protection CLI families, including

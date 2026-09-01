@@ -22,13 +22,13 @@ function schemaToZod(property: SchemaProperty): z.ZodType<unknown> {
         base = z.boolean();
         break;
       case 'array':
-        base = z.array(z.unknown());
+        base = z.array(z.json());
         break;
       case 'object':
-        base = z.record(z.string(), z.unknown());
+        base = z.record(z.string(), z.json());
         break;
       default:
-        base = z.unknown();
+        base = z.json();
         break;
     }
   }
@@ -69,6 +69,6 @@ export function buildToolInputShape(spec: CommandDefinition): Record<string, z.Z
     shape[option.name] = schema;
   }
 
-  shape.params = z.record(z.string(), z.unknown()).optional().describe('Optional raw JSON params merged beneath typed fields.');
+  shape.params = z.record(z.string(), z.json()).optional().describe('Optional raw JSON params merged beneath typed fields.');
   return shape;
 }

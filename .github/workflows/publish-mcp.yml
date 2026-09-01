@@ -7,6 +7,10 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: publish-mcp-registry
+  cancel-in-progress: false
+
 jobs:
   publish:
     if: github.ref == 'refs/heads/main'
@@ -15,12 +19,23 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Verify registry release targets
+        id: release
         run: |
           version="$(jq --raw-output .version server.json)"
           test "$(npm view "peer-protocol-cli@$version" version)" = "$version"
           test "$(curl --fail --silent --show-error https://mcp.peer.xyz/health | jq --raw-output .version)" = "$version"
+          name="$(jq --raw-output .name server.json)"
+          encoded_name="$(jq --null-input --raw-output --arg value "$name" '$value | @uri')"
+          registry_url="https://registry.modelcontextprotocol.io/v0.1/servers/$encoded_name/versions/$version"
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$registry_url")"
+          case "$status" in
+            200) echo "exists=true" >> "$GITHUB_OUTPUT" ;;
+            404) echo "exists=false" >> "$GITHUB_OUTPUT" ;;
+            *) echo "Unexpected MCP Registry status: $status" >&2; exit 1 ;;
+          esac
 
       - name: Install MCP publisher
+        if: steps.release.outputs.exists != 'true'
         run: |
           curl --fail --location --silent --show-error \
             --output mcp-publisher.tar.gz \
@@ -30,7 +45,9 @@ jobs:
           chmod +x mcp-publisher
 
       - name: Authenticate to the MCP registry
+        if: steps.release.outputs.exists != 'true'
         run: ./mcp-publisher login github-oidc
 
       - name: Publish to the MCP registry
+        if: steps.release.outputs.exists != 'true'
         run: ./mcp-publisher publish server.json

@@ -24,7 +24,7 @@ catalogs own enumerations; prose must not duplicate a command inventory.
 
 ## MCP
 
-Run `npx -y https://github.com/zkp2p/peer-cli/releases/download/v0.2.0/peer-protocol-cli-0.2.0.tgz mcp --profile <profile>`.
+Run `npx -y https://github.com/zkp2p/peer-cli/releases/download/v0.3.1/peer-protocol-cli-0.3.1.tgz mcp --profile <profile>`.
 
 - read-only: generic and Peer Cash reads; no signing or broadcasting
 - cash: complete peer_cash_* surface; prepares unsigned plans and never accepts

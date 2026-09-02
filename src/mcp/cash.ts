@@ -207,6 +207,9 @@ const positiveInteger = z
   .regex(/^[1-9]\d*$/, 'Use a positive decimal integer in base units');
 const address = z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Use an EVM address');
 const hash = z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Use a transaction hash');
+const paymentMethod = z
+  .string()
+  .regex(/^0x[a-fA-F0-9]{64}$/, 'Use a payment method bytes32 hash');
 const depositId = z
   .string()
   .regex(/^0x[a-fA-F0-9]{40}_[0-9]+$/, 'Use a composite Peer deposit id');
@@ -452,14 +455,15 @@ export function registerPeerCashTools(
       title: 'Prepare an order access policy',
       description:
         'Prepare the unsigned verified-buyer access-policy transaction required for Venmo, Cash App, or PayPal orders after finalization.',
-      inputSchema: { depositId },
+      inputSchema: { depositId, paymentMethod },
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
         idempotentHint: true,
       },
     },
-    ({ depositId: id }) => handleTool(() => client.prepareAccessPolicy(id)),
+    ({ depositId: id, paymentMethod: method }) =>
+      handleTool(() => client.prepareAccessPolicy(id, method as `0x${string}`)),
   );
 
   server.registerTool(

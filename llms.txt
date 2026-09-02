@@ -46,7 +46,7 @@ local stdio profiles.
 3. peer_cash_prepare
 4. host approval and ordered wallet submission
 5. peer_cash_finalize after the confirmed createDeposit receipt
-6. peer_cash_prepare_access_policy when required
+6. peer_cash_prepare_access_policy once per accessPolicyPaymentMethods hash
 7. persist depositId and resume with peer_cash_order
 
 Base USDC uses 6 decimals. Treat estimates as approximate. Retry read failures

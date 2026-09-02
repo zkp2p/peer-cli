@@ -3,6 +3,7 @@ import { registerPeerCashTools } from '../src/mcp/cash.js';
 
 const depositId = '0x1111111111111111111111111111111111111111_7';
 const transactionHash = `0x${'ab'.repeat(32)}` as `0x${string}`;
+const paymentMethod = `0x${'cd'.repeat(32)}` as `0x${string}`;
 
 function createHarness(includeWrites = false) {
   const registerTool = vi.fn();
@@ -150,6 +151,18 @@ describe('Peer Cash MCP tools', () => {
       status: 'success',
       logs: [],
     });
+  });
+
+  it('prepares the required method-scoped access policy', async () => {
+    const { client, handlers, registerTool } = createHarness(true);
+    await handlers.get('peer_cash_prepare_access_policy')!({ depositId, paymentMethod });
+
+    expect(client.prepareAccessPolicy).toHaveBeenCalledWith(depositId, paymentMethod);
+    const registration = registerTool.mock.calls.find(
+      ([name]) => name === 'peer_cash_prepare_access_policy',
+    );
+    expect(registration?.[1].description).toContain('accessPolicyPaymentMethods');
+    expect(registration?.[1].description).not.toContain('Cash App');
   });
 
   it('returns structured MCP errors without throwing transport failures', async () => {

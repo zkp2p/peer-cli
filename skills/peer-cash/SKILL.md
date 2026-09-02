@@ -36,9 +36,10 @@ without inspecting it and obtaining operator approval.
    purpose, and expected effect. Obtain explicit approval for that exact plan.
 5. Have the host wallet submit each transaction in order and confirm the
    `createDeposit` receipt.
-6. Call `peer_cash_finalize` with the confirmed transaction hash. If
-   `accessPolicyRequired` is true, prepare, approve, and submit the access-policy
-   transaction with the depositor wallet.
+6. Call `peer_cash_finalize` with the confirmed transaction hash. For every
+   hash in `accessPolicyPaymentMethods`, call `peer_cash_prepare_access_policy`
+   with the returned `depositId` and that hash, then approve and submit the
+   transaction with the depositor wallet. An empty list requires no policy.
 7. Persist the returned `depositId`; use `peer_cash_order` to resume.
 
 Use `peer_cash_orders` to list a maker's orders,

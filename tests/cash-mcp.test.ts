@@ -154,10 +154,15 @@ describe('Peer Cash MCP tools', () => {
   });
 
   it('prepares the required method-scoped access policy', async () => {
-    const { client, handlers } = createHarness(true);
+    const { client, handlers, registerTool } = createHarness(true);
     await handlers.get('peer_cash_prepare_access_policy')!({ depositId, paymentMethod });
 
     expect(client.prepareAccessPolicy).toHaveBeenCalledWith(depositId, paymentMethod);
+    const registration = registerTool.mock.calls.find(
+      ([name]) => name === 'peer_cash_prepare_access_policy',
+    );
+    expect(registration?.[1].description).toContain('accessPolicyPaymentMethods');
+    expect(registration?.[1].description).not.toContain('Cash App');
   });
 
   it('returns structured MCP errors without throwing transport failures', async () => {

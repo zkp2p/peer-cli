@@ -454,7 +454,7 @@ export function registerPeerCashTools(
     {
       title: 'Prepare an order access policy',
       description:
-        'Prepare the unsigned verified-buyer access-policy transaction required for Venmo, Cash App, or PayPal orders after finalization.',
+        'Prepare one unsigned verified-buyer access-policy transaction after finalization for a payment method returned by accessPolicyPaymentMethods.',
       inputSchema: { depositId, paymentMethod },
       annotations: {
         readOnlyHint: false,

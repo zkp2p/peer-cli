@@ -123,16 +123,18 @@ export const stakeDefinitions: CommandDefinition[] = [
     handler: sdkReadHandler(['getRiskWindow'], async (input) => [ensureString(input.paymentMethodHash, 'paymentMethodHash')]),
   },
   {
-    path: ['stake', 'chargeback-enabled'],
-    description: 'Read whether a deposit has chargeback coverage enabled.',
+    path: ['stake', 'dispute-protection-enabled'],
+    description: 'Read whether a deposit has dispute protection enabled for a payment method.',
     readOnly: true,
     args: [
       addressArgument('escrow', 'Escrow address.'),
       { name: 'depositId', description: 'Numeric deposit ID.', schema: { type: 'string', description: 'Deposit ID.' }, optionFlags: ['--deposit-id <id>'] },
+      { name: 'paymentMethod', description: 'Payment method bytes32 hash.', schema: { type: 'string', description: 'Payment method hash.' }, optionFlags: ['--payment-method <hash>'] },
     ],
-    handler: sdkReadHandler(['isChargebackEnabled'], async (input) => [
+    handler: sdkReadHandler(['isDisputeProtectionEnabled'], async (input) => [
       ensureAddress(input.escrow, 'escrow'),
       asBigInt(input.depositId, 'depositId'),
+      ensureString(input.paymentMethod, 'paymentMethod'),
     ]),
   },
   {
@@ -249,7 +251,7 @@ export const stakeDefinitions: CommandDefinition[] = [
     requireWallet: true,
     args: [{ name: 'intentHash', description: 'Intent hash.', schema: { type: 'string', description: 'Intent hash.' }, optionFlags: ['--intent-hash <hash>'] }],
     options: [{ name: 'policy', flags: '--policy <address>', description: 'Optional snapshotted dispute protection policy address.', schema: { type: 'string', description: 'Dispute protection policy address.' } }],
-    handler: sdkWriteHandler(['releaseMaturedChargebackIntent'], async (input) => ({
+    handler: sdkWriteHandler(['releaseMaturedDisputeProtectionIntent'], async (input) => ({
       intentHash: ensureString(input.intentHash, 'intentHash'),
       ...(input.policy ? { disputeProtectionPolicyAddress: ensureAddress(input.policy, 'policy') } : {}),
     })),
@@ -263,7 +265,7 @@ export const stakeDefinitions: CommandDefinition[] = [
     options: [
       { name: 'policy', flags: '--policy <address>', description: 'Optional snapshotted dispute protection policy address.', schema: { type: 'string', description: 'Dispute protection policy address.' } },
     ],
-    handler: sdkWriteHandler(['releaseMaturedChargebackIntents'], async (input) => ({
+    handler: sdkWriteHandler(['releaseMaturedDisputeProtectionIntents'], async (input) => ({
       intentHashes: parseJsonArray(input.intentHashes, 'intentHashes').map((hash, index) => ensureString(hash, `intentHashes[${index}]`)),
       ...(input.policy ? { disputeProtectionPolicyAddress: ensureAddress(input.policy, 'policy') } : {}),
     })),

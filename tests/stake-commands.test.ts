@@ -6,6 +6,7 @@ import { createMockRuntime } from './helpers/mock-runtime.js';
 const OWNER = '0x1111111111111111111111111111111111111111';
 const TAKER = '0x2222222222222222222222222222222222222222';
 const POLICY = '0x3333333333333333333333333333333333333333';
+const PAYMENT_METHOD = `0x${'44'.repeat(32)}`;
 
 function definition(path: string[]) {
   const result = commandDefinitions.find((entry) => entry.path.join(' ') === path.join(' '));
@@ -35,6 +36,9 @@ describe('staking and guardian commands', () => {
     });
     expect(buildInputSchema(definition(['stake', 'deposit']))).toMatchObject({
       required: ['amount'],
+    });
+    expect(buildInputSchema(definition(['stake', 'dispute-protection-enabled']))).toMatchObject({
+      required: ['escrow', 'depositId', 'paymentMethod'],
     });
     expect(buildInputSchema(definition(['guardian', 'quote-extension']))).toMatchObject({
       required: ['intentAmount', 'additionalSeconds'],
@@ -70,6 +74,23 @@ describe('staking and guardian commands', () => {
       taker: TAKER,
       stakeOwner: OWNER,
     });
+  });
+
+  it('reads method-scoped dispute protection through the stable SDK API', async () => {
+    const runtime = createMockRuntime();
+    const result = await executeDefinition(
+      definition(['stake', 'dispute-protection-enabled']),
+      { escrow: OWNER, depositId: '7', paymentMethod: PAYMENT_METHOD },
+      {},
+      runtime.deps,
+    );
+
+    expect(result).toMatchObject({ ok: true });
+    expect(runtime.calls.find((entry) => entry.path === 'isDisputeProtectionEnabled')?.args).toEqual([
+      OWNER,
+      7n,
+      PAYMENT_METHOD,
+    ]);
   });
 
   it('previews stake and guardian writes until --yes is explicit', async () => {
@@ -123,6 +144,26 @@ describe('staking and guardian commands', () => {
       intentHash,
       additionalTime: 3600n,
       maxCost: 1500000n,
+    });
+  });
+
+  it('uses the dispute protection SDK methods for matured intent releases', async () => {
+    const runtime = createMockRuntime({ yes: true });
+    const intentHash = `0x${'ab'.repeat(32)}`;
+    const result = await executeDefinition(
+      definition(['stake', 'release-matured']),
+      { intentHash, policy: POLICY },
+      { yes: true },
+      runtime.deps,
+    );
+
+    expect(result).toMatchObject({ ok: true, data: { executed: true } });
+    expect(
+      runtime.calls.find((entry) => entry.path === 'releaseMaturedDisputeProtectionIntent')
+        ?.args[0],
+    ).toEqual({
+      intentHash,
+      disputeProtectionPolicyAddress: POLICY,
     });
   });
 });

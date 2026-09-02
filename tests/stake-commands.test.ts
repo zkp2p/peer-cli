@@ -49,7 +49,7 @@ describe('staking and guardian commands', () => {
       behaviors: {
         getStakeOwner: () => OWNER,
         getStakeVaultContract: () => ({ address: TAKER, stakeToken: OWNER, abi: [] }),
-        getChargebackPolicyContract: () => ({ address: POLICY, abi: [] }),
+        getDisputeProtectionPolicyContract: () => ({ address: POLICY, abi: [] }),
         'indexer.getStakingState': (params: unknown) => ({ params, freshness: { indexedBlockNumber: '99' } }),
       },
     });
@@ -66,7 +66,7 @@ describe('staking and guardian commands', () => {
       chainId: 8453,
       environment: 'base',
       vaultAddress: TAKER,
-      chargebackPolicyAddress: POLICY,
+      disputeProtectionPolicyAddress: POLICY,
       taker: TAKER,
       stakeOwner: OWNER,
     });

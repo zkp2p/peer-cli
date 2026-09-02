@@ -43,12 +43,12 @@ export const stakeDefinitions: CommandDefinition[] = [
       const { client } = await context.getClient({ requireWallet: false });
       const stakeOwner = await client.getStakeOwner(taker);
       const vault = client.getStakeVaultContract();
-      const policy = client.getChargebackPolicyContract();
+      const policy = client.getDisputeProtectionPolicyContract();
       return client.indexer.getStakingState({
         chainId: 8453,
         environment: context.config.env === 'staging' ? 'base_staging' : 'base',
         vaultAddress: vault.address,
-        chargebackPolicyAddress: policy.address,
+        disputeProtectionPolicyAddress: policy.address,
         taker,
         stakeOwner,
       });
@@ -244,28 +244,28 @@ export const stakeDefinitions: CommandDefinition[] = [
   },
   {
     path: ['stake', 'release-matured'],
-    description: 'Release one matured chargeback intent and unlock its stake cover.',
+    description: 'Release one matured dispute-protected intent and unlock its stake cover.',
     readOnly: false,
     requireWallet: true,
     args: [{ name: 'intentHash', description: 'Intent hash.', schema: { type: 'string', description: 'Intent hash.' }, optionFlags: ['--intent-hash <hash>'] }],
-    options: [{ name: 'policy', flags: '--policy <address>', description: 'Optional snapshotted chargeback policy address.', schema: { type: 'string', description: 'Chargeback policy address.' } }],
+    options: [{ name: 'policy', flags: '--policy <address>', description: 'Optional snapshotted dispute protection policy address.', schema: { type: 'string', description: 'Dispute protection policy address.' } }],
     handler: sdkWriteHandler(['releaseMaturedChargebackIntent'], async (input) => ({
       intentHash: ensureString(input.intentHash, 'intentHash'),
-      ...(input.policy ? { chargebackPolicyAddress: ensureAddress(input.policy, 'policy') } : {}),
+      ...(input.policy ? { disputeProtectionPolicyAddress: ensureAddress(input.policy, 'policy') } : {}),
     })),
   },
   {
     path: ['stake', 'release-matured-batch'],
-    description: 'Release multiple matured chargeback intents in one transaction.',
+    description: 'Release multiple matured dispute-protected intents in one transaction.',
     readOnly: false,
     requireWallet: true,
     args: [{ name: 'intentHashes', description: 'JSON array of intent hashes.', schema: { type: 'array', description: 'Intent hashes.' }, optionFlags: ['--intent-hashes <json>'] }],
     options: [
-      { name: 'policy', flags: '--policy <address>', description: 'Optional snapshotted chargeback policy address.', schema: { type: 'string', description: 'Chargeback policy address.' } },
+      { name: 'policy', flags: '--policy <address>', description: 'Optional snapshotted dispute protection policy address.', schema: { type: 'string', description: 'Dispute protection policy address.' } },
     ],
     handler: sdkWriteHandler(['releaseMaturedChargebackIntents'], async (input) => ({
       intentHashes: parseJsonArray(input.intentHashes, 'intentHashes').map((hash, index) => ensureString(hash, `intentHashes[${index}]`)),
-      ...(input.policy ? { chargebackPolicyAddress: ensureAddress(input.policy, 'policy') } : {}),
+      ...(input.policy ? { disputeProtectionPolicyAddress: ensureAddress(input.policy, 'policy') } : {}),
     })),
   },
 ];

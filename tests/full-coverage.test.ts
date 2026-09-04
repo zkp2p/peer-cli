@@ -112,6 +112,24 @@ describe('parsing coverage', () => {
     expect(() => asBigInt({}, 'field')).toThrow('field must be a bigint-compatible value.');
   });
 
+  it('asBigInt accepts integer numbers and decimal-integer strings', () => {
+    expect(asBigInt(42, 'field')).toBe(42n);
+    expect(asBigInt('42', 'field')).toBe(42n);
+    expect(asBigInt('  -7 ', 'field')).toBe(-7n);
+  });
+
+  it('asBigInt rejects malformed strings and numbers instead of throwing raw or returning 0n', () => {
+    // BigInt('') is 0n and BigInt('0x10') is 16 — both must be rejected loudly.
+    expect(() => asBigInt('', 'depositId')).toThrow('depositId must be an integer');
+    expect(() => asBigInt('0x10', 'depositId')).toThrow('depositId must be an integer');
+    expect(() => asBigInt('1.5', 'depositId')).toThrow('depositId must be an integer');
+    expect(() => asBigInt('abc', 'depositId')).toThrow('depositId must be an integer');
+    // Non-integer / precision-losing numbers.
+    expect(() => asBigInt(1.5, 'maxCost')).toThrow('maxCost must be a whole number');
+    expect(() => asBigInt(Number.NaN, 'maxCost')).toThrow('maxCost must be a whole number');
+    expect(() => asBigInt(2 ** 53, 'maxCost')).toThrow('too large to pass as a number');
+  });
+
   it('parseJsonObject accepts object values directly', () => {
     const obj = { key: 'value' };
     expect(parseJsonObject(obj, 'field')).toBe(obj);

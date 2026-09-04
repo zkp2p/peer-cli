@@ -118,7 +118,24 @@ export function ensureSupportedPlatformList(values: string[] | undefined, fieldN
 
 export function amountToUnits(value: unknown, fieldName: string, decimals = 6): bigint {
   const parsed = ensurePositiveNumber(value, fieldName);
-  return parseUnits(parsed.toString(), decimals);
+  const minUnit = 1 / 10 ** decimals;
+  if (parsed < minUnit) {
+    // parseUnits would round this to 0n, silently turning a nonzero request into
+    // a no-op transfer/approve.
+    throw createError('VALIDATION_ERROR', `${fieldName} must be at least ${minUnit}, got ${value}.`, {
+      details: { value, minimum: minUnit },
+    });
+  }
+  if (parsed >= 1e21) {
+    // Number#toFixed and Number#toString both switch to exponential notation at
+    // 1e21, which parseUnits rejects; an amount this large is not a real input.
+    throw createError('VALIDATION_ERROR', `${fieldName} is implausibly large: ${value}.`, {
+      details: { value },
+    });
+  }
+  // toFixed keeps plain decimal notation (toString emits '1e-7' for small
+  // magnitudes, which parseUnits throws on) and caps the fraction at `decimals`.
+  return parseUnits(parsed.toFixed(decimals), decimals);
 }
 
 export function optionalAmountToUnits(value: unknown, fieldName: string, decimals = 6): bigint | undefined {

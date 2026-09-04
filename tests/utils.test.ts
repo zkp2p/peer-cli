@@ -66,6 +66,17 @@ describe('validation utils', () => {
     expect(ensureHexPrivateKey('0x59c6995e998f97a5a0044966f0945383f0d7d1f5eb53d3d16c23f0a3077ec12e')).toMatch(/^0x/);
   });
 
+  it('amountToUnits handles sub-unit and exponential-notation amounts instead of throwing raw or silently rounding to zero', () => {
+    // Would stringify to '1e-7' and make parseUnits throw.
+    expect(() => amountToUnits(0.0000001, 'amount', 6)).toThrow('amount must be at least');
+    // Would round to 0n inside parseUnits.
+    expect(() => amountToUnits('0.0000004', 'amount', 6)).toThrow('amount must be at least');
+    // Would stringify to '1e+21'.
+    expect(() => amountToUnits(1e21, 'amount', 6)).toThrow('implausibly large');
+    // A value at exactly one base unit still works.
+    expect(amountToUnits(0.000001, 'amount', 6)).toBe(1n);
+  });
+
   it('rejects invalid values with helpful errors', () => {
     expect(() => ensureString(' ', 'field')).toThrow('field must be a non-empty string.');
     expect(() => ensureAddress('0x123', 'field')).toThrow('field must be a valid EVM address.');

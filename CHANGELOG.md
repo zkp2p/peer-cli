@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Hardened numeric argument parsing. `asBigInt` (deposit ids, intent amounts,
+  `maxCost`, durations) now rejects a blank, hex, or fractional string and a
+  non-integer or precision-losing number with a `VALIDATION_ERROR` instead of
+  throwing a raw `SyntaxError`/`RangeError` or, for `""`, silently resolving to
+  `0n`. `amountToUnits` rejects a sub-base-unit amount (previously rounded to
+  `0n`, turning a transfer into a no-op) and an amount large enough to force
+  exponential notation past `parseUnits`.
+
 ## 0.3.1
 
 - Made free-form MCP inputs emit explicit recursive JSON schemas so strict MCP

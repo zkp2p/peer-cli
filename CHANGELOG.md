@@ -6,6 +6,8 @@
   deposit/intent previews. Production and preproduction continue rejecting UPI.
 - Absorb Peer Cash 0.5.2, removing its nested SDK 0.13 dependency.
 - Pin the packaged MCP launcher to the matching CLI release.
+- Update the MCP transport’s Hono and qs dependencies to resolve current
+  production dependency audit findings.
 
 ## 0.3.1
 

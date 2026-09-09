@@ -109,7 +109,7 @@ function parseSupportedCurrencies(value: unknown, fieldName: string): string[] {
   return ensureSupportedCurrencyList(parseCsv(value as string | undefined), fieldName) ?? [];
 }
 
-function parseConversionRates(input: Record<string, unknown>): { currency: string; conversionRate: string }[][] {
+function parseConversionRates(input: Record<string, unknown>, processors: string[]): { currency: string; conversionRate: string }[][] {
   if (input.conversionRates) {
     const conversionRates = parseJsonArray(input.conversionRates, 'conversionRates') as { currency?: unknown; conversionRate: string }[][];
     return conversionRates.map((entries, rowIndex) => entries.map((entry, entryIndex) => ({
@@ -118,7 +118,6 @@ function parseConversionRates(input: Record<string, unknown>): { currency: strin
     })));
   }
 
-  const processors = parseSupportedPlatforms(input.platforms, 'platforms');
   const currencies = parseSupportedCurrencies(input.currencies, 'currencies');
   if (processors.length === 0 || currencies.length === 0 || input.rate === undefined) {
     throw createError('VALIDATION_ERROR', 'Provide --conversion-rates JSON or --platforms, --currencies, and --rate.');
@@ -278,7 +277,7 @@ export const depositDefinitions: CommandDefinition[] = [
       ['prepareCreateDeposit'],
       ['createDeposit'],
       async (input, context) => withUsdcAddress(input, context, async (token) => {
-        const processorNames = parseSupportedPlatforms(input.platforms, 'platforms');
+        const processorNames = parseSupportedPlatforms(input.platforms, 'platforms', context.config.env);
         return {
           token: ensureAddress(token, 'token'),
           amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6),
@@ -288,7 +287,7 @@ export const depositDefinitions: CommandDefinition[] = [
           },
           processorNames,
           depositData: parseDepositDataEntries(input, processorNames),
-          conversionRates: parseConversionRates(input),
+          conversionRates: parseConversionRates(input, processorNames),
           delegate: input.delegate ? ensureAddress(input.delegate, 'delegate') : undefined,
           intentGuardian: input.intentGuardian ? ensureAddress(input.intentGuardian, 'intentGuardian') : undefined,
           retainOnEmpty: Boolean(input.retainOnEmpty),

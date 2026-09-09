@@ -192,6 +192,56 @@ describe('registry-backed command handlers', () => {
     });
   });
 
+  it.each(['production', 'preproduction', 'staging'] as const)(
+    'scopes UPI quote discovery to staging in %s',
+    async (env) => {
+      const runtime = createMockRuntime({ config: { env } });
+      const platforms = await call(['config', 'platforms'], {}, runtime);
+      expect(platforms).toEqual(env === 'staging'
+        ? expect.arrayContaining(['upi', 'cashapp'])
+        : expect.not.arrayContaining(['upi']));
+      const result = await run(['quote'], { from: 'INR', amount: 100, platform: 'UPI' }, runtime);
+      if (env === 'staging') {
+        expect(result.ok).toBe(true);
+        expect(runtime.calls.find((entry) => entry.path === 'getQuote')?.args[0]).toMatchObject({
+          paymentPlatforms: ['upi'], fiatCurrency: 'INR', amount: '100000000',
+        });
+      } else {
+        expect(result).toMatchObject({ ok: false, error: { code: 'VALIDATION_ERROR' } });
+        expect(runtime.calls.some((entry) => entry.path === 'getQuote')).toBe(false);
+      }
+    },
+  );
+
+  it('passes staging UPI through quote comparison and payee registration', async () => {
+    const runtime = createMockRuntime({ config: { env: 'staging' } });
+    await call(['market', 'compare'], { from: 'INR', amount: 100, platform: 'upi' }, runtime);
+    expect(runtime.calls.find((entry) => entry.path === 'getQuote')?.args[0]).toMatchObject({
+      paymentPlatforms: ['upi'], fiatCurrency: 'INR',
+    });
+    await call(['payee', 'register'], { processors: 'upi', depositData: [{ vpa: 'maker@bank' }] }, runtime);
+    expect(runtime.calls.find((entry) => entry.path === 'registerPayeeDetails')?.args[0]).toMatchObject({
+      processorNames: ['upi'], depositData: [{ vpa: 'maker@bank' }],
+    });
+  });
+
+  it('prepares staging UPI deposits and intents without broadcasting', async () => {
+    const runtime = createMockRuntime({ config: { env: 'staging' } });
+    await call(['deposit', 'create'], {
+      amount: 10, min: 1, max: 10, platforms: 'upi', currencies: 'INR', rate: 90,
+      depositData: [{ vpa: 'maker@bank' }],
+    }, runtime);
+    expect(runtime.calls.find((entry) => entry.path === 'prepareCreateDeposit')?.args[0]).toMatchObject({
+      processorNames: ['upi'], conversionRates: [[{ currency: 'INR', conversionRate: '90000000000000000000' }]],
+    });
+    await call(['intent', 'create'], {
+      deposit: '1', amount: 1, platform: 'upi', currency: 'INR', rate: 90,
+      to: '0x1111111111111111111111111111111111111111', payeeDetails: 'maker@bank',
+    }, runtime);
+    expect(runtime.calls.some((entry) => entry.path === 'signalIntent')).toBe(false);
+    expect(runtime.preparedResults).toHaveLength(2);
+  });
+
   it('validates supported currencies and platforms locally before outbound calls', async () => {
     const quoteRuntime = createMockRuntime();
     const invalidQuote = await run(['quote'], {

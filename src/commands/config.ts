@@ -1,7 +1,7 @@
 import { privateKeyToAccount } from 'viem/accounts';
 import type { CommandDefinition } from './framework.js';
 import { readStoredConfig, replaceStoredConfig, writeStoredConfig } from '../sdk/config.js';
-import { SUPPORTED_CURRENCIES, SUPPORTED_ENVS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
+import { SUPPORTED_CURRENCIES, SUPPORTED_ENVS, supportedPlatforms } from '../utils/constants.js';
 import { createError } from '../output/errors.js';
 import { ensureHexPrivateKey, ensureOneOf, ensureString } from '../utils/validation.js';
 
@@ -137,9 +137,9 @@ export const configDefinitions: CommandDefinition[] = [
   },
   {
     path: ['config', 'platforms'],
-    description: 'List supported payment platforms.',
+    description: 'List payment platforms supported in the selected environment.',
     readOnly: true,
-    handler: async () => [...SUPPORTED_PLATFORMS],
+    handler: async (_input, context) => [...supportedPlatforms(context.config.env)],
   },
   {
     path: ['config', 'currencies'],

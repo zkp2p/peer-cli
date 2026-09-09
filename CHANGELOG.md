@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0
+
+- Add staging-only UPI platform discovery, quotes, maker registration and
+  deposit/intent previews. Production and preproduction continue rejecting UPI.
+- Adopt Peer Cash 0.5.3 and SDK 0.14.1 with stable contracts 0.4.1,
+  including the current Cash App readiness risk window.
+- Pin the packaged MCP launcher to the matching CLI release.
+- Update the MCP transport’s Hono and qs dependencies to resolve current
+  production dependency audit findings.
+
 ## 0.3.1
 
 - Made free-form MCP inputs emit explicit recursive JSON schemas so strict MCP

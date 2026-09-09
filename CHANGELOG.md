@@ -4,7 +4,8 @@
 
 - Add staging-only UPI platform discovery, quotes, maker registration and
   deposit/intent previews. Production and preproduction continue rejecting UPI.
-- Absorb Peer Cash 0.5.2, removing its nested SDK 0.13 dependency.
+- Adopt Peer Cash 0.5.3 and SDK 0.14.1 with stable contracts 0.4.1,
+  including the current Cash App readiness risk window.
 - Pin the packaged MCP launcher to the matching CLI release.
 - Update the MCP transport’s Hono and qs dependencies to resolve current
   production dependency audit findings.

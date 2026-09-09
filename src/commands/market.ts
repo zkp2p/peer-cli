@@ -1,7 +1,7 @@
 import type { CommandDefinition } from './framework.js';
 import { sdkReadHandler } from './helpers.js';
 import { createError } from '../output/errors.js';
-import { DEFAULT_CHAIN_ID, SUPPORTED_MARKET_PERIODS, SUPPORTED_PLATFORMS } from '../utils/constants.js';
+import { DEFAULT_CHAIN_ID, SUPPORTED_MARKET_PERIODS, supportedPlatforms } from '../utils/constants.js';
 import {
   amountToUnits,
   ensureAddress,
@@ -88,7 +88,7 @@ export const marketDefinitions: CommandDefinition[] = [
       const recipient = input.recipient ? ensureAddress(input.recipient, 'recipient') : caller!;
 
       return [{
-        paymentPlatforms: ensureSupportedPlatformList(parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS], 'platform'),
+        paymentPlatforms: ensureSupportedPlatformList(parseCsv(input.platform as string | undefined) ?? [...supportedPlatforms(context.config.env)], 'platform', context.config.env),
         fiatCurrency: ensureSupportedCurrency(input.from, 'from'),
         amount: amountToUnits(input.amount, 'amount', FIAT_AMOUNT_DECIMALS).toString(),
         isExactFiat: true,

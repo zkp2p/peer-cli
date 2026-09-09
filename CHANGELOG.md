@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+- Add staging-only UPI platform discovery, quotes, maker registration and
+  deposit/intent previews. Production and preproduction continue rejecting UPI.
+- Absorb Peer Cash 0.5.2, removing its nested SDK 0.13 dependency.
+- Pin the packaged MCP launcher to the matching CLI release.
+
 ## 0.3.1
 
 - Made free-form MCP inputs emit explicit recursive JSON schemas so strict MCP

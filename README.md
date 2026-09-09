@@ -23,14 +23,14 @@ The package is `peer-protocol-cli`; do not install the unrelated unscoped
 `peer-cli` package.
 
 ```bash
-npm install --global peer-protocol-cli@0.3.1
+npm install --global peer-protocol-cli@0.4.0
 peer --help
 ```
 
 Run without a global install:
 
 ```bash
-npx -y peer-protocol-cli@0.3.1 quote --from USD --amount 100 --platform wise
+npx -y peer-protocol-cli@0.4.0 quote --from USD --amount 100 --platform wise
 ```
 
 Successful output is JSON by default. Errors always use the canonical JSON
@@ -73,7 +73,7 @@ The current tool counts are generated in `agents/runtime-manifest.json`.
       "command": "npx",
       "args": [
         "-y",
-        "peer-protocol-cli@0.3.1",
+        "peer-protocol-cli@0.4.0",
         "mcp",
         "--profile",
         "read-only"
@@ -196,3 +196,12 @@ The documentation application for `agents.peer.xyz` is owned by
 `zkp2p/zkp2p-clients` at `clients/agents`; this repository owns the executable
 runtime, package manifests, portable skill, and generated contracts it
 documents.
+
+### Staging UPI
+
+UPI/INR is available only with `--env staging`. Use `peer config platforms
+--env staging` to inspect that environment’s catalog and `peer quote --env
+staging --from INR --amount 100 --platform upi` to request a quote. Deposit
+creation, payee registration and intent previews accept the same staging
+platform. Peerlytics analytics and Peer Cash keep their own supported rails;
+this does not add UPI to those services.

@@ -107,7 +107,7 @@ describe('registry-backed command handlers', () => {
 
     expect(defaultQuote).toMatchObject({ ok: true });
     expect(runtime.calls.filter((entry) => entry.path === 'getQuote').at(-1)?.args[0]).toMatchObject({
-      paymentPlatforms: ['wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime'],
+      paymentPlatforms: ['wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime', 'upi'],
     });
 
     const payee = await executeDefinition(definition(['payee', 'register']), {
@@ -193,28 +193,21 @@ describe('registry-backed command handlers', () => {
   });
 
   it.each(['production', 'preproduction', 'staging'] as const)(
-    'scopes UPI quote discovery to staging in %s',
+    'lists and quotes UPI in %s',
     async (env) => {
       const runtime = createMockRuntime({ config: { env } });
       const platforms = await call(['config', 'platforms'], {}, runtime);
-      expect(platforms).toEqual(env === 'staging'
-        ? expect.arrayContaining(['upi', 'cashapp'])
-        : expect.not.arrayContaining(['upi']));
+      expect(platforms).toEqual(expect.arrayContaining(['upi', 'cashapp']));
       const result = await run(['quote'], { from: 'INR', amount: 100, platform: 'UPI' }, runtime);
-      if (env === 'staging') {
-        expect(result.ok).toBe(true);
-        expect(runtime.calls.find((entry) => entry.path === 'getQuote')?.args[0]).toMatchObject({
-          paymentPlatforms: ['upi'], fiatCurrency: 'INR', amount: '100000000',
-        });
-      } else {
-        expect(result).toMatchObject({ ok: false, error: { code: 'VALIDATION_ERROR' } });
-        expect(runtime.calls.some((entry) => entry.path === 'getQuote')).toBe(false);
-      }
+      expect(result.ok).toBe(true);
+      expect(runtime.calls.find((entry) => entry.path === 'getQuote')?.args[0]).toMatchObject({
+        paymentPlatforms: ['upi'], fiatCurrency: 'INR', amount: '100000000',
+      });
     },
   );
 
-  it('passes staging UPI through quote comparison and payee registration', async () => {
-    const runtime = createMockRuntime({ config: { env: 'staging' } });
+  it('passes UPI through quote comparison and payee registration', async () => {
+    const runtime = createMockRuntime();
     await call(['market', 'compare'], { from: 'INR', amount: 100, platform: 'upi' }, runtime);
     expect(runtime.calls.find((entry) => entry.path === 'getQuote')?.args[0]).toMatchObject({
       paymentPlatforms: ['upi'], fiatCurrency: 'INR',
@@ -225,8 +218,8 @@ describe('registry-backed command handlers', () => {
     });
   });
 
-  it('prepares staging UPI deposits and intents without broadcasting', async () => {
-    const runtime = createMockRuntime({ config: { env: 'staging' } });
+  it('prepares UPI deposits and intents without broadcasting', async () => {
+    const runtime = createMockRuntime();
     await call(['deposit', 'create'], {
       amount: 10, min: 1, max: 10, platforms: 'upi', currencies: 'INR', rate: 90,
       depositData: [{ vpa: 'maker@bank' }],
@@ -823,7 +816,7 @@ describe('registry-backed command handlers', () => {
       const platforms = await run(['config', 'platforms'], {}, runtime);
       expect(platforms).toMatchObject({
         ok: true,
-        data: ['wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime'],
+        data: ['wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime', 'upi'],
       });
 
       const currencies = await run(['config', 'currencies'], {}, runtime);

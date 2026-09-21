@@ -12,7 +12,7 @@ import { createError } from '../output/errors.js';
 import type { CommandDefinition } from './framework.js';
 import { sdkDirectWriteHandler, sdkReadHandler } from './helpers.js';
 import { parsePayeeDepositData, parseProcessorNames } from './payee-data.js';
-import { DEFAULT_CHAIN_ID, supportedPlatforms } from '../utils/constants.js';
+import { DEFAULT_CHAIN_ID, SUPPORTED_PLATFORMS } from '../utils/constants.js';
 
 const FIAT_AMOUNT_DECIMALS = 6;
 
@@ -96,7 +96,7 @@ export const quoteDefinitions: CommandDefinition[] = [
       const destinationToken = resolveDestinationToken(input.to, client.getUsdcAddress());
       return [
         {
-          paymentPlatforms: ensureSupportedPlatformList(parseCsv(input.platform as string | undefined) ?? [...supportedPlatforms(context.config.env)], 'platform', context.config.env),
+          paymentPlatforms: ensureSupportedPlatformList(parseCsv(input.platform as string | undefined) ?? [...SUPPORTED_PLATFORMS], 'platform'),
           fiatCurrency: ensureSupportedCurrency(input.from, 'from'),
           user: input.user ? ensureAddress(input.user, 'user') : walletClient.account?.address ?? zeroAddress,
           recipient: input.recipient ? ensureAddress(input.recipient, 'recipient') : walletClient.account?.address ?? zeroAddress,
@@ -118,8 +118,8 @@ export const quoteDefinitions: CommandDefinition[] = [
       { name: 'processors', flags: '--processors <names>', description: 'Comma-separated processor names.', schema: { type: 'string', description: 'Processor names.' } },
       { name: 'depositData', flags: '--deposit-data <json>', description: 'JSON array of deposit detail objects.', schema: { type: 'array', description: 'Deposit details array.' } },
     ],
-    handler: sdkDirectWriteHandler(['registerPayeeDetails'], async (input, context) => {
-      const processorNames = parseProcessorNames(input.processors, 'processors', context.config.env);
+    handler: sdkDirectWriteHandler(['registerPayeeDetails'], async (input) => {
+      const processorNames = parseProcessorNames(input.processors, 'processors');
       return [{
         processorNames,
         depositData: parsePayeeDepositData(input.depositData, processorNames),

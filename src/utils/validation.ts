@@ -1,7 +1,6 @@
 import { isAddress, parseUnits } from 'viem';
 import { createError } from '../output/errors.js';
-import { SUPPORTED_CURRENCIES, supportedPlatforms } from './constants.js';
-import type { PeerEnv } from '../sdk/config.js';
+import { SUPPORTED_CURRENCIES, SUPPORTED_PLATFORMS } from './constants.js';
 
 export function parseCsv(value: string | undefined): string[] | undefined {
   if (!value) return undefined;
@@ -108,13 +107,13 @@ export function ensureSupportedCurrencyList(values: string[] | undefined, fieldN
   return values?.map((value, index) => ensureSupportedCurrency(value, `${fieldName}[${index}]`));
 }
 
-export function ensureSupportedPlatform(value: unknown, fieldName: string, env: PeerEnv = 'production') {
+export function ensureSupportedPlatform(value: unknown, fieldName: string): (typeof SUPPORTED_PLATFORMS)[number] {
   const parsed = ensureString(value, fieldName).toLowerCase();
-  return ensureSupportedValue(value, parsed, supportedPlatforms(env), 'platform');
+  return ensureSupportedValue(value, parsed, SUPPORTED_PLATFORMS, 'platform');
 }
 
-export function ensureSupportedPlatformList(values: string[] | undefined, fieldName: string, env: PeerEnv = 'production'): string[] | undefined {
-  return values?.map((value, index) => ensureSupportedPlatform(value, `${fieldName}[${index}]`, env));
+export function ensureSupportedPlatformList(values: string[] | undefined, fieldName: string): string[] | undefined {
+  return values?.map((value, index) => ensureSupportedPlatform(value, `${fieldName}[${index}]`));
 }
 
 export function amountToUnits(value: unknown, fieldName: string, decimals = 6): bigint {

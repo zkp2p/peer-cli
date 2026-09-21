@@ -3671,7 +3671,7 @@
       "config",
       "platforms"
     ],
-    "description": "List payment platforms supported in the selected environment.",
+    "description": "List supported payment platforms.",
     "parameter_schema": {
       "type": "object",
       "properties": {

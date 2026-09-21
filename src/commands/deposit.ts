@@ -277,7 +277,7 @@ export const depositDefinitions: CommandDefinition[] = [
       ['prepareCreateDeposit'],
       ['createDeposit'],
       async (input, context) => withUsdcAddress(input, context, async (token) => {
-        const processorNames = parseSupportedPlatforms(input.platforms, 'platforms', context.config.env);
+        const processorNames = parseSupportedPlatforms(input.platforms, 'platforms');
         return {
           token: ensureAddress(token, 'token'),
           amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6),

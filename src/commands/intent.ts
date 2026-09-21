@@ -41,11 +41,11 @@ export const intentDefinitions: CommandDefinition[] = [
       { name: 'payeeDetails', flags: '--payee-details <value>', description: 'Payee details string or serialized data.', schema: { type: 'string', description: 'Payee details.' } },
       { name: 'processorIntentData', flags: '--processor-intent-data <json>', description: 'JSON processor intent data.', schema: { type: 'object', description: 'Processor intent data.' } },
     ],
-    handler: sdkWriteHandler(['signalIntent'], async (input, context) => ({
+    handler: sdkWriteHandler(['signalIntent'], async (input) => ({
       depositId: asBigInt(input.deposit, 'deposit'),
       amount: parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6),
       toAddress: ensureAddress(input.to, 'to'),
-      processorName: ensureSupportedPlatform(input.platform, 'platform', context.config.env),
+      processorName: ensureSupportedPlatform(input.platform, 'platform'),
       payeeDetails: ensureString(input.payeeDetails, 'payeeDetails'),
       fiatCurrencyCode: ensureSupportedCurrency(input.currency, 'currency'),
       conversionRate: parseConversionRate(input.rate),

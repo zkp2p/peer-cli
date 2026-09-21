@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1
+
+- Adopt Peer Cash 0.6.1 and SDK 0.14.2, which ship optional Venmo receipt
+  linking and read UPI/INR creation rates from Polygon Chainlink.
+- Accept UPI/INR in production and preproduction as well as staging, matching
+  the SDK payment-method catalog now that the Amazon Pay UPI flow is live.
+
 ## 0.4.0
 
 - Add staging-only UPI platform discovery, quotes, maker registration and

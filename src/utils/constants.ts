@@ -20,14 +20,9 @@ export const SUPPORTED_CURRENCIES = [
   'THB', 'TRY', 'UGX', 'USD', 'VND', 'ZAR',
 ] as const;
 export const SUPPORTED_PLATFORMS = [
-  'wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime',
+  'wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime', 'upi',
 ] as const;
 export const LEGACY_PLATFORMS = ['luxon', 'n26'] as const;
-export const STAGING_PLATFORMS = [...SUPPORTED_PLATFORMS, 'upi'] as const;
-export const KNOWN_PLATFORMS = [...STAGING_PLATFORMS, ...LEGACY_PLATFORMS] as const;
-
-export function supportedPlatforms(env: (typeof SUPPORTED_ENVS)[number]) {
-  return env === 'staging' ? STAGING_PLATFORMS : SUPPORTED_PLATFORMS;
-}
+export const KNOWN_PLATFORMS = [...SUPPORTED_PLATFORMS, ...LEGACY_PLATFORMS] as const;
 export const DUMMY_PRIVATE_KEY =
   '0x59c6995e998f97a5a0044966f0945383f0d7d1f5eb53d3d16c23f0a3077ec12e' as const;

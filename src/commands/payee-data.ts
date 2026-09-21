@@ -1,4 +1,3 @@
-import type { PeerEnv } from '../sdk/config.js';
 import { createError } from '../output/errors.js';
 import { parseJsonArray } from '../utils/parsing.js';
 import { ensureSupportedPlatformList, parseCsv } from '../utils/validation.js';
@@ -30,8 +29,8 @@ function normalizePayeeDetailEntry(entry: Record<string, unknown>, processorName
   return normalized;
 }
 
-export function parseProcessorNames(value: unknown, fieldName: string, env: PeerEnv = 'production'): string[] {
-  return ensureSupportedPlatformList(parseCsv(value as string | undefined), fieldName, env) ?? [];
+export function parseProcessorNames(value: unknown, fieldName: string): string[] {
+  return ensureSupportedPlatformList(parseCsv(value as string | undefined), fieldName) ?? [];
 }
 
 export function parsePayeeDepositData(

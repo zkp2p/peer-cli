@@ -77,8 +77,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@zkp2p/cash": "^0.6.1",
-    "@zkp2p/sdk": "^0.14.2",
+    "@zkp2p/cash": "0.7.0",
+    "@zkp2p/sdk": "0.14.5",
     "commander": "^14.0.3",
     "viem": "^2.55.19",
     "zod": "^4.4.3"

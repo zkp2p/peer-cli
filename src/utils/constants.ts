@@ -20,7 +20,7 @@ export const SUPPORTED_CURRENCIES = [
   'THB', 'TRY', 'UGX', 'USD', 'VND', 'ZAR',
 ] as const;
 export const SUPPORTED_PLATFORMS = [
-  'wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime', 'upi',
+  'wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime', 'upi', 'xmoney',
 ] as const;
 export const LEGACY_PLATFORMS = ['luxon', 'n26'] as const;
 export const KNOWN_PLATFORMS = [...SUPPORTED_PLATFORMS, ...LEGACY_PLATFORMS] as const;

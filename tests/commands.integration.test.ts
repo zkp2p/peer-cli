@@ -107,7 +107,7 @@ describe('registry-backed command handlers', () => {
 
     expect(defaultQuote).toMatchObject({ ok: true });
     expect(runtime.calls.filter((entry) => entry.path === 'getQuote').at(-1)?.args[0]).toMatchObject({
-      paymentPlatforms: ['wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime', 'upi'],
+      paymentPlatforms: ['wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime', 'upi', 'xmoney'],
     });
 
     const payee = await executeDefinition(definition(['payee', 'register']), {
@@ -816,7 +816,7 @@ describe('registry-backed command handlers', () => {
       const platforms = await run(['config', 'platforms'], {}, runtime);
       expect(platforms).toMatchObject({
         ok: true,
-        data: ['wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime', 'upi'],
+        data: ['wise', 'venmo', 'revolut', 'cashapp', 'mercadopago', 'zelle', 'paypal', 'monzo', 'alipay', 'chime', 'upi', 'xmoney'],
       });
 
       const currencies = await run(['config', 'currencies'], {}, runtime);

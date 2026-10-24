@@ -20,6 +20,11 @@ jobs:
         if: runner.environment == 'github-hosted' && runner.os == 'Linux'
         uses: zkp2p/.github/actions/patch-node24@96cd20d1545013b0e7e89b56ce80ab2c4a42df9d
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
 
       - name: Verify registry release targets
         id: release

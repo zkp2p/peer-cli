@@ -12,10 +12,13 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
+      - name: Patch hosted action runtime
+        if: runner.environment == 'github-hosted' && runner.os == 'Linux'
+        uses: zkp2p/.github/actions/patch-node24@b5f5952aa1f7ada0a6dedfdbd320dce83d69635b
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: "24.22.1"
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
       - run: npm ci

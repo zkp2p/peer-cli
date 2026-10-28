@@ -17,13 +17,11 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: zkp2p/peer-infra/.github/workflows/build-deploy-image.yml@df1bdfb3d00508a8eaab3289da07639ed29037b5
+    uses: zkp2p/.github/.github/workflows/build-deploy-image-public.yml@55da14159305d36a9f576ad818c9b79602db8954 # main (zkp2p/.github#12)
     with:
       dockerfile: deploy/Dockerfile
       image-name: peer-mcp
       artifact-name: mcp-image
-      runner: ubuntu-latest
-      require-s3: true
       artifact-role-arn: arn:aws:iam::411399509833:role/peer-deploy-artifacts-mcp
   deploy:
     needs: image

@@ -1,0 +1,10 @@
+service: mcp
+region: us-east-1
+environments:
+  prod:
+    branch: releases/prod
+    instanceId: i-04825e6d16a3b5586
+    roleArn: arn:aws:iam::411399509833:role/peer-deploy-mcp-prod
+    ssmDocument: peer-deploy-mcp-prod
+    logGroup: /peer/deploy/mcp
+    ci: required

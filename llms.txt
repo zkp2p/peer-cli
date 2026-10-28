@@ -36,7 +36,7 @@ Never start a full MCP process with --yes unless automatic broadcasting is an
 explicit operator decision.
 
 The hosted read-only Streamable HTTP endpoint is
-https://peer-cli-production.up.railway.app/mcp. Cash and full authority remain
+https://mcp.peer.xyz/mcp. Cash and full authority remain
 local stdio profiles.
 
 ## Peer Cash order flow

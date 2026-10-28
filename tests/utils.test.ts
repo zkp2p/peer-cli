@@ -33,9 +33,12 @@ afterEach(() => {
 });
 
 describe('validation utils', () => {
-  it('keeps supported platforms aligned with the SDK active catalog', () => {
-    const activePlatforms = Object.keys(getPaymentMethodsCatalog(DEFAULT_CHAIN_ID, 'production'));
+  it('keeps supported platforms aligned with the SDK active catalog except Monobank', () => {
+    // SDK 0.14.6 added Monobank; this dependency bump preserves the CLI platform allowlist.
+    const activePlatforms = Object.keys(getPaymentMethodsCatalog(DEFAULT_CHAIN_ID, 'production'))
+      .filter((platform) => platform !== 'monobank');
     expect([...SUPPORTED_PLATFORMS].sort()).toEqual(activePlatforms.sort());
+    expect(() => ensureSupportedPlatform('monobank', 'platform')).toThrow('Unsupported platform: monobank.');
   });
 
   it('parses csv and json input', () => {

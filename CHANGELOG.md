@@ -37,7 +37,7 @@
 
 ## 0.2.0
 
-- Added a read-only Streamable HTTP transport with a Railway health endpoint.
+- Added a read-only Streamable HTTP transport with a health endpoint.
 - Added the official MCP Registry manifest for local stdio and hosted HTTP use.
 - Fixed preproduction and staging so they use their matching Curator APIs by
   default instead of silently querying production.

@@ -1,3 +1,6 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runCliInProcess } from './helpers/cli-runner.js';
 import { createMockRuntime, ORCHESTRATOR_V3_ADDRESS } from './helpers/mock-runtime.js';
@@ -43,6 +46,67 @@ describe('inferCommand', () => {
 });
 
 describe('in-process cli runner', () => {
+  it('reads a deposit ID from raw params when its positional argument is omitted', async () => {
+    const getDeposit = vi.fn(async () => ({ id: '123' }));
+    const runtime = createMockRuntime({ behaviors: { getDeposit } });
+
+    const result = await runCliInProcess(
+      ['node', 'peer', 'deposit', 'show', '--params', '{"depositId":"123"}'],
+      runtime.deps,
+    );
+
+    expect(result.exitCode).toBeUndefined();
+    expect(result.stderr).toBe('');
+    expect(getDeposit).toHaveBeenCalledWith(123n);
+    expect(JSON.parse(result.stdout)).toMatchObject({ ok: true, data: { id: '123' } });
+  });
+
+  it('reads omitted positionals from a params file, with inline params taking precedence', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'peer-cli-params-'));
+    try {
+      const path = join(directory, 'params.json');
+      await writeFile(path, JSON.stringify({ depositId: '123' }));
+      const getDeposit = vi.fn(async () => ({ id: '123' }));
+      const runtime = createMockRuntime({ behaviors: { getDeposit } });
+
+      const fromFile = await runCliInProcess(
+        ['node', 'peer', 'deposit', 'show', '--params-file', path],
+        runtime.deps,
+      );
+      expect(fromFile.exitCode).toBeUndefined();
+      expect(fromFile.stderr).toBe('');
+      expect(getDeposit).toHaveBeenLastCalledWith(123n);
+
+      const fromInline = await runCliInProcess(
+        ['node', 'peer', 'deposit', 'show', '--params-file', path, '--params', '{"depositId":"456"}'],
+        runtime.deps,
+      );
+      expect(fromInline.exitCode).toBeUndefined();
+      expect(fromInline.stderr).toBe('');
+      expect(getDeposit).toHaveBeenLastCalledWith(456n);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    ['456'],
+    ['--id', '456'],
+    ['456', '--id', '789'],
+  ])('keeps explicit deposit arguments ahead of raw params: %j', async (...explicitArgs) => {
+    const getDeposit = vi.fn(async () => ({ id: '456' }));
+    const runtime = createMockRuntime({ behaviors: { getDeposit } });
+
+    const result = await runCliInProcess(
+      ['node', 'peer', 'deposit', 'show', ...explicitArgs, '--params', '{"depositId":"123"}'],
+      runtime.deps,
+    );
+
+    expect(result.exitCode).toBeUndefined();
+    expect(result.stderr).toBe('');
+    expect(getDeposit).toHaveBeenCalledWith(456n);
+  });
+
   it('executes read commands and renders json output', async () => {
     const runtime = createMockRuntime({
       behaviors: {

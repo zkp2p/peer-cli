@@ -138,7 +138,7 @@ export function mergeCommandInput(
   explicitInput: Record<string, unknown>,
   paramsPayload: Record<string, unknown> | undefined,
 ): Record<string, unknown> {
-  return pruneUndefined({ ...(paramsPayload ?? {}), ...explicitInput });
+  return pruneUndefined({ ...(paramsPayload ?? {}), ...pruneUndefined(explicitInput) });
 }
 
 export function buildInputSchema(spec: CommandDefinition): Record<string, unknown> {

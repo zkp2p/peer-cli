@@ -59,4 +59,3 @@ inspection.
 - Indexer GraphQL: https://indexer.zkp2p.xyz/v1/graphql
 - Agent docs: https://agents.peer.xyz
 - Runtime source: https://github.com/zkp2p/peer-cli
-- Docs source: https://github.com/zkp2p/zkp2p-clients/tree/main/clients/agents

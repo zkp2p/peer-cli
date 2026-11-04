@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { executeDefinition } from '../src/commands/framework.js';
 import { commandDefinitions } from '../src/commands/registry.js';
-import { writeStoredConfig } from '../src/sdk/config.js';
 import { createMockRuntime, ORCHESTRATOR_V3_ADDRESS } from './helpers/mock-runtime.js';
 
 const sdkMocks = vi.hoisted(() => ({
@@ -264,7 +263,9 @@ describe('registry-backed command handlers', () => {
     });
 
     const marketRuntime = createMockRuntime();
-    const invalidMarket = await run(['market', 'spreads'], {
+    const invalidMarket = await run(['market', 'compare'], {
+      from: 'USD',
+      amount: 25,
       platform: 'not-real',
     }, marketRuntime);
     expect(invalidMarket).toMatchObject({
@@ -275,7 +276,7 @@ describe('registry-backed command handlers', () => {
         message: expect.stringContaining('Unsupported platform: not-real.'),
       },
     });
-    expect(marketRuntime.requestJson).not.toHaveBeenCalled();
+    expect(marketRuntime.calls.find((entry) => entry.path === 'getQuote')).toBeUndefined();
 
     const depositRuntime = createMockRuntime({ yes: true });
     const invalidDeposit = await run(['deposit', 'create'], {
@@ -567,240 +568,33 @@ describe('registry-backed command handlers', () => {
     await expect(call(['indexer', 'delegations', 'by-deposit'], { depositId: '7' }, runtime)).resolves.toMatchObject({ path: 'indexer.getDelegationForDeposit' });
   });
 
-  it('handles market, transfer, and checkout commands', async () => {
-    await withTempHome(async (home) => {
-      const runtime = createMockRuntime({
-        yes: true,
-        config: {
-          payApiKey: 'pay-key',
-          marketApiKey: 'market-key',
-          payBaseUrl: 'https://pay.example',
-          marketBaseUrl: 'https://market.example/',
+  it('handles market compare, transfer, and balance commands', async () => {
+    const runtime = createMockRuntime({ yes: true });
+
+    const compare = await run(['market', 'compare'], { from: 'USD', amount: 10 }, runtime);
+    expect(compare).toMatchObject({
+      ok: true,
+      data: [{ route: 'fast', price: '1.23' }],
+    });
+    expect(runtime.calls.filter((entry) => entry.path === 'getQuote').at(-1)?.args[0]).toMatchObject({
+      amount: '10000000',
+      isExactFiat: true,
+    });
+
+    await expect(run(['transfer'], { to: '0x1111111111111111111111111111111111111111', amount: 1 }, runtime)).resolves.toMatchObject({
+      ok: true,
+      data: {
+        executed: true,
+        preview: {
+          description: 'Transfer 1 USDC to 0x1111111111111111111111111111111111111111.',
         },
-        requestJson: async (url, options) => {
-          if (url.endsWith('/api/merchants/me')) {
-            return {
-              success: true,
-              responseObject: {
-                id: 'merchant-1',
-                defaultAddress: '0x1111111111111111111111111111111111111111',
-              },
-            };
-          }
-          if (url.endsWith('/api/checkout/sessions')) {
-            return {
-              success: true,
-              responseObject: {
-                session: { id: 'session-1', status: 'CREATED' },
-                sessionToken: 'token-1',
-                checkoutUrl: 'https://pay.example/checkout?session=session-1&token=token-1',
-                url,
-                options,
-              },
-            };
-          }
-          if (url.includes('/v1/checkout/session/order-1/cancel')) {
-            return { orderId: 'order-1', status: 'cancelled', url, options };
-          }
-          return { url, options };
-        },
-      });
+        result: '0xsent',
+      },
+    });
 
-      await expect(run(['market', 'spreads'], { platform: 'wise', currency: 'USD' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/market/summary?platform=wise&currency=USD&limit=200' },
-      });
-
-      await expect(run(['market', 'orderbook'], { currency: 'EUR', platform: 'wise', minSize: 100 }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/orderbook?currency=EUR&platform=wise&minSize=100' },
-      });
-
-      const compare = await run(['market', 'compare'], { from: 'USD', amount: 10 }, runtime);
-      expect(compare).toMatchObject({
-        ok: true,
-        data: [{ route: 'fast', price: '1.23' }],
-      });
-      expect(runtime.calls.filter((entry) => entry.path === 'getQuote').at(-1)?.args[0]).toMatchObject({
-        amount: '10000000',
-        isExactFiat: true,
-      });
-
-      await expect(run(['market', 'volume'], { platform: 'wise', currency: 'USD', range: 'mtd' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/analytics/overview?range=mtd&platform=wise&currency=USD' },
-      });
-
-      await expect(run(['market', 'leaderboard'], {}, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/analytics/leaderboard?limit=20&offset=0' },
-      });
-
-      await expect(run(['market', 'protocol-stats'], {}, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/analytics/summary' },
-      });
-
-      // --- New Peerlytics commands ---
-
-      await expect(run(['market', 'vaults'], {}, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/analytics/vaults?limit=50&offset=0' },
-      });
-
-      await expect(run(['market', 'explorer', 'address'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/explorer/address/0x1111111111111111111111111111111111111111?limit=100&offset=0' },
-      });
-
-      await expect(run(['market', 'explorer', 'deposit'], { id: '123' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/explorer/deposit/123?limit=100&offset=0' },
-      });
-
-      await expect(run(['market', 'explorer', 'intent'], { hash: '0xabc' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/explorer/intent/0xabc' },
-      });
-
-      await expect(run(['market', 'explorer', 'maker'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/explorer/maker/0x1111111111111111111111111111111111111111' },
-      });
-
-      await expect(run(['market', 'explorer', 'verifier'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/explorer/verifier/0x1111111111111111111111111111111111111111' },
-      });
-
-      await expect(run(['market', 'explorer', 'vault'], { id: '42' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/explorer/vault/42' },
-      });
-
-      await expect(run(['market', 'explorer', 'search'], { query: '0xtest' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/explorer/search?q=0xtest' },
-      });
-
-      await expect(run(['market', 'deposits'], { depositor: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/deposits?depositor=0x1111111111111111111111111111111111111111&limit=50&offset=0' },
-      });
-
-      const marketDepositsMissingFilter = await run(['market', 'deposits'], {}, runtime);
-      expect(marketDepositsMissingFilter).toMatchObject({
-        ok: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'At least one filter is required: --depositor, --delegate, --platform, or --currency.',
-        },
-      });
-
-      await expect(run(['market', 'intents'], { status: 'FULFILLED', limit: 10 }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/intents?status=FULFILLED&limit=10&offset=0' },
-      });
-
-      await expect(run(['market', 'activity'], { type: 'intent_fulfilled', limit: 5 }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/activity?type=intent_fulfilled&limit=5' },
-      });
-
-      await expect(run(['market', 'taker-history'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/takers/0x1111111111111111111111111111111111111111/history' },
-      });
-
-      await expect(run(['market', 'maker-history'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/makers/0x1111111111111111111111111111111111111111/history' },
-      });
-
-      await expect(run(['market', 'meta', 'platforms'], {}, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/meta/platforms' },
-      });
-
-      await expect(run(['market', 'meta', 'currencies'], {}, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/meta/currencies' },
-      });
-
-      await expect(run(['market', 'api-key', 'list'], {}, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/account/keys' },
-      });
-
-      await expect(run(['market', 'api-key', 'create'], { label: 'test' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/account/keys' },
-      });
-
-      await expect(run(['market', 'api-key', 'rotate'], { key: 'pk_old' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/account/keys' },
-      });
-
-      await expect(run(['market', 'api-key', 'delete'], { key: 'pk_old' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/account/keys' },
-      });
-
-      await expect(run(['market', 'credits'], {}, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { url: 'https://market.example/v1/account/credits' },
-      });
-
-      // API key commands require marketApiKey
-      const noKeyRuntime = createMockRuntime({ config: { marketBaseUrl: 'https://market.example/' } });
-      await expect(run(['market', 'api-key', 'list'], {}, noKeyRuntime)).resolves.toMatchObject({
-        ok: false,
-        error: { code: 'AUTH_REQUIRED' },
-      });
-      await expect(run(['market', 'credits'], {}, noKeyRuntime)).resolves.toMatchObject({
-        ok: false,
-        error: { code: 'AUTH_REQUIRED' },
-      });
-
-      await expect(run(['transfer'], { to: '0x1111111111111111111111111111111111111111', amount: 1 }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: {
-          executed: true,
-          preview: {
-            description: 'Transfer 1 USDC to 0x1111111111111111111111111111111111111111.',
-          },
-          result: '0xsent',
-        },
-      });
-
-      await expect(run(['balance'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
-        ok: true,
-        data: { raw: '123', formatted: '0.000123' },
-      });
-
-    const create = await run(['checkout', 'create'], {
-      amount: 12,
-      description: 'Order',
-      }, runtime);
-      expect(create).toMatchObject({ ok: true, data: { executed: true, result: { session: { id: 'session-1' } } } });
-      expect(await readFile(join(home, '.peer', 'checkout-sessions.json'), 'utf8')).toContain('session-1');
-
-      const list = await run(['checkout', 'list'], { status: 'pending' }, createMockRuntime({
-        config: {
-          payBaseUrl: 'https://pay.example',
-          payApiKey: undefined,
-        },
-      }));
-      expect(list).toMatchObject({ ok: true, data: { source: 'cache', sessions: [{ id: 'session-1', status: 'CREATED' }] } });
-
-      const show = await run(['checkout', 'show'], { sessionId: 'session-1' }, createMockRuntime({
-        config: { payApiKey: undefined },
-      }));
-      expect(show).toMatchObject({ ok: true, data: { source: 'cache', session: { id: 'session-1', status: 'CREATED' } } });
-
-      const cancel = await run(['checkout', 'cancel'], { sessionId: 'order-1' }, runtime);
-      expect(cancel).toMatchObject({ ok: true, data: { executed: true, result: { status: 'cancelled' } } });
+    await expect(run(['balance'], { address: '0x1111111111111111111111111111111111111111' }, runtime)).resolves.toMatchObject({
+      ok: true,
+      data: { raw: '123', formatted: '0.000123' },
     });
   });
 
@@ -848,21 +642,20 @@ describe('registry-backed command handlers', () => {
   });
 
   it('masks secrets in config show output', async () => {
-    await withTempHome(async () => {
+    await withTempHome(async (home) => {
       const rawKey = '0x59c6995e998f97a5a0044966f0945383f0d7d1f5eb53d3d16c23f0a3077ec12e';
-      await writeStoredConfig({
+      // Keys that earlier releases stored and this release no longer reads.
+      await mkdir(join(home, '.peer'), { recursive: true });
+      await writeFile(join(home, '.peer', 'config.json'), JSON.stringify({
         apiKey: 'stored-api-key-123',
         marketApiKey: 'stored-market-key-456',
         payApiKey: 'stored-pay-key-789',
-      });
+      }));
 
       const runtime = createMockRuntime({
         config: {
           privateKey: rawKey,
-          apiKey: 'flag-api-key-123',
           indexerKey: 'flag-indexer-key-456',
-          marketApiKey: 'flag-market-key-789',
-          payApiKey: 'flag-pay-key-000',
         },
       });
 
@@ -877,10 +670,7 @@ describe('registry-backed command handlers', () => {
           },
           resolved: expect.objectContaining({
             privateKey: '0x59c6...12e',
-            apiKey: 'flag-api...',
             indexerKey: 'flag-ind...',
-            marketApiKey: 'flag-mar...',
-            payApiKey: 'flag-pay...',
             walletAddress: expect.stringMatching(/^0x/),
           }),
         },
@@ -891,10 +681,7 @@ describe('registry-backed command handlers', () => {
       expect(serialized).not.toContain('stored-api-key-123');
       expect(serialized).not.toContain('stored-market-key-456');
       expect(serialized).not.toContain('stored-pay-key-789');
-      expect(serialized).not.toContain('flag-api-key-123');
       expect(serialized).not.toContain('flag-indexer-key-456');
-      expect(serialized).not.toContain('flag-market-key-789');
-      expect(serialized).not.toContain('flag-pay-key-000');
     });
   });
 });

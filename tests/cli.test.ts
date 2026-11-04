@@ -26,7 +26,7 @@ describe('inferCommand', () => {
 
   it('skips global flags with values', () => {
     expect(inferCommand(['node', 'peer', '--env', 'staging', 'quote'])).toBe('peer quote');
-    expect(inferCommand(['node', 'peer', '--format', 'table', 'market', 'spreads'])).toBe('peer market spreads');
+    expect(inferCommand(['node', 'peer', '--format', 'table', 'market', 'compare'])).toBe('peer market compare');
   });
 
   it('skips boolean global flags', () => {
@@ -243,20 +243,8 @@ describe('in-process cli runner', () => {
     expect(indexerRuntime.calls.find((entry) => entry.path === 'indexer.getDepositById')?.args[0]).toBe('0xabc_7');
   });
 
-  it('accepts named aliases for positional market and intent reads', async () => {
+  it('accepts named aliases for positional indexer and intent reads', async () => {
     const address = '0x1111111111111111111111111111111111111111';
-
-    const historyRuntime = createMockRuntime();
-    const historyResult = await runCliInProcess(
-      ['node', 'peer', 'market', 'taker-history', '--address', address],
-      historyRuntime.deps,
-    );
-    expect(historyResult.exitCode).toBeUndefined();
-    expect(historyResult.stderr).toBe('');
-    expect(historyRuntime.requestJson).toHaveBeenCalledWith(
-      `https://peerlytics.xyz/api/v1/takers/${address}/history`,
-      expect.any(Object),
-    );
 
     const intentRuntime = createMockRuntime();
     const intentResult = await runCliInProcess(
@@ -313,7 +301,6 @@ describe('in-process cli runner', () => {
     const brokenDeps = {
       createClient: async () => { throw new Error('boom'); },
       resolveConfig: async () => { throw new Error('config exploded'); },
-      requestJson: async () => { throw new Error('nope'); },
     };
     const result = await runCliInProcess(
       ['node', 'peer', 'quote', '--from', 'USD', '--amount', '10'],
@@ -322,6 +309,35 @@ describe('in-process cli runner', () => {
     // The error is caught by framework.ts executeDefinition, not renderTopLevelError
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain('"ok": false');
+  });
+
+  it('does not advertise API key options or the removed market and checkout commands', async () => {
+    const help = await runCliInProcess(['node', 'peer', '--help']);
+    expect(help.exitCode).toBeUndefined();
+    for (const removed of ['--api-key', '--indexer-key', '--market-api-key', '--pay-api-key', '--market-base-url', '--pay-base-url', 'checkout']) {
+      expect(help.stdout).not.toContain(removed);
+    }
+
+    const marketHelp = await runCliInProcess(['node', 'peer', 'market', '--help']);
+    expect(marketHelp.stdout).toMatch(/Commands:\n\s+compare \[options\]/);
+    expect(marketHelp.stdout).not.toMatch(/spreads|explorer|api-key|credits/);
+  });
+
+  it('rejects the removed key options and still accepts the unadvertised indexer key', async () => {
+    const removed = await runCliInProcess(
+      ['node', 'peer', '--api-key', 'unused', 'quote', '--from', 'USD', '--amount', '10'],
+      createMockRuntime().deps,
+    );
+    expect(removed.exitCode).toBe(1);
+    expect(removed.stderr).toContain("unknown option '--api-key'");
+
+    const runtime = createMockRuntime();
+    const indexed = await runCliInProcess(
+      ['node', 'peer', '--indexer-key', 'indexer-secret-123', 'indexer', 'deposits', 'show', '--id', '0xabc_7'],
+      runtime.deps,
+    );
+    expect(indexed.exitCode).toBeUndefined();
+    expect(runtime.deps.resolveConfig).toHaveBeenCalledWith(expect.objectContaining({ indexerKey: 'indexer-secret-123' }));
   });
 
   it('uses one canonical --yes execution flag', async () => {

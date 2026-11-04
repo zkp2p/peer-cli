@@ -9,16 +9,12 @@ const previousHome = process.env.HOME;
 const previousPeerEnv = process.env.PEER_ENV;
 const previousPeerRpcUrl = process.env.PEER_RPC_URL;
 const previousPeerBaseApiUrl = process.env.PEER_BASE_API_URL;
-const previousPeerMarketBaseUrl = process.env.PEER_MARKET_BASE_URL;
-const previousPeerPayBaseUrl = process.env.PEER_PAY_BASE_URL;
 
 afterEach(() => {
   process.env.HOME = previousHome;
   process.env.PEER_ENV = previousPeerEnv;
   process.env.PEER_RPC_URL = previousPeerRpcUrl;
   process.env.PEER_BASE_API_URL = previousPeerBaseApiUrl;
-  process.env.PEER_MARKET_BASE_URL = previousPeerMarketBaseUrl;
-  process.env.PEER_PAY_BASE_URL = previousPeerPayBaseUrl;
 });
 
 async function withHome<T>(fn: (home: string) => Promise<T>): Promise<T> {
@@ -39,26 +35,19 @@ describe('config precedence branches', () => {
   it('covers stored, env, and default fallbacks', async () => {
     await withHome(async (_home) => {
       await mkdir(dirname(getPeerConfigPath()), { recursive: true });
-      await writeFile(getPeerConfigPath(), JSON.stringify({ env: 'staging', rpcUrl: 'https://stored-rpc', marketApiKey: 'stored-market' }));
+      await writeFile(getPeerConfigPath(), JSON.stringify({ env: 'staging', rpcUrl: 'https://stored-rpc', indexerKey: 'stored-indexer' }));
       process.env.PEER_ENV = 'production';
       process.env.PEER_RPC_URL = 'https://env-rpc';
       process.env.PEER_BASE_API_URL = 'https://env-base';
-      process.env.PEER_MARKET_BASE_URL = 'https://env-market';
-      process.env.PEER_PAY_BASE_URL = 'https://env-pay';
 
-      await expect(resolveConfig({ format: 'table', yes: true, debug: true, apiKey: 'flag-key', indexerKey: 'indexer', indexerUrl: 'https://indexer', marketApiKey: 'flag-market', payApiKey: 'flag-pay', baseApiUrl: 'https://flag-base', marketBaseUrl: 'https://flag-market', payBaseUrl: 'https://flag-pay' })).resolves.toMatchObject({
+      await expect(resolveConfig({ format: 'table', yes: true, debug: true, indexerKey: 'indexer', indexerUrl: 'https://indexer', baseApiUrl: 'https://flag-base' })).resolves.toMatchObject({
         env: 'production',
         format: 'table',
         yes: true,
         debug: true,
-        apiKey: 'flag-key',
         indexerKey: 'indexer',
         indexerUrl: 'https://indexer',
-        marketApiKey: 'flag-market',
-        payApiKey: 'flag-pay',
         baseApiUrl: 'https://flag-base',
-        marketBaseUrl: 'https://flag-market/',
-        payBaseUrl: 'https://flag-pay',
         rpcUrl: 'https://env-rpc',
       });
 
@@ -80,9 +69,9 @@ describe('config precedence branches', () => {
 
   it('merges stored config patches', async () => {
     await withHome(async () => {
-      await writeStoredConfig({ env: 'staging', apiKey: 'a' });
-      await writeStoredConfig({ payApiKey: 'b' });
-      await expect(readStoredConfig()).resolves.toMatchObject({ env: 'staging', apiKey: 'a', payApiKey: 'b' });
+      await writeStoredConfig({ env: 'staging', indexerKey: 'a' });
+      await writeStoredConfig({ rpcUrl: 'https://b' });
+      await expect(readStoredConfig()).resolves.toMatchObject({ env: 'staging', indexerKey: 'a', rpcUrl: 'https://b' });
     });
   });
 

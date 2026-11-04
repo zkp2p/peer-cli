@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { Command, CommanderError } from 'commander';
+import { Command, CommanderError, Option } from 'commander';
 import { registerDefinitions, type RuntimeDeps } from './commands/framework.js';
 import { commandDefinitions } from './commands/registry.js';
 import { buildOutput, renderOutput } from './output/formatter.js';
@@ -27,14 +27,9 @@ export async function createProgram(deps?: RuntimeDeps): Promise<Command> {
   program.option('--private-key <hex>', 'Hex-encoded private key. Warning: visible in process listings. Prefer PEER_PRIVATE_KEY.');
   program.option('--wallet-path <path>', 'Path to a file containing a private key.');
   program.option('--rpc-url <url>', 'Override the Base RPC URL.');
-  program.option('--api-key <value>', 'Curator API key for SDK-backed authenticated routes.');
-  program.option('--indexer-key <value>', 'Indexer API key.');
+  program.addOption(new Option('--indexer-key <value>', 'Indexer API key.').hideHelp());
   program.option('--indexer-url <url>', 'Indexer base URL override.');
-  program.option('--market-api-key <value>', 'Peerlytics API key.');
-  program.option('--pay-api-key <value>', 'Pay API key.');
   program.option('--base-api-url <url>', 'Base API URL override for SDK services.');
-  program.option('--market-base-url <url>', 'Peerlytics base URL override.');
-  program.option('--pay-base-url <url>', 'Pay API base URL override.');
   program.option('--format <value>', 'Output format: json or table.', 'json');
   program.option('--yes', 'Skip dry-run previews and execute immediately.');
   program.option('--debug', 'Enable verbose debug logging.');
@@ -52,14 +47,9 @@ const GLOBAL_OPTIONS_WITH_VALUES = new Set([
   '--private-key',
   '--wallet-path',
   '--rpc-url',
-  '--api-key',
   '--indexer-key',
   '--indexer-url',
-  '--market-api-key',
-  '--pay-api-key',
   '--base-api-url',
-  '--market-base-url',
-  '--pay-base-url',
   '--format',
 ]);
 

@@ -12,7 +12,7 @@
 - The command registry, `src/mcp/cash.ts`, and the error catalog are runtime sources of truth. `npm run build` regenerates the agent contracts.
 - `peer mcp --profile read-only` is the default. `cash` exposes custody-separated Peer Cash tools; `full` exposes every tool.
 - `--yes` is the only flag that forces prepared generic writes to broadcast.
-- Persistent config lives at `~/.peer/config.json`; checkout cache lives at `~/.peer/checkout-sessions.json`.
+- Persistent config lives at `~/.peer/config.json`.
 - Persistent runtime files must remain owner-only, and debug output must redact secrets.
 - `--format table` only changes successful CLI rendering. Errors always emit JSON to stderr.
-- The `agents.peer.xyz` application is maintained in `zkp2p-clients/clients/agents`, not this repository.
+- The `agents.peer.xyz` application is maintained outside this repository.

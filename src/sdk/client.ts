@@ -21,7 +21,6 @@ export async function createClient(config: ResolvedConfig, options: { requireWal
     requireWallet: Boolean(options.requireWallet),
     rpcUrl: config.rpcUrl,
     accountAddress: account.address,
-    hasApiKey: Boolean(config.apiKey),
     hasIndexerKey: Boolean(config.indexerKey),
   });
   const transport = http(config.rpcUrl);
@@ -35,7 +34,6 @@ export async function createClient(config: ResolvedConfig, options: { requireWal
     walletClient: walletClient as unknown as Zkp2pClientOptions['walletClient'],
     chainId: DEFAULT_CHAIN_ID,
     runtimeEnv: config.env,
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
     ...(config.indexerKey ? { indexerApiKey: config.indexerKey } : {}),
     ...(config.indexerUrl ? { indexerUrl: config.indexerUrl } : {}),
     ...(config.baseApiUrl ? { baseApiUrl: config.baseApiUrl } : {}),

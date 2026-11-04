@@ -166,30 +166,6 @@ describe('quote.ts coverage', () => {
   });
 });
 
-// --- market.ts: api-key create/rotate/delete auth checks (lines 472, 491-492, 511-512) ---
-describe('market api-key auth coverage', () => {
-  it('rejects api-key create without market key', async () => {
-    const noKeyRuntime = makeContext();
-    await expect(
-      lookup(['market', 'api-key', 'create']).handler({ label: 'test' }, noKeyRuntime.context),
-    ).rejects.toMatchObject({ code: 'AUTH_REQUIRED' });
-  });
-
-  it('rejects api-key rotate without market key', async () => {
-    const noKeyRuntime = makeContext();
-    await expect(
-      lookup(['market', 'api-key', 'rotate']).handler({ key: 'pk_old' }, noKeyRuntime.context),
-    ).rejects.toMatchObject({ code: 'AUTH_REQUIRED' });
-  });
-
-  it('rejects api-key delete without market key', async () => {
-    const noKeyRuntime = makeContext();
-    await expect(
-      lookup(['market', 'api-key', 'delete']).handler({ key: 'pk_old' }, noKeyRuntime.context),
-    ).rejects.toMatchObject({ code: 'AUTH_REQUIRED' });
-  });
-});
-
 // --- transfer.ts: lines 100-103 (balance without wallet) ---
 describe('transfer.ts coverage', () => {
   it('balance throws AUTH_REQUIRED without wallet or address', async () => {
@@ -197,62 +173,6 @@ describe('transfer.ts coverage', () => {
     await expect(
       lookup(['balance']).handler({}, noWallet.context),
     ).rejects.toMatchObject({ code: 'AUTH_REQUIRED' });
-  });
-});
-
-// --- checkout.ts: metadata, cache miss, show/cancel branches ---
-describe('checkout.ts coverage', () => {
-  it('checkout create with metadata and description', async () => {
-    await withTempHome(async () => {
-      const runtime = createMockRuntime({
-        yes: true,
-        config: {
-          payApiKey: 'pay-key',
-          payBaseUrl: 'https://pay.example',
-        },
-        requestJson: async (url) => {
-          if (url.endsWith('/api/merchants/me')) {
-            return { success: true, responseObject: { id: 'm1', defaultAddress: DEFAULT_ADDRESS } };
-          }
-          if (url.endsWith('/api/checkout/sessions')) {
-            return { success: true, responseObject: { session: { id: 's1', status: 'CREATED' }, sessionToken: 't1', checkoutUrl: 'https://pay.example/checkout', url } };
-          }
-          return { url };
-        },
-      });
-
-      const result = await run(['checkout', 'create'], {
-        amount: 10,
-        description: 'Test order',
-        metadata: '{"key":"value","nested":{"deep":true}}',
-      }, runtime);
-      expect(result).toMatchObject({ ok: true });
-    });
-  });
-
-  it('checkout show returns from API', async () => {
-    const runtime = createMockRuntime({
-      config: {
-        payApiKey: 'pay-key',
-        payBaseUrl: 'https://pay.example',
-      },
-      requestJson: async () => ({ orderId: 'order-1', status: 'CREATED' }),
-    });
-    const result = await run(['checkout', 'show'], { sessionId: 'order-1' }, runtime);
-    expect(result).toMatchObject({ ok: true, data: { orderId: 'order-1' } });
-  });
-
-  it('checkout cancel executes with --yes', async () => {
-    const runtime = createMockRuntime({
-      yes: true,
-      config: {
-        payApiKey: 'pay-key',
-        payBaseUrl: 'https://pay.example',
-      },
-      requestJson: async () => ({ orderId: 'order-1', status: 'cancelled' }),
-    });
-    const result = await run(['checkout', 'cancel'], { sessionId: 'order-1' }, runtime);
-    expect(result).toMatchObject({ ok: true });
   });
 });
 
@@ -595,64 +515,6 @@ describe('vault.ts coverage', () => {
       id: 'vault-1', manager: DEFAULT_ADDRESS, feeRecipient: DEFAULT_ADDRESS,
       name: 'Updated Vault', uri: 'ipfs://new',
     }, runtime.context)).resolves.toMatchObject({ executed: true });
-  });
-});
-
-// --- checkout.ts ---
-describe('checkout.ts extra coverage', () => {
-  it('nested session cache key (lines 46-55)', async () => {
-    const runtime = makeContext({
-      payApiKey: 'pay-key', walletAddress: DEFAULT_ADDRESS, yes: true,
-      requestJson: async <T>(url: string) => {
-        if (url.includes('/api/merchants/me')) return { success: true, responseObject: { id: 'merchant-1', defaultAddress: DEFAULT_ADDRESS } } as T;
-        return { success: true, responseObject: { session: { session: { id: 'deeply-nested-id' } } } } as T;
-      },
-    });
-    await lookup(['checkout', 'create']).handler({ amount: 10 }, runtime.context);
-    expect(runtime.written.length).toBeGreaterThan(0);
-  });
-
-  it('cache miss (lines 96-97)', async () => {
-    const runtime = makeContext({
-      payApiKey: 'pay-key', walletAddress: DEFAULT_ADDRESS, yes: true,
-      requestJson: async <T>(url: string) => {
-        if (url.includes('/api/merchants/me')) return { success: true, responseObject: { id: 'merchant-1', defaultAddress: DEFAULT_ADDRESS } } as T;
-        return { success: true, responseObject: { noKey: true } } as T;
-      },
-    });
-    await lookup(['checkout', 'create']).handler({ amount: 10 }, runtime.context);
-    expect(runtime.written).toHaveLength(0);
-  });
-
-  it('show cache hit (line 205)', async () => {
-    const cachedData = JSON.stringify({ sessions: { 'order-1': { orderId: 'order-1', status: 'created' } } });
-    const runtime = makeContext();
-    runtime.context.readTextFile = async () => cachedData;
-    const result = await lookup(['checkout', 'show']).handler({ sessionId: 'order-1' }, runtime.context);
-    expect(result).toEqual({ source: 'cache', session: { orderId: 'order-1', status: 'created' } });
-  });
-
-  it('cancel with payApiKey', async () => {
-    const runtime = makeContext({
-      payApiKey: 'pay-key', yes: true,
-      requestJson: async <T>() => ({ orderId: 'order-1', status: 'cancelled' }) as T,
-    });
-    const result = await lookup(['checkout', 'cancel']).handler({ sessionId: 'order-1' }, runtime.context);
-    expect(result).toMatchObject({ executed: true });
-  });
-
-  it('create with explicit merchantId and recipient (line 171)', async () => {
-    const runtime = createMockRuntime({
-      yes: true,
-      config: { payApiKey: 'pay-key', payBaseUrl: 'https://pay.example' },
-      requestJson: async () => ({ success: true, responseObject: { session: { id: 'session-direct' } } }),
-      readTextFile: async () => JSON.stringify({ sessions: {} }),
-    });
-    const result = await definition(['checkout', 'create']).handler(
-      { amount: 10, merchantId: 'merchant-override', recipient: DEFAULT_ADDRESS },
-      runtime.context,
-    );
-    expect(result).toMatchObject({ executed: true });
   });
 });
 

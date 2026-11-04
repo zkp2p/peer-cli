@@ -1,5 +1,3 @@
-import { chmod, readFile, writeFile, mkdir } from 'node:fs/promises';
-import { dirname } from 'node:path';
 import type { Command } from 'commander';
 import type { PreparedTransaction } from '@zkp2p/sdk';
 import { buildOutput, renderOutput } from '../output/formatter.js';
@@ -9,7 +7,6 @@ import { createClient as defaultCreateClient } from '../sdk/client.js';
 import type { ClientBundle } from '../sdk/client.js';
 import { resolveConfig as defaultResolveConfig } from '../sdk/config.js';
 import type { GlobalOptions, ResolvedConfig } from '../sdk/config.js';
-import { requestJson as defaultRequestJson } from '../utils/http.js';
 import { logDebug, setDebugEnabled } from '../utils/logger.js';
 import { parseJsonFile, parseJsonInput } from '../utils/validation.js';
 
@@ -69,7 +66,6 @@ export interface CommandDefinition {
 export interface RuntimeDeps {
   createClient: typeof defaultCreateClient;
   resolveConfig: typeof defaultResolveConfig;
-  requestJson: typeof defaultRequestJson;
 }
 
 export interface CommandExecutionContext {
@@ -79,10 +75,7 @@ export interface CommandExecutionContext {
   globalOptions: GlobalOptions;
   deps: RuntimeDeps;
   getClient: (options?: { requireWallet?: boolean }) => Promise<ClientBundle>;
-  requestJson: typeof defaultRequestJson;
   readJsonFile: typeof parseJsonFile;
-  readTextFile: (path: string) => Promise<string>;
-  writeJsonFile: (path: string, value: unknown) => Promise<void>;
   runPrepared<TResult = unknown, TPreview = unknown>(plan: {
     description?: string;
     prepare: () => Promise<{ prepared: PreparedTransaction; previewData?: TPreview }>;
@@ -93,7 +86,6 @@ export interface CommandExecutionContext {
 const DEFAULT_DEPS: RuntimeDeps = {
   createClient: defaultCreateClient,
   resolveConfig: defaultResolveConfig,
-  requestJson: defaultRequestJson,
 };
 
 const GROUP_DESCRIPTIONS: Record<string, string> = {
@@ -106,7 +98,6 @@ const GROUP_DESCRIPTIONS: Record<string, string> = {
   market: 'Market intelligence',
   transfer: 'USDC transfer commands',
   balance: 'USDC balance command',
-  checkout: 'Checkout session commands',
   config: 'Configuration commands',
   mcp: 'Model Context Protocol server',
   payee: 'Payee helpers',
@@ -205,13 +196,8 @@ export async function executeDefinition(
       walletPath: config.walletPath,
       indexerUrl: config.indexerUrl,
       baseApiUrl: config.baseApiUrl,
-      marketBaseUrl: config.marketBaseUrl,
-      payBaseUrl: config.payBaseUrl,
       hasPrivateKey: Boolean(config.privateKey),
-      hasApiKey: Boolean(config.apiKey),
       hasIndexerKey: Boolean(config.indexerKey),
-      hasMarketApiKey: Boolean(config.marketApiKey),
-      hasPayApiKey: Boolean(config.payApiKey),
     });
     logDebug('Command input', { command, input });
 
@@ -222,15 +208,7 @@ export async function executeDefinition(
       globalOptions,
       deps,
       getClient: (options = {}) => deps.createClient(config, { requireWallet: spec.requireWallet ?? options.requireWallet }),
-      requestJson: deps.requestJson,
       readJsonFile: parseJsonFile,
-      readTextFile: async (path) => readFile(path, 'utf8'),
-      writeJsonFile: async (path, value) => {
-        await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-        await chmod(dirname(path), 0o700);
-        await writeFile(path, JSON.stringify(value, null, 2), { mode: 0o600 });
-        await chmod(path, 0o600);
-      },
       runPrepared: async (plan) => {
         logDebug('Preparing write operation', { command, description: plan.description });
         const { prepared, previewData } = await plan.prepare();

@@ -3,7 +3,6 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  getCheckoutCachePath,
   getPeerConfigDir,
   getPeerConfigPath,
   readStoredConfig,
@@ -20,8 +19,6 @@ const previousPeerPrivateKey = process.env.PEER_PRIVATE_KEY;
 const previousPeerWalletPath = process.env.PEER_WALLET_PATH;
 const previousPeerRpcUrl = process.env.PEER_RPC_URL;
 const previousPeerBaseApiUrl = process.env.PEER_BASE_API_URL;
-const previousPeerMarketBaseUrl = process.env.PEER_MARKET_BASE_URL;
-const previousPeerPayBaseUrl = process.env.PEER_PAY_BASE_URL;
 
 afterEach(() => {
   process.env.HOME = previousHome;
@@ -30,8 +27,6 @@ afterEach(() => {
   process.env.PEER_WALLET_PATH = previousPeerWalletPath;
   process.env.PEER_RPC_URL = previousPeerRpcUrl;
   process.env.PEER_BASE_API_URL = previousPeerBaseApiUrl;
-  process.env.PEER_MARKET_BASE_URL = previousPeerMarketBaseUrl;
-  process.env.PEER_PAY_BASE_URL = previousPeerPayBaseUrl;
 });
 
 async function withTempHome<T>(fn: (home: string) => Promise<T>): Promise<T> {
@@ -48,14 +43,9 @@ function makeConfig(partial: Partial<ResolvedConfig> = {}): ResolvedConfig {
     debug: partial.debug ?? false,
     walletPath: partial.walletPath,
     rpcUrl: partial.rpcUrl ?? 'https://mainnet.base.org',
-    apiKey: partial.apiKey,
     indexerKey: partial.indexerKey,
     indexerUrl: partial.indexerUrl,
-    marketApiKey: partial.marketApiKey,
-    payApiKey: partial.payApiKey,
     baseApiUrl: partial.baseApiUrl ?? 'https://api.zkp2p.xyz',
-    marketBaseUrl: partial.marketBaseUrl ?? 'https://peerlytics.xyz/api/',
-    payBaseUrl: partial.payBaseUrl ?? 'https://api.pay.zkp2p.xyz',
     privateKey: partial.privateKey,
   };
 }
@@ -65,15 +55,14 @@ describe('config helpers', () => {
     await withTempHome(async (home) => {
       expect(getPeerConfigDir()).toBe(join(home, '.peer'));
       expect(getPeerConfigPath()).toBe(join(home, '.peer', 'config.json'));
-      expect(getCheckoutCachePath()).toBe(join(home, '.peer', 'checkout-sessions.json'));
     });
   });
 
   it('reads and writes stored config', async () => {
     await withTempHome(async () => {
       expect(await readStoredConfig()).toEqual({});
-      await expect(writeStoredConfig({ env: 'staging', apiKey: 'abc' })).resolves.toEqual({ env: 'staging', apiKey: 'abc' });
-      await expect(readStoredConfig()).resolves.toEqual({ env: 'staging', apiKey: 'abc' });
+      await expect(writeStoredConfig({ env: 'staging', indexerKey: 'abc' })).resolves.toEqual({ env: 'staging', indexerKey: 'abc' });
+      await expect(readStoredConfig()).resolves.toEqual({ env: 'staging', indexerKey: 'abc' });
     });
   });
 
@@ -95,15 +84,11 @@ describe('config helpers', () => {
         privateKey: '0x8f2a55949024377f59ffcb76953361d492af6f9d932c8f3aef0f0cbce4e3d4c0',
         walletPath: '/tmp/wallet.json',
         rpcUrl: 'https://rpc.stored',
-        marketApiKey: 'stored-market',
-        payApiKey: 'stored-pay',
       });
       process.env.PEER_ENV = 'staging';
       process.env.PEER_PRIVATE_KEY = '0x59c6995e998f97a5a0044966f0945383f0d7d1f5eb53d3d16c23f0a3077ec12e';
       process.env.PEER_RPC_URL = 'https://rpc.env';
       process.env.PEER_BASE_API_URL = 'https://base.env';
-      process.env.PEER_MARKET_BASE_URL = 'https://market.env';
-      process.env.PEER_PAY_BASE_URL = 'https://pay.env';
 
       await expect(
         resolveConfig({
@@ -122,8 +107,6 @@ describe('config helpers', () => {
         walletPath: '/tmp/override-wallet.json',
         rpcUrl: 'https://rpc.env',
         baseApiUrl: 'https://base.env',
-        marketBaseUrl: 'https://market.env/',
-        payBaseUrl: 'https://pay.env',
         indexerUrl: 'https://indexer.flag',
       });
     });

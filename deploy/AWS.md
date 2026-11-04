@@ -11,16 +11,16 @@ Push to `releases/prod` to deploy through the Peer Deploy Platform:
 1. GitHub-hosted `ubuntu-latest` runners build `deploy/Dockerfile`, which runs
    `npm ci`, `npm run check` and production dependency pruning. CI also starts
    the image and requires HTTP 200 from `http://127.0.0.1:8080/health`.
-2. The image job assumes `peer-deploy-artifacts-mcp` through GitHub OIDC and
+2. The image job assumes the artifact writer role through GitHub OIDC and
    uploads the immutable `mcp-image` artifact to S3. The reusable workflow emits
    the artifact key, manifest SHA-256 and image ID.
 3. The deploy job resolves `deploy/environments.yml`, requires successful CI
-   for the source SHA, and assumes `peer-deploy-mcp-prod` through GitHub OIDC.
-4. SSM document `peer-deploy-mcp-prod` runs Peer Deploy's blue-green image
-   deployment on `peer-mcp-prod` (`i-04825e6d16a3b5586`, `us-east-1`). The platform
-   verifies the artifact and candidate health at `/health` before switching
-   traffic. Command logs go to `/peer/deploy/mcp`; GitHub records deployment
-   status.
+   for the source SHA, and assumes the environment's deploy role through GitHub
+   OIDC.
+4. The environment's SSM document runs Peer Deploy's blue-green image
+   deployment on the production host. The platform verifies the artifact and
+   candidate health at `/health` before switching traffic. Command logs go to
+   the environment's CloudWatch log group; GitHub records deployment status.
 
 This is a public repository: all CI and deployment jobs run on GitHub-hosted
 runners. No repository runner variable or self-hosted fleet is needed. CI needs
@@ -29,9 +29,8 @@ The build and deploy reusable workflows are pinned to reviewed commits in
 `.github/workflows/deploy.yml`.
 
 A manual **Deploy** dispatch on `releases/prod` redeploys in `image` mode with
-`reason` `manual`. `peer-config-reconciler` (peer-infra `stacks/config-cd`)
-dispatches `mode=image` with `reason=reconcile`; those runs are named
-`Deploy releases/prod (reconcile)`.
+`reason` `manual`. The configuration reconciler dispatches `mode=image` with
+`reason=reconcile`; those runs are named `Deploy releases/prod (reconcile)`.
 
 Deploys on the same branch are serialized and do not cancel an in-progress
 deployment. Key removal is disabled. Manual host rebuilds are retired; release
@@ -83,17 +82,4 @@ Host provisioning owns the `peer-mcp.service` unit, container restrictions,
 Caddy routing and network isolation. Caddy forwards to loopback with a
 loopback Host header to preserve MCP host validation. `/health` checks process
 readiness; it does not verify every tool's upstream provider integration.
-
-## Migration health monitor
-
-`aws-health.py` is retained from the original AWS migration. It expects
-owner-only `/etc/peer-mcp/health-target.json` with `region`, `accountId`,
-`instanceId` and `roleName`, and the expected `imageId` in
-`/var/lib/peer-mcp-migration/build.json`. It uses the EC2 instance role for
-CloudWatch metrics and checks the service, image, read-only health, tool catalog
-and public TLS origin.
-
-Its version, catalog count and origin marker are migration-specific assertions;
-the host's expected image and monitoring configuration must track releases.
-This script is not invoked by CI or CD. Peer Deploy uses `/health` as its
-deployment health gate.
+Peer Deploy uses `/health` as its deployment health gate.

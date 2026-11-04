@@ -42,7 +42,6 @@ describe('createClient', () => {
         debug: true,
         privateKey: '0x59c6995e998f97a5a0044966f0945383f0d7d1f5eb53d3d16c23f0a3077ec12e',
         rpcUrl: 'https://rpc.example',
-        apiKey: 'api',
         indexerKey: 'indexer',
         indexerUrl: 'https://indexer.example',
         baseApiUrl: 'https://base.example',
@@ -62,7 +61,6 @@ describe('createClient', () => {
       expect.objectContaining({
         chainId: 8453,
         runtimeEnv: 'production',
-        apiKey: 'api',
         indexerApiKey: 'indexer',
         indexerUrl: 'https://indexer.example',
         baseApiUrl: 'https://base.example',

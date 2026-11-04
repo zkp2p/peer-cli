@@ -61,6 +61,6 @@
 - Added a generated runtime manifest, a public library entry point, owner-only
   local state, broader debug redaction, and a zero-advisory dependency tree.
 - Removed the retired `--execute` alias; `--yes` is the single execution flag.
-- Moved the `agents.peer.xyz` documentation application to
-  `zkp2p-clients/clients/agents`.
+- Moved the `agents.peer.xyz` documentation application out of this
+  repository.
 - Shipped the initial `peer-cli` implementation.

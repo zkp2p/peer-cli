@@ -14,9 +14,6 @@ export interface MockRuntimeOptions {
   yes?: boolean;
   accountAddress?: `0x${string}`;
   behaviors?: Record<string, unknown>;
-  requestJson?: (url: string, options?: RequestInit) => Promise<unknown>;
-  readTextFile?: (path: string) => Promise<string>;
-  writeJsonFile?: (path: string, value: unknown) => Promise<void>;
   spec?: CommandDefinition;
 }
 
@@ -26,9 +23,6 @@ export interface MockRuntimeHarness {
   bundle: ClientBundle;
   calls: ProxyCall[];
   runPrepared: CommandExecutionContext['runPrepared'];
-  requestJson: RuntimeDeps['requestJson'];
-  readTextFile: (path: string) => Promise<string>;
-  writeJsonFile: (path: string, value: unknown) => Promise<void>;
   config: ResolvedConfig;
   preparedResults: PreparedExecutionResult[];
 }
@@ -143,14 +137,9 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): MockRuntime
     debug: false,
     walletPath: undefined,
     rpcUrl: 'https://mainnet.base.org',
-    apiKey: undefined,
     indexerKey: undefined,
     indexerUrl: undefined,
-    marketApiKey: undefined,
-    payApiKey: undefined,
     baseApiUrl: 'https://api.zkp2p.xyz',
-    marketBaseUrl: 'https://peerlytics.xyz/api/',
-    payBaseUrl: 'https://api.pay.zkp2p.xyz',
     privateKey: undefined,
   };
   const baseConfig: ResolvedConfig = {
@@ -159,9 +148,6 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): MockRuntime
     yes: options.yes ?? options.config?.yes ?? false,
   };
 
-  const requestJson = vi.fn(options.requestJson ?? (async (url: string, requestOptions?: RequestInit) => ({ url, options: requestOptions }))) as unknown as RuntimeDeps['requestJson'];
-  const readTextFile = vi.fn(options.readTextFile ?? (async () => '{}'));
-  const writeJsonFile = vi.fn(options.writeJsonFile ?? (async () => undefined));
   const preparedResults: Array<PreparedExecutionResult<unknown, unknown>> = [];
 
   const runPrepared = vi.fn(async (plan: { description?: string; prepare: () => Promise<{ prepared: { to: string; data: string; value: bigint; chainId: number }; previewData?: unknown }>; execute: () => Promise<unknown> }) => {
@@ -197,16 +183,10 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): MockRuntime
       privateKey: globalOptions.privateKey ?? baseConfig.privateKey,
       walletPath: globalOptions.walletPath ?? baseConfig.walletPath,
       rpcUrl: globalOptions.rpcUrl ?? baseConfig.rpcUrl,
-      apiKey: globalOptions.apiKey ?? baseConfig.apiKey,
       indexerKey: globalOptions.indexerKey ?? baseConfig.indexerKey,
       indexerUrl: globalOptions.indexerUrl ?? baseConfig.indexerUrl,
-      marketApiKey: globalOptions.marketApiKey ?? baseConfig.marketApiKey,
-      payApiKey: globalOptions.payApiKey ?? baseConfig.payApiKey,
       baseApiUrl: globalOptions.baseApiUrl ?? baseConfig.baseApiUrl,
-      marketBaseUrl: globalOptions.marketBaseUrl ?? baseConfig.marketBaseUrl,
-      payBaseUrl: globalOptions.payBaseUrl ?? baseConfig.payBaseUrl,
     })),
-    requestJson,
   };
 
   const spec = options.spec ?? {
@@ -223,10 +203,7 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): MockRuntime
     globalOptions: options.globalOptions ?? {},
     deps,
     getClient: vi.fn(async () => bundle),
-    requestJson,
     readJsonFile: async () => undefined,
-    readTextFile,
-    writeJsonFile,
     runPrepared,
   };
 
@@ -236,9 +213,6 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): MockRuntime
     bundle,
     calls,
     runPrepared,
-    requestJson,
-    readTextFile,
-    writeJsonFile,
     config: baseConfig,
     preparedResults,
   } as MockRuntimeHarness;

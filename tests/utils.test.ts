@@ -3,7 +3,6 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { getPaymentMethodsCatalog } from '@zkp2p/sdk';
-import { requestJson } from '../src/utils/http.js';
 import { logDebug, setDebugEnabled } from '../src/utils/logger.js';
 import { DEFAULT_CHAIN_ID, SUPPORTED_PLATFORMS } from '../src/utils/constants.js';
 import {
@@ -97,102 +96,5 @@ describe('logging utils', () => {
     logDebug('hello', { count: 1 });
     expect(spy.mock.calls.at(-1)?.[0]).toContain('[peer-cli] hello');
     expect(spy.mock.calls.at(-1)?.[0]).toContain('"count":1');
-  });
-});
-
-describe('requestJson', () => {
-  it('sends json requests and parses responses', async () => {
-    let requestUrl: string | URL | undefined;
-    let requestInit: RequestInit | undefined;
-    const fetchMock = vi.fn(async (input: string | URL, init?: RequestInit) => {
-      requestUrl = input;
-      requestInit = init;
-      return {
-      ok: true,
-      status: 200,
-      text: async () => '{"value":1}',
-      };
-    });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
-
-    await expect(requestJson<{ value: number }>('https://example.test', { method: 'POST', body: '{}' })).resolves.toEqual({ value: 1 });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith('https://example.test', expect.any(Object));
-    expect(requestUrl).toBe('https://example.test');
-    expect(requestInit).toBeDefined();
-    if (!requestInit) {
-      throw new Error('expected request init to be defined');
-    }
-    expect(requestInit).toMatchObject({ method: 'POST', body: '{}' });
-    expect(requestInit.headers).toBeInstanceOf(Headers);
-    expect((requestInit.headers as Headers).get('content-type')).toBe('application/json');
-  });
-
-  it('logs http request and response details in debug mode', async () => {
-    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
-    const fetchMock = vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      text: async () => '{"value":1}',
-    }));
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
-    setDebugEnabled(true);
-
-    await expect(
-      requestJson<{ value: number }>('https://example.test', {
-        method: 'POST',
-        headers: { authorization: 'Bearer secret-token' },
-        body: '{"hello":"world"}',
-      }),
-    ).resolves.toEqual({ value: 1 });
-
-    const combined = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(combined).toContain('[peer-cli] HTTP request');
-    expect(combined).toContain('[peer-cli] HTTP response');
-    expect(combined).toContain('"status":200');
-    expect(combined).not.toContain('secret-token');
-  });
-
-  it('maps failed responses to peer errors', async () => {
-    const fetchMock = vi.fn(async () => ({
-      ok: false,
-      status: 429,
-      text: async () => '{"error":"slow down"}',
-    }));
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
-
-    await expect(requestJson('https://example.test')).rejects.toMatchObject({
-      code: 'RATE_LIMITED',
-      category: 'rate_limit',
-      retryable: true,
-    });
-  });
-
-  it('maps invalid upstream html to api errors', async () => {
-    const fetchMock = vi.fn(async () => ({
-      ok: false,
-      status: 502,
-      text: async () => '<html>bad gateway</html>',
-    }));
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
-
-    await expect(requestJson('https://example.test')).rejects.toMatchObject({
-      code: 'API_ERROR',
-      category: 'api',
-      retryable: true,
-      message: 'Invalid JSON response from https://example.test',
-    });
-  });
-
-  it('maps aborts to timeout errors', async () => {
-    const abortError = Object.assign(new Error('aborted'), { name: 'AbortError' });
-    vi.stubGlobal('fetch', vi.fn(async () => {
-      throw abortError;
-    }) as unknown as typeof fetch);
-
-    await expect(requestJson('https://example.test')).rejects.toMatchObject({
-      code: 'TIMEOUT',
-      category: 'timeout',
-    });
   });
 });

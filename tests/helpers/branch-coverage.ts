@@ -3,7 +3,6 @@ import type { CommandExecutionContext, RuntimeDeps } from '../../src/commands/fr
 import { commandDefinitions } from '../../src/commands/registry.js';
 import type { ClientBundle } from '../../src/sdk/client.js';
 import type { ResolvedConfig } from '../../src/sdk/config.js';
-import type { RequestJsonOptions } from '../../src/utils/http.js';
 import { DEFAULT_CHAIN_ID } from '../../src/utils/constants.js';
 
 const sdkMocks = vi.hoisted(() => ({
@@ -46,13 +45,9 @@ type PreparedMethod = ((...args: unknown[]) => Promise<PreparedCallResult>) & {
   }>;
 };
 
-type RequestJsonStub = (url: string, options?: RequestJsonOptions) => Promise<unknown>;
-
 export interface BranchCoverageRuntime {
   deps: RuntimeDeps;
   context: CommandExecutionContext;
-  written: Array<{ path: string; value: unknown }>;
-  cache: Record<string, string>;
   config: ResolvedConfig;
   bundle: ClientBundle;
 }
@@ -83,15 +78,9 @@ function makePreparedMethod(name: string, result: unknown = { path: name }): Pre
 
 export function makeContext(options: {
   yes?: boolean;
-  payApiKey?: string;
   walletAddress?: `0x${string}`;
   getUsdcAddress?: () => `0x${string}` | undefined;
-    requestJson?: RequestJsonStub;
-  cache?: Record<string, string>;
 } = {}): BranchCoverageRuntime {
-  const cache = options.cache ?? {};
-  const written: Array<{ path: string; value: unknown }> = [];
-  const requestJson = (options.requestJson ?? (async <T>(url: string) => ({ url } as T))) as RuntimeDeps['requestJson'];
 
   const client = {
     getQuote: async (...args: unknown[]) => [{ route: 'fast', args }],
@@ -230,21 +219,15 @@ export function makeContext(options: {
     debug: false,
     walletPath: undefined,
     rpcUrl: 'https://rpc.example',
-    apiKey: undefined,
     indexerKey: undefined,
     indexerUrl: undefined,
-    marketApiKey: undefined,
-    payApiKey: options.payApiKey,
     baseApiUrl: 'https://base.example',
-    marketBaseUrl: 'https://market.example/',
-    payBaseUrl: 'https://pay.example',
     privateKey: undefined,
   };
 
   const deps: RuntimeDeps = {
     createClient: async () => bundle,
     resolveConfig: async () => config,
-    requestJson,
   };
 
   const context: CommandExecutionContext = {
@@ -254,20 +237,7 @@ export function makeContext(options: {
     globalOptions: {},
     deps,
     getClient: async () => bundle,
-    requestJson,
     readJsonFile: async () => undefined,
-    readTextFile: async (path: string) => {
-      const value = cache[path];
-      if (value !== undefined) {
-        return value;
-      }
-      const error = new Error(`Missing fixture for ${path}`) as NodeJS.ErrnoException;
-      error.code = 'ENOENT';
-      throw error;
-    },
-    writeJsonFile: async (path: string, value: unknown) => {
-      written.push({ path, value });
-    },
     runPrepared: async (plan) => {
       const { prepared } = await plan.prepare();
       const preview = {
@@ -291,8 +261,6 @@ export function makeContext(options: {
   return {
     deps,
     context,
-    written,
-    cache,
     config,
     bundle,
   };

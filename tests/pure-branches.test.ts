@@ -1,8 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { CommandExecutionContext } from '../src/commands/framework.js';
 import { sdkReadHandler, sdkSeparatePrepareHandler, sdkWriteHandler, mergeParamsWithFile } from '../src/commands/helpers.js';
 import { createError, normalizeError } from '../src/output/errors.js';
-import { requestJson } from '../src/utils/http.js';
 
 function makeContext(options: { yes?: boolean } = {}) {
   const client = {
@@ -46,14 +45,11 @@ function makeContext(options: { yes?: boolean } = {}) {
     deps: {} as never,
     command: 'peer test',
     spec: {} as never,
-    requestJson: async () => undefined,
     readJsonFile: async () => undefined,
-    readTextFile: async () => '',
-    writeJsonFile: async () => undefined,
   } as unknown as CommandExecutionContext;
 }
 
-describe('helper and transport branches', () => {
+describe('helper and error normalization branches', () => {
   it('covers helper error paths and previewData wiring', async () => {
     await expect(
       sdkReadHandler(['missing'], async () => [])({} as never, makeContext()),
@@ -74,22 +70,7 @@ describe('helper and transport branches', () => {
     expect(mergeParamsWithFile({ a: 1, b: undefined }, ['a', 'b'], { c: 2 })).toEqual({ c: 2, a: 1, b: undefined });
   });
 
-  it('covers http and normalization fallbacks', async () => {
-    const fetchMock = vi.fn(async () => ({
-      ok: false,
-      status: 500,
-      text: async () => '',
-    }));
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
-    await expect(requestJson('https://example.test')).rejects.toMatchObject({ code: 'API_ERROR', retryable: true });
-
-    vi.stubGlobal('fetch', vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      text: async () => '',
-    })) as unknown as typeof fetch);
-    await expect(requestJson('https://example.test')).resolves.toBeUndefined();
-
+  it('covers normalization fallbacks', () => {
     expect(normalizeError({ message: 'unknown', code: 123 })).toMatchObject({ code: 'INTERNAL_ERROR' });
     expect(normalizeError({ message: 'unexpected api key failure' })).toMatchObject({ code: 'AUTH_REQUIRED' });
     expect(normalizeError(createError('RATE_LIMITED', 'too many requests'))).toMatchObject({ code: 'RATE_LIMITED' });

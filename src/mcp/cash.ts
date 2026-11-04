@@ -28,7 +28,6 @@ export interface PeerCashMcpConfig {
   receiptClient?: ReceiptClient;
   environment?: CashClientOptions['environment'];
   rpcUrl?: string;
-  apiKey?: string;
   referralCode?: string;
   referrer?: string | string[];
 }
@@ -113,11 +112,6 @@ function resolveConfig(
       process.env.PEER_CASH_RPC_URL ??
       globalOptions.rpcUrl ??
       process.env.PEER_RPC_URL,
-    apiKey:
-      config.apiKey ??
-      process.env.PEER_CASH_API_KEY ??
-      globalOptions.apiKey ??
-      process.env.PEER_API_KEY,
     referralCode:
       config.referralCode ?? process.env.PEER_CASH_REFERRAL_CODE,
     referrer: config.referrer ?? process.env.PEER_CASH_REFERRER,
@@ -130,7 +124,6 @@ function getCashClient(config: PeerCashMcpConfig): CashClient {
   return createCashClient({
     environment: config.environment ?? 'production',
     ...(config.rpcUrl ? { rpcUrl: config.rpcUrl } : {}),
-    ...(config.apiKey ? { apiKey: config.apiKey } : {}),
     ...(config.referralCode ? { referralCode: config.referralCode } : {}),
     ...(config.referrer ? { referrer: config.referrer } : {}),
   });

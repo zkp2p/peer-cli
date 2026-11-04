@@ -5,10 +5,12 @@ import { SUPPORTED_CURRENCIES, SUPPORTED_ENVS, SUPPORTED_PLATFORMS } from '../ut
 import { createError } from '../output/errors.js';
 import { ensureHexPrivateKey, ensureOneOf, ensureString } from '../utils/validation.js';
 
-const CONFIG_KEYS = ['env', 'wallet', 'walletPath', 'private-key', 'privateKey', 'api-key', 'apiKey', 'market-api-key', 'marketApiKey', 'pay-api-key', 'payApiKey', 'rpc-url', 'rpcUrl', 'indexer-url', 'indexerUrl', 'indexer-key', 'indexerKey'] as const;
+const CONFIG_KEYS = ['env', 'wallet', 'walletPath', 'private-key', 'privateKey', 'rpc-url', 'rpcUrl', 'indexer-url', 'indexerUrl', 'indexer-key', 'indexerKey'] as const;
 
 type ConfigKey = (typeof CONFIG_KEYS)[number];
 
+// Earlier releases stored apiKey, marketApiKey and payApiKey. They are no longer
+// read, but existing config files may still hold them, so keep masking them.
 const SECRET_CONFIG_KEYS = ['privateKey', 'apiKey', 'indexerKey', 'marketApiKey', 'payApiKey'] as const;
 
 function maskPrivateKey(value: string): string {
@@ -44,12 +46,6 @@ function normalizeConfigKey(value: string): ConfigKey {
     walletPath: 'walletPath',
     'private-key': 'privateKey',
     privateKey: 'privateKey',
-    'api-key': 'apiKey',
-    apiKey: 'apiKey',
-    'market-api-key': 'marketApiKey',
-    marketApiKey: 'marketApiKey',
-    'pay-api-key': 'payApiKey',
-    payApiKey: 'payApiKey',
     'rpc-url': 'rpcUrl',
     rpcUrl: 'rpcUrl',
     'indexer-url': 'indexerUrl',

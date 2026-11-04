@@ -3,8 +3,8 @@
 # peer-cli
 
 The canonical agent interface for Peer: one JSON-first CLI, local and hosted MCP
-servers, and one generated contract for protocol, indexer, market, checkout,
-and Peer Cash workflows.
+servers, and one generated contract for protocol, indexer, market, and Peer
+Cash workflows.
 
 - Docs and agent-readable text: <https://agents.peer.xyz>
 - Exact CLI schemas: [`agents/tool-catalog.json`](agents/tool-catalog.json)
@@ -45,8 +45,8 @@ transaction or API preview first and execute only when the process receives
 
 Signer material resolves from `PEER_PRIVATE_KEY` or `--wallet-path`. Passing a
 private key on the command line is supported but visible in process listings;
-prefer the environment or an owner-readable wallet file. Persistent config and
-checkout caches are written with owner-only permissions.
+prefer the environment or an owner-readable wallet file. Persistent config is
+written with owner-only permissions.
 
 Never start a write-capable MCP process with `--yes` unless every write tool in
 that process is intentionally allowed to broadcast without a second CLI
@@ -139,14 +139,10 @@ Common settings:
 - `PEER_PRIVATE_KEY` / `PEER_WALLET_PATH`: signer material for generic write
   commands
 - `PEER_RPC_URL`: Base RPC override
-- `PEER_API_KEY`: Curator API key when required
-- `PEER_INDEXER_API_KEY` / `PEER_INDEXER_URL`: indexer overrides
-- `PEER_MARKET_API_KEY` / `PEER_MARKET_BASE_URL`: Peerlytics access
-- `PEER_PAY_API_KEY` / `PEER_PAY_BASE_URL`: hosted checkout access
-- `PEER_BASE_API_URL`: Curator override. Defaults follow `PEER_ENV`:
-  `api.zkp2p.xyz`, `api-preprod.zkp2p.xyz`, or `api-staging.zkp2p.xyz`.
-- `PEER_CASH_RPC_URL`, `PEER_CASH_API_KEY`, `PEER_CASH_REFERRAL_CODE`, and
-  `PEER_CASH_REFERRER`: cash-profile overrides
+- `PEER_INDEXER_URL`: indexer override
+- `PEER_BASE_API_URL`: Curator override. The default follows `PEER_ENV`.
+- `PEER_CASH_RPC_URL`, `PEER_CASH_REFERRAL_CODE`, and `PEER_CASH_REFERRER`:
+  cash-profile overrides
 
 Use `peer config show`, `set`, `unset`, and `reset` for persistent local
 settings. `peer config show` masks secret values. Prefer environment variables
@@ -166,9 +162,7 @@ The CLI covers:
   preview-first intent extension
 - ProtocolViewer and indexer reads, including a raw GraphQL escape hatch
 - vaults, rate managers, delegation, fees, and snapshots
-- Peerlytics market, explorer, history, attribution, and API-key operations
 - USDC balances and transfers
-- hosted checkout creation, reads, cancellation, and local resume cache
 - local config and environment inspection
 
 Run `peer --help`, `peer <family> --help`, or inspect the generated tool catalog
@@ -190,12 +184,11 @@ npm run check
 
 `npm run build` regenerates all agent catalogs before bundling `peer` and the
 public MCP library entry point. Run `npm run test:e2e` after changing networked
-flows or checkout behavior.
+flows.
 
-The documentation application for `agents.peer.xyz` is owned by
-`zkp2p/zkp2p-clients` at `clients/agents`; this repository owns the executable
-runtime, package manifests, portable skill, and generated contracts it
-documents.
+The documentation application for `agents.peer.xyz` is maintained separately;
+this repository owns the executable runtime, package manifests, portable skill,
+and generated contracts it documents.
 
 ### UPI
 

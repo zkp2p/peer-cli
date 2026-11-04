@@ -6,14 +6,10 @@ export const DEFAULT_BASE_API_URLS = {
   preproduction: 'https://api-preprod.zkp2p.xyz',
   staging: 'https://api-staging.zkp2p.xyz',
 } as const;
-export const DEFAULT_PAY_API_URL = 'https://api.pay.zkp2p.xyz';
-export const DEFAULT_MARKET_API_URL = 'https://peerlytics.xyz/api/';
 export const PEER_CONFIG_DIR = '.peer';
 export const PEER_CONFIG_FILE = 'config.json';
-export const PEER_CHECKOUT_CACHE_FILE = 'checkout-sessions.json';
 export const SUPPORTED_ENVS = ['production', 'preproduction', 'staging'] as const;
 export const SUPPORTED_FORMATS = ['json', 'table'] as const;
-export const SUPPORTED_MARKET_PERIODS = ['mtd', '3mtd', 'ytd', 'all'] as const;
 export const SUPPORTED_CURRENCIES = [
   'AED', 'ARS', 'AUD', 'BRL', 'CAD', 'CHF', 'CNY', 'CZK', 'DKK', 'EUR', 'GBP', 'HKD', 'HUF', 'IDR',
   'ILS', 'INR', 'JPY', 'KES', 'MXN', 'MYR', 'NOK', 'NZD', 'PHP', 'PLN', 'RON', 'SAR', 'SEK', 'SGD',

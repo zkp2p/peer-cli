@@ -197,6 +197,35 @@ The documentation application for `agents.peer.xyz` is owned by
 runtime, package manifests, portable skill, and generated contracts it
 documents.
 
+## Release, deploy and publish
+
+One release ships three things from the same commit: the hosted MCP server
+(`https://mcp.peer.xyz`), the npm package `peer-protocol-cli`, and the MCP
+Registry entry from `server.json`. Do them in this order:
+
+1. **Version on `main`.** Align the version in `package.json`, `mcp.json`,
+   `plugin.json`, `server.json` and the packaged skill, and merge to `main`
+   with CI green.
+2. **Deploy.** Fast-forward `releases/prod` to that commit.
+   `.github/workflows/deploy.yml` requires a successful `ci.yml` run for the
+   commit, builds `deploy/Dockerfile`, and deploys it over SSM with peer-deploy's
+   blue-green strategy. Afterwards `https://mcp.peer.xyz/health` reports the new
+   `version`.
+3. **Publish to npm.** Dispatch `publish.yml` on `main` while `main` still
+   points at the release commit. It runs `npm run check` and `npm publish`
+   through npm trusted publishing (GitHub OIDC); there is no npm token.
+4. **Publish to the MCP Registry.** Dispatch `publish-mcp.yml` on `main`. It
+   checks that npm has `peer-protocol-cli@<server.json version>` and that the
+   hosted `/health` reports that version, then publishes `server.json` with
+   GitHub OIDC. It skips a version the registry already has.
+
+Production config is Infisical project `mcp`, env `prod`; config CD snapshots it
+to Secrets Manager `peer/mcp/prod` and runs `Deploy releases/prod (reconcile)`
+automatically. Roll back the hosted server by moving `releases/prod` to the last
+known-good commit; npm and registry versions are not rolled back, so ship a new
+version instead. Deploy output is in CloudWatch `/peer/deploy/mcp`. See
+[`deploy/AWS.md`](deploy/AWS.md) for details.
+
 ### UPI
 
 UPI/INR is available in production, preproduction and staging, matching the

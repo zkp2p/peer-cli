@@ -1,4 +1,4 @@
-FROM node:22.23.4-bookworm-slim AS build
+FROM node:22.23.5-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts --no-audit --fund=false
@@ -13,7 +13,7 @@ COPY mcp.json plugin.json server.json README.md LICENSE CHANGELOG.md AGENTS.md C
 RUN npm run check
 RUN npm prune --omit=dev --ignore-scripts --no-audit --fund=false
 
-FROM node:22.23.4-bookworm-slim
+FROM node:22.23.5-bookworm-slim
 WORKDIR /app
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules

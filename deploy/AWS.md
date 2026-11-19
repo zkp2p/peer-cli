@@ -115,6 +115,45 @@ Caddy routing and network isolation. Caddy forwards to loopback with a
 loopback Host header to preserve MCP host validation. `/health` checks process
 readiness; it does not verify every tool's upstream provider integration.
 
+## Edge (Cloudflare)
+
+`mcp.peer.xyz` is proxied by Cloudflare. The host's security group accepts
+80/443 only from Cloudflare's ranges, plus 443 from Kohai, its one listed
+internal caller, so a request to the host's public IP times out. Operator access
+stays on SSM. Zones, DNS records and the WAF live in peer-infra
+`stacks/cloudflare-edge`; the security group, private DNS and caller lists in
+`stacks/edge-ingress/boxes.json`.
+
+- **Caddy.** peer-infra `tools/edge-origin` (SSM document `peer-edge-origin`)
+  owns the edge part of the Caddyfile. Caddy trusts only Cloudflare's ranges,
+  answers 403 to a Cloudflare connection without our origin-pull client
+  certificate, and writes a JSON access log to `/var/lib/caddy/logs/access.log`
+  without query strings. Never hand-edit those blocks; peer-deploy's upstream
+  rewrite keeps them, and the loopback Host header is unchanged.
+- **Client IP.** The server never reads the caller's address and has no per-IP
+  limiter, so IPv6 callers need nothing special.
+- **No streams.** `/mcp` is stateless JSON (`enableJsonResponse`, no sessions)
+  and `GET /mcp` answers 405, so there is no SSE stream to keep alive. Each tool
+  call answers once, when it finishes. Plan for 100 seconds: Cloudflare returns
+  524 if that answer has not started by its origin timeout, although the Node
+  server allows 120 s (`requestTimeout` in `src/mcp/server.ts`). Nothing is
+  cached.
+- **Calls out.** Inside the VPC, Peer hostnames resolve to private addresses,
+  so this host reaches another Peer box only when it is in that box's
+  `internal_callers`. It is listed for the prod indexer only, not for Curator
+  (`api.zkp2p.xyz`, used by the `quote` tool) or Pay API. Add a caller with a
+  peer-infra PR to `boxes.json` and a stack apply; never open a security group
+  by hand.
+- **Errors.** 520–526 come from Cloudflare and mean an origin problem (526 is an
+  invalid origin certificate). A WAF block is Cloudflare's own HTML block page
+  ("Sorry, you have been blocked", with a Cloudflare Ray ID); it never reaches
+  Caddy, so it is absent from the access log. A response from the server itself
+  is JSON. Every proxied response carries `server: cloudflare`, so that header
+  does not identify a block.
+- **TLS.** Cloudflare serves the edge certificate and connects in Full (strict)
+  mode; Caddy keeps renewing its Let's Encrypt certificate over HTTP-01 through
+  Cloudflare.
+
 ## Monitoring and logs
 
 The host health collector is owned by peer-infra `hosts/mcp/` (see

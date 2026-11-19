@@ -97,8 +97,9 @@ the `cash` and `full` profiles; those authority-bearing profiles remain local
 stdio processes.
 
 The hosted server sits behind Cloudflare. It returns plain JSON with no
-long-lived stream, and a tool call must start its response within 100 s or
-Cloudflare returns 524. See [Edge (Cloudflare)](deploy/AWS.md#edge-cloudflare).
+long-lived stream. Plan for a tool call to start its response within 100
+seconds; past Cloudflare's origin timeout the call gets a 524. See
+[Edge (Cloudflare)](deploy/AWS.md#edge-cloudflare).
 
 ## Peer Cash
 

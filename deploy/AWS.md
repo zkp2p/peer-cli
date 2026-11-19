@@ -134,9 +134,10 @@ stays on SSM. Zones, DNS records and the WAF live in peer-infra
   limiter, so IPv6 callers need nothing special.
 - **No streams.** `/mcp` is stateless JSON (`enableJsonResponse`, no sessions)
   and `GET /mcp` answers 405, so there is no SSE stream to keep alive. Each tool
-  call answers once, when it finishes. Cloudflare returns 524 if that answer has
-  not started within 100 s, although the Node server allows 120 s
-  (`requestTimeout` in `src/mcp/server.ts`). Nothing is cached.
+  call answers once, when it finishes. Plan for 100 seconds: Cloudflare returns
+  524 if that answer has not started by its origin timeout, although the Node
+  server allows 120 s (`requestTimeout` in `src/mcp/server.ts`). Nothing is
+  cached.
 - **Calls out.** Inside the VPC, Peer hostnames resolve to private addresses,
   so this host reaches another Peer box only when it is in that box's
   `internal_callers`. It is listed for the prod indexer only, not for Curator
@@ -144,9 +145,11 @@ stays on SSM. Zones, DNS records and the WAF live in peer-infra
   peer-infra PR to `boxes.json` and a stack apply; never open a security group
   by hand.
 - **Errors.** 520–526 come from Cloudflare and mean an origin problem (526 is an
-  invalid origin certificate). A WAF block is Cloudflare's own 403 page
-  (`server: cloudflare`); it never reaches Caddy, so it is absent from the access
-  log.
+  invalid origin certificate). A WAF block is Cloudflare's own HTML block page
+  ("Sorry, you have been blocked", with a Cloudflare Ray ID); it never reaches
+  Caddy, so it is absent from the access log. A response from the server itself
+  is JSON. Every proxied response carries `server: cloudflare`, so that header
+  does not identify a block.
 - **TLS.** Cloudflare serves the edge certificate and connects in Full (strict)
   mode; Caddy keeps renewing its Let's Encrypt certificate over HTTP-01 through
   Cloudflare.

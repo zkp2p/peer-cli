@@ -28,18 +28,17 @@ without inspecting it and obtaining operator approval.
    Use `peer_cash_source_capabilities` and `peer_cash_quote_source` before a
    non-Base source route; track submitted Relay work with
    `peer_cash_relay_status` rather than resubmitting an uncertain transfer.
-2. Call `peer_cash_estimate`. State that the Chainlink estimate is approximate;
-   the binding rate resolves when a buyer fills.
+2. Call `peer_cash_estimate` and show the amount as approximate. Use the returned
+   `binding` and the corridor’s capability pricing to identify when the rate locks.
 3. Call `peer_cash_prepare` with the Base USDC amount as a 6-decimal base-unit
    string and the required receive legs. For example, 100 USDC is `100000000`.
 4. Show the ordered unsigned transaction plan, destination, value, calldata
    purpose, and expected effect. Obtain explicit approval for that exact plan.
 5. Have the host wallet submit each transaction in order and confirm the
    `createDeposit` receipt.
-6. Call `peer_cash_finalize` with the confirmed transaction hash. For every
-   hash in `accessPolicyPaymentMethods`, call `peer_cash_prepare_access_policy`
-   with the returned `depositId` and that hash, then approve and submit the
-   transaction with the depositor wallet. An empty list requires no policy.
+6. Call `peer_cash_finalize` with the confirmed create-deposit transaction hash.
+   Skip the legacy `peer_cash_prepare_access_policy` step, including when the plan
+   reports `accessPolicyRequired`. That transaction adds a retired group.
 7. Persist the returned `depositId`; use `peer_cash_order` to resume.
 
 Use `peer_cash_orders` to list a maker's orders,
@@ -53,8 +52,7 @@ approval and confirmation rules.
   be indexer lag.
 - For `TRANSACTION_SUBMISSION_UNKNOWN` or `TRANSACTION_STATUS_UNKNOWN`, inspect
   the named hash, wallet activity, and existing orders before any resubmission.
-- For `ACCESS_POLICY_CONFIGURATION_FAILED`, repair the policy step; the deposit
-  already exists.
+- For `ACCESS_POLICY_CONFIGURATION_FAILED`, resume from the existing deposit ID. Leave the retired policy unset.
 - Retry `INDEXER_UNAVAILABLE` and `ORACLE_READ_FAILED` only as reads.
 
 If evidence cannot prove whether a mutation occurred, stop and require wallet

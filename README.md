@@ -54,7 +54,7 @@ preview.
 
 ## MCP profiles
 
-`peer mcp` requires one of three explicit profiles:
+`peer mcp` defaults to `read-only`. Select a different profile with `--profile`:
 
 - `read-only` — default protocol reads plus Peer Cash reads. No signing or
   broadcasting.
@@ -92,7 +92,7 @@ The hosted MCP server exposes only the `read-only` profile over Streamable HTTP:
 https://mcp.peer.xyz/mcp
 ```
 
-Run the same transport yourself with `peer mcp --transport http`. HTTP refuses
+Run the same transport yourself with `peer mcp --transport http --profile read-only`. HTTP refuses
 the `cash` and `full` profiles; those authority-bearing profiles remain local
 stdio processes.
 
@@ -118,12 +118,12 @@ custody boundary are unchanged:
 6. `peer_cash_finalize` — resolve a confirmed receipt into a durable
    `depositId`.
 7. `peer_cash_order` / `peer_cash_orders` — resume and inspect orders.
-8. `peer_cash_prepare_access_policy`, `peer_cash_prepare_withdraw`, and
-   `peer_cash_prepare_top_up` — prepare follow-up transactions.
+8. `peer_cash_prepare_withdraw` and `peer_cash_prepare_top_up` — prepare a withdrawal or top-up.
+
+Version 0.4.1 still exposes `peer_cash_prepare_access_policy`. Skip this legacy step for new orders. Finalize the confirmed create-deposit receipt and persist the deposit ID, even when the plan reports `accessPolicyRequired`. Applying the old policy would add a retired group to the deposit.
 
 Base USDC amounts are decimal strings in 6-decimal base units: 100 USDC is
-`100000000`. Estimates are not locked quotes; the binding Chainlink rate
-resolves when a buyer fills.
+`100000000`. For pricing, read the corridor’s `pricing.kind` in `peer_cash_capabilities`. In the published CLI 0.4.1, Alipay/CNY and UPI/INR fix the rate at deposit creation. Other supported corridors bind the oracle rate when a buyer signals an intent.
 
 Install the packaged portable skill from
 [`skills/peer-cash/SKILL.md`](skills/peer-cash/SKILL.md) when the agent host
@@ -158,6 +158,8 @@ settings. `peer config show` masks secret values. Prefer environment variables
 for credentials.
 
 ## Command families
+
+Version 0.4.1 bundles a protocol SDK that targets OrchestratorV3. Its historical intent commands remain visible, but new production intents require an OrchestratorV4-capable client. See the [protocol SDK reference](https://docs.peer.xyz/developer/sdk/client-reference).
 
 The CLI covers:
 

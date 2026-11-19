@@ -96,6 +96,10 @@ Run the same transport yourself with `peer mcp --transport http`. HTTP refuses
 the `cash` and `full` profiles; those authority-bearing profiles remain local
 stdio processes.
 
+The hosted server sits behind Cloudflare. It returns plain JSON with no
+long-lived stream, and a tool call must start its response within 100 s or
+Cloudflare returns 524. See [Edge (Cloudflare)](deploy/AWS.md#edge-cloudflare).
+
 ## Peer Cash
 
 The retired standalone `peer-cash-mcp` server now lives here. Its tool names and

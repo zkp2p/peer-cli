@@ -72,7 +72,7 @@ the loader's expected key set and deploy it first, then edit Infisical.
 ## Image and local verification
 
 Build with `docker build -f deploy/Dockerfile -t peer-mcp:local .`. The final
-image uses Node 22.23.4 and UID 10001, with the HTTP entrypoint bound to
+image uses Node 22.23.5 and UID 10001, with the HTTP entrypoint bound to
 `127.0.0.1` and `PORT=8080` by default. The container starts through
 `/opt/peer/runtime.cjs`, which reads the config-CD snapshot mounted at
 `/run/secrets/runtime.json`.

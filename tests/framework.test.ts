@@ -10,6 +10,14 @@ describe('framework helpers', () => {
     expect(mergeCommandInput({ a: 2, b: undefined }, { a: 1, c: 3 })).toEqual({ a: 2, c: 3 });
   });
 
+  it('preserves raw params when the corresponding explicit argument is omitted', () => {
+    expect(mergeCommandInput({ depositId: undefined }, { depositId: '123' })).toEqual({ depositId: '123' });
+  });
+
+  it.each([false, 0, '', null])('retains a supplied falsy override: %j', (value) => {
+    expect(mergeCommandInput({ value }, { value: 'raw' })).toEqual({ value });
+  });
+
   it('builds a schema from positional args and options', () => {
     const schema = buildInputSchema({
       path: ['quote'],

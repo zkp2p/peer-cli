@@ -53,6 +53,8 @@ approval and confirmation rules.
 - For `TRANSACTION_SUBMISSION_UNKNOWN` or `TRANSACTION_STATUS_UNKNOWN`, inspect
   the named hash, wallet activity, and existing orders before any resubmission.
 - For `ACCESS_POLICY_CONFIGURATION_FAILED`, resume from the existing deposit ID. Leave the retired policy unset.
+- For `PAYEE_NOT_FOUND` (after 0.4.1), the handle does not exist on that
+  platform. Ask for a corrected payee; do not retry the same one.
 - Retry `INDEXER_UNAVAILABLE` and `ORACLE_READ_FAILED` only as reads.
 
 If evidence cannot prove whether a mutation occurred, stop and require wallet

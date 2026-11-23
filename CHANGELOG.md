@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.5.0-rc.0
+
+Release candidate on the npm `rc` tag; `latest` stays 0.4.1 during the soak.
 
 - Run every Peer Cash MCP tool on `peer.sell` from `@zkp2p/sdk` 0.16.0-rc.2,
   including the Relay source tools (`peer_cash_source_capabilities`,

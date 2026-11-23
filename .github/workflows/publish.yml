@@ -23,4 +23,15 @@ jobs:
           package-manager-cache: false
       - run: npm ci
       - run: npm run check
-      - run: npm publish --access public
+      - name: Choose the npm dist-tag from the version
+        id: tag
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          # A prerelease (X.Y.Z-id.N) publishes on its first identifier, never latest.
+          case "$version" in
+            *-*) prerelease="${version#*-}"; tag="${prerelease%%.*}" ;;
+            *) tag=latest ;;
+          esac
+          echo "Publishing $version on $tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - run: npm publish --access public --tag "${{ steps.tag.outputs.tag }}"

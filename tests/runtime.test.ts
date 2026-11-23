@@ -56,6 +56,18 @@ describe('MCP runtime configuration', () => {
     expect(result.stderr).toBe(fileSource);
   });
 
+  it('accepts the optional Relay key, exposes it to the server and redacts it from output', () => {
+    const relayKey = 'relay-key-0123456789abcdef';
+    const result = runRuntime({ NODE_ENV: 'production', PEER_CASH_RELAY_API_KEY: relayKey },
+      'console.log(process.env.PEER_CASH_RELAY_API_KEY === "relay-key-0123456789abcdef", process.env.PEER_CASH_RELAY_API_KEY)');
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe('true [REDACTED]\n');
+  });
+
+  it('rejects a non-string optional Relay key', () => {
+    expectRejected({ NODE_ENV: 'production', PEER_CASH_RELAY_API_KEY: 123 }, 'PEER_CASH_RELAY_API_KEY');
+  });
+
   it('rejects missing keys even when container env provides them', () => {
     expectRejected({}, 'NODE_ENV');
   });

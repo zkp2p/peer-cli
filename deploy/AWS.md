@@ -65,9 +65,10 @@ Each image deploy writes the snapshot to a per-attempt file under
 `PORT` and keys matching `*_NEXT` are excluded. Host edits do not persist across
 deploys.
 
-`deploy/runtime.cjs` accepts exactly `NODE_ENV`. Adding or removing a key in
-Infisical makes the reconcile deploy fail its health check and roll back; change
-the loader's expected key set and deploy it first, then edit Infisical.
+`deploy/runtime.cjs` requires `NODE_ENV` and accepts one optional key,
+`PEER_CASH_RELAY_API_KEY`, which `peer_cash_quote_source` needs for Relay quotes.
+Any other key in Infisical makes the reconcile deploy fail its health check and
+roll back; change the loader's key sets and deploy it first, then edit Infisical.
 
 ## Image and local verification
 
@@ -76,8 +77,8 @@ image uses Node 22.23.5 and UID 10001, with the HTTP entrypoint bound to
 `127.0.0.1` and `PORT=8080` by default. The container starts through
 `/opt/peer/runtime.cjs`, which reads the config-CD snapshot mounted at
 `/run/secrets/runtime.json`.
-This file must contain exactly `NODE_ENV`, as a string, for example
-`{"NODE_ENV":"production"}`. `PORT` is forbidden in the file: Peer Deploy sets it
+This file must contain `NODE_ENV` and may contain `PEER_CASH_RELAY_API_KEY`, both
+strings, for example `{"NODE_ENV":"production"}`. `PORT` is forbidden in the file: Peer Deploy sets it
 through container environment variables for each blue-green slot, and the wrapper
 preserves that value. The service needs no application secrets, database, Redis
 or persistent application volume.

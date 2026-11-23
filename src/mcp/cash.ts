@@ -1,7 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-// @zkp2p/sdk has no Relay source routing or access policy; those tools stay on Cash.
-import { createCashClient, type CashClient } from '@zkp2p/cash';
 import {
   createPeer,
   type CurrencyType,
@@ -25,20 +23,16 @@ export interface ReceiptClient {
   }): Promise<TransactionReceipt>;
 }
 
-export type PeerCashOnlyClient = Pick<
-  CashClient,
-  'sourceCapabilities' | 'quoteSource' | 'relayStatus' | 'prepareAccessPolicy'
->;
-
 export interface PeerCashMcpConfig {
   client?: PeerSell;
-  cashOnlyClient?: PeerCashOnlyClient;
   receiptClient?: ReceiptClient;
   environment?: PeerOptions['environment'];
   rpcUrl?: string;
   apiKey?: string;
   referralCode?: string;
   referrer?: string | string[];
+  /** Relay API key for the source tools; Relay's quote endpoint requires one. */
+  relayApiKey?: string;
 }
 
 interface RegisterPeerCashToolsOptions {
@@ -129,6 +123,7 @@ function resolveConfig(
     referralCode:
       config.referralCode ?? process.env.PEER_CASH_REFERRAL_CODE,
     referrer: config.referrer ?? process.env.PEER_CASH_REFERRER,
+    relayApiKey: config.relayApiKey ?? process.env.PEER_CASH_RELAY_API_KEY,
   };
 }
 
@@ -139,6 +134,7 @@ function clientOptions(config: PeerCashMcpConfig): PeerOptions {
     ...(config.apiKey ? { apiKey: config.apiKey } : {}),
     ...(config.referralCode ? { referralCode: config.referralCode } : {}),
     ...(config.referrer ? { referrer: config.referrer } : {}),
+    ...(config.relayApiKey ? { relay: { apiKey: config.relayApiKey } } : {}),
   };
 }
 
@@ -146,9 +142,6 @@ function getSellClient(config: PeerCashMcpConfig): PeerSell {
   return config.client ?? createPeer(clientOptions(config)).sell;
 }
 
-function getCashOnlyClient(config: PeerCashMcpConfig): PeerCashOnlyClient {
-  return config.cashOnlyClient ?? createCashClient(clientOptions(config));
-}
 
 function getReceiptClient(config: PeerCashMcpConfig): ReceiptClient {
   if (config.receiptClient) return config.receiptClient;
@@ -251,7 +244,6 @@ export function registerPeerCashTools(
 ): void {
   const config = resolveConfig(options.config, options.globalOptions);
   const client = getSellClient(config);
-  const cashOnlyClient = getCashOnlyClient(config);
 
   server.registerTool(
     PEER_CASH_TOOL_NAMES.capabilities,
@@ -286,7 +278,7 @@ export function registerPeerCashTools(
       inputSchema: {},
       annotations: { readOnlyHint: true, idempotentHint: true },
     },
-    () => handleTool(() => cashOnlyClient.sourceCapabilities()),
+    () => handleTool(() => client.sourceCapabilities()),
   );
 
   server.registerTool(
@@ -309,15 +301,25 @@ export function registerPeerCashTools(
       annotations: { readOnlyHint: true, idempotentHint: false },
     },
     ({ user, amount, sourceChainId, sourceCurrency, recipient, tradeType }) =>
-      handleTool(() =>
-        cashOnlyClient.quoteSource({
+      handleTool(() => {
+        // Relay's quote endpoint rejects keyless requests; say so once instead of
+        // returning a retryable failure an agent would repeat.
+        if (!options.config?.client && !config.relayApiKey) {
+          throw {
+            code: 'RELAY_API_KEY_REQUIRED',
+            retryable: false,
+            message: 'Relay quotes need an API key, and this server has none configured.',
+            remediation: 'Set PEER_CASH_RELAY_API_KEY for the peer MCP server, then retry. Do not retry before that.',
+          };
+        }
+        return client.quoteSource({
           user,
           amount: BigInt(amount),
           source: { chainId: sourceChainId, currency: sourceCurrency },
           ...(recipient ? { recipient } : {}),
           ...(tradeType ? { tradeType } : {}),
-        }),
-      ),
+        });
+      }),
   );
 
   server.registerTool(
@@ -329,7 +331,7 @@ export function registerPeerCashTools(
       inputSchema: { requestId: z.string().min(1) },
       annotations: { readOnlyHint: true, idempotentHint: true },
     },
-    ({ requestId }) => handleTool(() => cashOnlyClient.relayStatus(requestId)),
+    ({ requestId }) => handleTool(() => client.relayStatus(requestId)),
   );
 
   server.registerTool(
@@ -457,18 +459,20 @@ export function registerPeerCashTools(
   server.registerTool(
     PEER_CASH_TOOL_NAMES.prepareAccessPolicy,
     {
-      title: 'Prepare an order access policy',
+      title: 'Prepare an order access policy (retired: no policy needed)',
       description:
-        'Prepare one unsigned verified-buyer access-policy transaction after finalization for a payment method returned by accessPolicyPaymentMethods.',
+        'Retired step, kept so existing agents keep working. The merchant group this tool used to configure was retired in @zkp2p/sdk 0.15, and peer_cash_prepare never asks for an access policy. It returns accessPolicyRequired: false and no transaction, so there is nothing to sign. Finalize the confirmed create-deposit receipt with peer_cash_finalize and persist the depositId.',
       inputSchema: { depositId, paymentMethod },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
+      annotations: { readOnlyHint: true, idempotentHint: true },
     },
     ({ depositId: id, paymentMethod: method }) =>
-      handleTool(() => cashOnlyClient.prepareAccessPolicy(id, method as `0x${string}`)),
+      handleTool(() => ({
+        depositId: id,
+        paymentMethod: method,
+        accessPolicyRequired: false,
+        transaction: null,
+        reason: 'The merchant group this step configured was retired in @zkp2p/sdk 0.15; no access policy is needed.',
+      })),
   );
 
   server.registerTool(

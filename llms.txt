@@ -48,7 +48,7 @@ local stdio profiles.
 5. peer_cash_finalize after the confirmed createDeposit receipt
 6. persist depositId and resume with peer_cash_order. Skip the retired group policy even when the 0.4.1 plan reports accessPolicyRequired.
 
-After 0.4.1, peer_cash_* sells through @zkp2p/sdk peer.sell. Only peer_cash_source_capabilities, peer_cash_quote_source, peer_cash_relay_status and peer_cash_prepare_access_policy still use @zkp2p/cash.
+After 0.4.1, every peer_cash_* tool runs on @zkp2p/sdk peer.sell, including the Relay source tools. peer_cash_prepare_access_policy answers accessPolicyRequired: false with no transaction (the merchant group it configured was retired in @zkp2p/sdk 0.15).
 
 Base USDC uses 6 decimals. Treat estimates as approximate. Retry read failures
 as reads; never retry an uncertain transaction without hash, wallet, and order

@@ -37,8 +37,9 @@ without inspecting it and obtaining operator approval.
 5. Have the host wallet submit each transaction in order and confirm the
    `createDeposit` receipt.
 6. Call `peer_cash_finalize` with the confirmed create-deposit transaction hash.
-   Skip the legacy `peer_cash_prepare_access_policy` step, including when the plan
-   reports `accessPolicyRequired`. That transaction adds a retired group.
+   Skip the retired `peer_cash_prepare_access_policy` step, including when the plan
+   reports `accessPolicyRequired`. After 0.4.1 it answers that no policy is needed;
+   in 0.4.1 its transaction adds a retired group.
 7. Persist the returned `depositId`; use `peer_cash_order` to resume.
 
 Use `peer_cash_orders` to list a maker's orders,

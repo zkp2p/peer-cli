@@ -10,5 +10,5 @@ export default defineConfig({
   splitting: false,
   target: 'node22',
   outExtension: () => ({ js: '.cjs' }),
-  noExternal: ['@zkp2p/sdk', '@zkp2p/cash', '@zkp2p/contracts-v2', '@zkp2p/indexer-schema', 'viem', 'ethers', 'ox'],
+  noExternal: ['@zkp2p/sdk', '@zkp2p/contracts-v2', '@zkp2p/indexer-schema', 'viem', 'ethers', 'ox'],
 });

@@ -120,16 +120,13 @@ custody boundary are unchanged:
 7. `peer_cash_order` / `peer_cash_orders` — resume and inspect orders.
 8. `peer_cash_prepare_withdraw` and `peer_cash_prepare_top_up` — prepare a withdrawal or top-up.
 
-After 0.4.1, these tools sell through `peer.sell` from `@zkp2p/sdk`
-`0.16.0-rc.1`. The SDK has no source routing or access policies, so the Relay
-source tools (`peer_cash_source_capabilities`, `peer_cash_quote_source`,
-`peer_cash_relay_status`) and `peer_cash_prepare_access_policy` still use
-`@zkp2p/cash`. `peer_cash_capabilities` no
+After 0.4.1, every one of these tools runs on `peer.sell` from `@zkp2p/sdk`
+`0.16.0-rc.2`, including the Relay source tools. `peer_cash_capabilities` no
 longer takes `includeRelaySources`; call `peer_cash_source_capabilities`
 instead. A payee handle that does not exist on its platform fails with
 `PAYEE_NOT_FOUND`, which is not retryable.
 
-Version 0.4.1 still exposes `peer_cash_prepare_access_policy`. Skip this legacy step for new orders. Finalize the confirmed create-deposit receipt and persist the deposit ID, even when the plan reports `accessPolicyRequired`. Applying the old policy would add a retired group to the deposit.
+`peer_cash_prepare_access_policy` is a retired step. After 0.4.1 it answers `accessPolicyRequired: false` with no transaction, because the merchant group it configured was retired in `@zkp2p/sdk` 0.15. Version 0.4.1 still returns a transaction from it: skip that step, finalize the confirmed create-deposit receipt and persist the deposit ID, even when the plan reports `accessPolicyRequired`.
 
 Base USDC amounts are decimal strings in 6-decimal base units: 100 USDC is
 `100000000`. For pricing, read the corridor’s `pricing.kind` in `peer_cash_capabilities`. In the published CLI 0.4.1, Alipay/CNY and UPI/INR fix the rate at deposit creation. Other supported corridors bind the oracle rate when a buyer signals an intent. After 0.4.1, every corridor binds the oracle rate when a buyer signals an intent.
@@ -159,8 +156,9 @@ Common settings:
 - `PEER_PAY_API_KEY` / `PEER_PAY_BASE_URL`: hosted checkout access
 - `PEER_BASE_API_URL`: Curator override. Defaults follow `PEER_ENV`:
   `api.zkp2p.xyz`, `api-preprod.zkp2p.xyz`, or `api-staging.zkp2p.xyz`.
-- `PEER_CASH_RPC_URL`, `PEER_CASH_API_KEY`, `PEER_CASH_REFERRAL_CODE`, and
-  `PEER_CASH_REFERRER`: cash-profile overrides
+- `PEER_CASH_RPC_URL`, `PEER_CASH_API_KEY`, `PEER_CASH_REFERRAL_CODE`,
+  `PEER_CASH_REFERRER`, and `PEER_CASH_RELAY_API_KEY` (Relay's quote endpoint
+  needs a key for `peer_cash_quote_source`): cash-profile overrides
 
 Use `peer config show`, `set`, `unset`, and `reset` for persistent local
 settings. `peer config show` masks secret values. Prefer environment variables

@@ -2,14 +2,16 @@
 
 ## Unreleased
 
-- Run the Peer Cash MCP tools on `peer.sell` from `@zkp2p/sdk` 0.16.0-rc.1.
-  The Relay source tools (`peer_cash_source_capabilities`,
-  `peer_cash_quote_source`, `peer_cash_relay_status`) and
-  `peer_cash_prepare_access_policy` stay on `@zkp2p/cash`, which the SDK does
-  not replace for source routing or access policies.
-- Remove the `includeRelaySources` argument of `peer_cash_capabilities`.
-  `PeerCashMcpConfig.client` is now a `PeerSell`; inject the Cash-only tools'
-  client through `cashOnlyClient`.
+- Run every Peer Cash MCP tool on `peer.sell` from `@zkp2p/sdk` 0.16.0-rc.2,
+  including the Relay source tools (`peer_cash_source_capabilities`,
+  `peer_cash_quote_source`, `peer_cash_relay_status`), and drop the
+  `@zkp2p/cash` dependency. Every tool name stays.
+- `peer_cash_prepare_access_policy` stays registered but answers
+  `accessPolicyRequired: false` with no transaction: the merchant group it
+  configured was retired in `@zkp2p/sdk` 0.15.
+- Remove the `includeRelaySources` argument of `peer_cash_capabilities`; call
+  `peer_cash_source_capabilities` instead. `PeerCashMcpConfig.client` is now a
+  `PeerSell`.
 - `peer intent release` sends the `releaseAmount` that `@zkp2p/sdk` 0.15+
   requires: the full on-chain intent amount by default (a depositor must
   release all of it), or `--amount` in USDC for an arbitrator's partial release.

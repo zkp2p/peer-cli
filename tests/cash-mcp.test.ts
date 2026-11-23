@@ -18,12 +18,9 @@ function createHarness(includeWrites = false) {
     orders: vi.fn(async () => [{ depositId }]),
     prepareWithdraw: vi.fn(async () => ({ transactions: [] })),
     prepareTopUp: vi.fn(async () => ({ transactions: [] })),
-  };
-  const cashOnlyClient = {
     sourceCapabilities: vi.fn(async () => ({ chains: [] })),
     quoteSource: vi.fn(async () => ({ requestId: 'relay-1', txs: [] })),
     relayStatus: vi.fn(async () => ({ requestId: 'relay-1', status: 'pending' })),
-    prepareAccessPolicy: vi.fn(async () => ({ transactions: [] })),
   };
   const receiptClient = {
     getTransactionReceipt: vi.fn(async () => ({
@@ -36,7 +33,6 @@ function createHarness(includeWrites = false) {
   registerPeerCashTools({ registerTool } as never, {
     config: {
       client: client as never,
-      cashOnlyClient: cashOnlyClient as never,
       receiptClient: receiptClient as never,
     },
     includeWrites,
@@ -45,7 +41,7 @@ function createHarness(includeWrites = false) {
   const handlers = new Map(
     registerTool.mock.calls.map(([name, _config, handler]) => [name as string, handler]),
   );
-  return { cashOnlyClient, client, handlers, receiptClient, registerTool };
+  return { client, handlers, receiptClient, registerTool };
 }
 
 beforeEach(() => {
@@ -109,7 +105,7 @@ describe('Peer Cash MCP tools', () => {
   });
 
   it('exposes live source routing and analytics inputs without signer authority', async () => {
-    const { cashOnlyClient, client, handlers } = createHarness();
+    const { client, handlers } = createHarness();
     await handlers.get('peer_cash_fill_stats')!({});
     await handlers.get('peer_cash_source_capabilities')!({});
     await handlers.get('peer_cash_quote_source')!({
@@ -126,8 +122,8 @@ describe('Peer Cash MCP tools', () => {
     });
 
     expect(client.fillStats).toHaveBeenCalledOnce();
-    expect(cashOnlyClient.sourceCapabilities).toHaveBeenCalledOnce();
-    expect(cashOnlyClient.quoteSource).toHaveBeenCalledWith({
+    expect(client.sourceCapabilities).toHaveBeenCalledOnce();
+    expect(client.quoteSource).toHaveBeenCalledWith({
       user: '0x1111111111111111111111111111111111111111',
       amount: 2500000n,
       source: {
@@ -137,7 +133,7 @@ describe('Peer Cash MCP tools', () => {
       recipient: '0x3333333333333333333333333333333333333333',
       tradeType: 'EXACT_INPUT',
     });
-    expect(cashOnlyClient.relayStatus).toHaveBeenCalledWith('relay-1');
+    expect(client.relayStatus).toHaveBeenCalledWith('relay-1');
     expect(client.buyer).toHaveBeenCalledWith(
       '0x1111111111111111111111111111111111111111',
     );
@@ -157,16 +153,25 @@ describe('Peer Cash MCP tools', () => {
     });
   });
 
-  it('prepares the required method-scoped access policy on @zkp2p/cash', async () => {
-    const { cashOnlyClient, handlers, registerTool } = createHarness(true);
-    await handlers.get('peer_cash_prepare_access_policy')!({ depositId, paymentMethod });
+  it('answers the retired access-policy step with no transaction', async () => {
+    const { client, handlers, registerTool } = createHarness(true);
+    const result = await handlers.get('peer_cash_prepare_access_policy')!({ depositId, paymentMethod });
 
-    expect(cashOnlyClient.prepareAccessPolicy).toHaveBeenCalledWith(depositId, paymentMethod);
+    expect(result.isError).toBeFalsy();
+    expect(JSON.parse(result.content[0].text)).toEqual({
+      depositId,
+      paymentMethod,
+      accessPolicyRequired: false,
+      transaction: null,
+      reason: 'The merchant group this step configured was retired in @zkp2p/sdk 0.15; no access policy is needed.',
+    });
+    // Nothing is prepared or read for it.
+    for (const method of Object.values(client)) expect(method).not.toHaveBeenCalled();
     const registration = registerTool.mock.calls.find(
       ([name]) => name === 'peer_cash_prepare_access_policy',
     );
-    expect(registration?.[1].description).toContain('accessPolicyPaymentMethods');
-    expect(registration?.[1].description).not.toContain('Cash App');
+    expect(registration?.[1].description).toContain('retired in @zkp2p/sdk 0.15');
+    expect(registration?.[1].annotations).toMatchObject({ readOnlyHint: true });
   });
 
   it('returns structured MCP errors without throwing transport failures', async () => {

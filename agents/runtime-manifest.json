@@ -18,11 +18,11 @@
         "signs_or_broadcasts": false
       },
       "cash": {
-        "tools": 13,
+        "tools": 14,
         "signs_or_broadcasts": false
       },
       "full": {
-        "tools": 159,
+        "tools": 160,
         "signs_or_broadcasts": "only when the MCP process starts with --yes"
       }
     }

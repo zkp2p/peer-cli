@@ -3,6 +3,7 @@ import { registerPeerCashTools } from '../src/mcp/cash.js';
 
 const depositId = '0x1111111111111111111111111111111111111111_7';
 const transactionHash = `0x${'ab'.repeat(32)}` as `0x${string}`;
+const paymentMethod = `0x${'cd'.repeat(32)}` as `0x${string}`;
 
 function createHarness(includeWrites = false) {
   const registerTool = vi.fn();
@@ -18,10 +19,11 @@ function createHarness(includeWrites = false) {
     prepareWithdraw: vi.fn(async () => ({ transactions: [] })),
     prepareTopUp: vi.fn(async () => ({ transactions: [] })),
   };
-  const sourceClient = {
+  const cashOnlyClient = {
     sourceCapabilities: vi.fn(async () => ({ chains: [] })),
     quoteSource: vi.fn(async () => ({ requestId: 'relay-1', txs: [] })),
     relayStatus: vi.fn(async () => ({ requestId: 'relay-1', status: 'pending' })),
+    prepareAccessPolicy: vi.fn(async () => ({ transactions: [] })),
   };
   const receiptClient = {
     getTransactionReceipt: vi.fn(async () => ({
@@ -34,7 +36,7 @@ function createHarness(includeWrites = false) {
   registerPeerCashTools({ registerTool } as never, {
     config: {
       client: client as never,
-      sourceClient: sourceClient as never,
+      cashOnlyClient: cashOnlyClient as never,
       receiptClient: receiptClient as never,
     },
     includeWrites,
@@ -43,7 +45,7 @@ function createHarness(includeWrites = false) {
   const handlers = new Map(
     registerTool.mock.calls.map(([name, _config, handler]) => [name as string, handler]),
   );
-  return { client, handlers, receiptClient, registerTool, sourceClient };
+  return { cashOnlyClient, client, handlers, receiptClient, registerTool };
 }
 
 beforeEach(() => {
@@ -81,6 +83,7 @@ describe('Peer Cash MCP tools', () => {
       'peer_cash_order',
       'peer_cash_orders',
       'peer_cash_prepare',
+      'peer_cash_prepare_access_policy',
       'peer_cash_prepare_withdraw',
       'peer_cash_prepare_top_up',
     ]);
@@ -106,7 +109,7 @@ describe('Peer Cash MCP tools', () => {
   });
 
   it('exposes live source routing and analytics inputs without signer authority', async () => {
-    const { client, handlers, sourceClient } = createHarness();
+    const { cashOnlyClient, client, handlers } = createHarness();
     await handlers.get('peer_cash_fill_stats')!({});
     await handlers.get('peer_cash_source_capabilities')!({});
     await handlers.get('peer_cash_quote_source')!({
@@ -123,8 +126,8 @@ describe('Peer Cash MCP tools', () => {
     });
 
     expect(client.fillStats).toHaveBeenCalledOnce();
-    expect(sourceClient.sourceCapabilities).toHaveBeenCalledOnce();
-    expect(sourceClient.quoteSource).toHaveBeenCalledWith({
+    expect(cashOnlyClient.sourceCapabilities).toHaveBeenCalledOnce();
+    expect(cashOnlyClient.quoteSource).toHaveBeenCalledWith({
       user: '0x1111111111111111111111111111111111111111',
       amount: 2500000n,
       source: {
@@ -134,7 +137,7 @@ describe('Peer Cash MCP tools', () => {
       recipient: '0x3333333333333333333333333333333333333333',
       tradeType: 'EXACT_INPUT',
     });
-    expect(sourceClient.relayStatus).toHaveBeenCalledWith('relay-1');
+    expect(cashOnlyClient.relayStatus).toHaveBeenCalledWith('relay-1');
     expect(client.buyer).toHaveBeenCalledWith(
       '0x1111111111111111111111111111111111111111',
     );
@@ -152,6 +155,18 @@ describe('Peer Cash MCP tools', () => {
       status: 'success',
       logs: [],
     });
+  });
+
+  it('prepares the required method-scoped access policy on @zkp2p/cash', async () => {
+    const { cashOnlyClient, handlers, registerTool } = createHarness(true);
+    await handlers.get('peer_cash_prepare_access_policy')!({ depositId, paymentMethod });
+
+    expect(cashOnlyClient.prepareAccessPolicy).toHaveBeenCalledWith(depositId, paymentMethod);
+    const registration = registerTool.mock.calls.find(
+      ([name]) => name === 'peer_cash_prepare_access_policy',
+    );
+    expect(registration?.[1].description).toContain('accessPolicyPaymentMethods');
+    expect(registration?.[1].description).not.toContain('Cash App');
   });
 
   it('returns structured MCP errors without throwing transport failures', async () => {

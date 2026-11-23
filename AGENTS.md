@@ -5,7 +5,7 @@ These instructions apply to the `peer-cli` repo.
 
 ## Working Rules
 - Treat `src/commands/registry.ts`, `src/mcp/cash.ts`, and `src/output/errors.ts` as runtime sources of truth. The files under `agents/` are their generated agent contracts.
-- `src/mcp/cash.ts` sells through `@zkp2p/sdk` `peer.sell`. Only the Relay source tools use `@zkp2p/cash`, because the SDK has no source routing.
+- `src/mcp/cash.ts` sells through `@zkp2p/sdk` `peer.sell`. Only the Relay source tools and `peer_cash_prepare_access_policy` use `@zkp2p/cash`, because the SDK has no source routing or access policies.
 - Do not hand-edit generated catalog files. Rebuild after changing command metadata.
 - Prefer dry-run previews for write paths. Use the single `--yes` execution flag only when immediate broadcast is intended.
 - Keep `peer mcp --profile read-only` as the default. The `cash` profile may prepare unsigned transactions but must never accept signer material, sign, or broadcast. Use `full` only for the complete operator surface.

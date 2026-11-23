@@ -39,7 +39,6 @@ without inspecting it and obtaining operator approval.
 6. Call `peer_cash_finalize` with the confirmed create-deposit transaction hash.
    Skip the legacy `peer_cash_prepare_access_policy` step, including when the plan
    reports `accessPolicyRequired`. That transaction adds a retired group.
-   Releases after 0.4.1 remove the tool.
 7. Persist the returned `depositId`; use `peer_cash_order` to resume.
 
 Use `peer_cash_orders` to list a maker's orders,

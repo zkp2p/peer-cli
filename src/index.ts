@@ -6,5 +6,5 @@ export {
   type PeerMcpOptions,
   type PeerMcpProfile,
 } from './mcp/server.js';
-export { type PeerCashMcpConfig, type PeerCashSourceClient } from './mcp/cash.js';
+export { type PeerCashMcpConfig, type PeerCashOnlyClient } from './mcp/cash.js';
 export { createProgram, runCli } from './cli.js';

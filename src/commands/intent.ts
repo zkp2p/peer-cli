@@ -99,8 +99,24 @@ export const intentDefinitions: CommandDefinition[] = [
     description: 'Release funds back to the payer.',
     readOnly: false,
     requireWallet: true,
-    options: [{ name: 'hash', flags: '--hash <intentHash>', description: 'Intent hash.', schema: { type: 'string', description: 'Intent hash.' } }],
-    handler: sdkWriteHandler(['releaseFundsToPayer'], async (input) => ({ intentHash: ensureString(input.hash, 'hash') })),
+    options: [
+      { name: 'hash', flags: '--hash <intentHash>', description: 'Intent hash.', schema: { type: 'string', description: 'Intent hash.' } },
+      {
+        name: 'amount',
+        flags: '--amount <value>',
+        description: 'USDC to release. Defaults to the full intent amount, which a depositor must release; an arbitrator may release less.',
+        schema: { type: 'number', description: 'USDC amount to release.' },
+      },
+    ],
+    // SDK 0.15+ requires releaseAmount: OrchestratorV4 releases exactly that amount.
+    handler: sdkWriteHandler(['releaseFundsToPayer'], async (input, _context, client) => {
+      const intentHash = ensureString(input.hash, 'hash');
+      const releaseAmount =
+        input.amount === undefined
+          ? (await client.getIntent(intentHash as `0x${string}`)).intent.amount
+          : parseUnits(ensurePositiveNumber(input.amount, 'amount').toString(), 6);
+      return { intentHash, releaseAmount };
+    }),
   },
   {
     path: ['intent', 'fulfill-inputs'],

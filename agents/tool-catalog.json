@@ -1490,6 +1490,10 @@
           "type": "string",
           "description": "Intent hash."
         },
+        "amount": {
+          "type": "number",
+          "description": "USDC to release. Defaults to the full intent amount, which a depositor must release; an arbitrator may release less."
+        },
         "params": {
           "type": "object",
           "description": "Optional raw JSON params object merged underneath the typed CLI flags."

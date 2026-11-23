@@ -34,7 +34,11 @@ afterEach(() => {
 
 describe('validation utils', () => {
   it('keeps supported platforms aligned with the SDK active catalog', () => {
-    const activePlatforms = Object.keys(getPaymentMethodsCatalog(DEFAULT_CHAIN_ID, 'production'));
+    // Monobank's only currency, UAH, has no oracle feed, so the CLI leaves it out.
+    const deliberatelyExcluded = new Set(['monobank']);
+    const activePlatforms = Object.keys(getPaymentMethodsCatalog(DEFAULT_CHAIN_ID, 'production')).filter(
+      (platform) => !deliberatelyExcluded.has(platform),
+    );
     expect([...SUPPORTED_PLATFORMS].sort()).toEqual(activePlatforms.sort());
   });
 

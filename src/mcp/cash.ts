@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-// @zkp2p/sdk has no Relay source routing; only the source tools use Cash.
+// @zkp2p/sdk has no Relay source routing or access policy; those tools stay on Cash.
 import { createCashClient, type CashClient } from '@zkp2p/cash';
 import {
   createPeer,
@@ -25,14 +25,14 @@ export interface ReceiptClient {
   }): Promise<TransactionReceipt>;
 }
 
-export type PeerCashSourceClient = Pick<
+export type PeerCashOnlyClient = Pick<
   CashClient,
-  'sourceCapabilities' | 'quoteSource' | 'relayStatus'
+  'sourceCapabilities' | 'quoteSource' | 'relayStatus' | 'prepareAccessPolicy'
 >;
 
 export interface PeerCashMcpConfig {
   client?: PeerSell;
-  sourceClient?: PeerCashSourceClient;
+  cashOnlyClient?: PeerCashOnlyClient;
   receiptClient?: ReceiptClient;
   environment?: PeerOptions['environment'];
   rpcUrl?: string;
@@ -59,6 +59,7 @@ export const PEER_CASH_TOOL_NAMES = {
   order: 'peer_cash_order',
   orders: 'peer_cash_orders',
   prepare: 'peer_cash_prepare',
+  prepareAccessPolicy: 'peer_cash_prepare_access_policy',
   prepareWithdraw: 'peer_cash_prepare_withdraw',
   prepareTopUp: 'peer_cash_prepare_top_up',
 } as const;
@@ -78,6 +79,7 @@ export const PEER_CASH_READ_TOOL_NAMES = [
 
 export const PEER_CASH_WRITE_TOOL_NAMES = [
   PEER_CASH_TOOL_NAMES.prepare,
+  PEER_CASH_TOOL_NAMES.prepareAccessPolicy,
   PEER_CASH_TOOL_NAMES.prepareWithdraw,
   PEER_CASH_TOOL_NAMES.prepareTopUp,
 ] as const;
@@ -144,8 +146,8 @@ function getSellClient(config: PeerCashMcpConfig): PeerSell {
   return config.client ?? createPeer(clientOptions(config)).sell;
 }
 
-function getSourceClient(config: PeerCashMcpConfig): PeerCashSourceClient {
-  return config.sourceClient ?? createCashClient(clientOptions(config));
+function getCashOnlyClient(config: PeerCashMcpConfig): PeerCashOnlyClient {
+  return config.cashOnlyClient ?? createCashClient(clientOptions(config));
 }
 
 function getReceiptClient(config: PeerCashMcpConfig): ReceiptClient {
@@ -219,6 +221,9 @@ const positiveInteger = z
   .regex(/^[1-9]\d*$/, 'Use a positive decimal integer in base units');
 const address = z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Use an EVM address');
 const hash = z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Use a transaction hash');
+const paymentMethod = z
+  .string()
+  .regex(/^0x[a-fA-F0-9]{64}$/, 'Use a payment method bytes32 hash');
 const depositId = z
   .string()
   .regex(/^0x[a-fA-F0-9]{40}_[0-9]+$/, 'Use a composite Peer deposit id');
@@ -246,7 +251,7 @@ export function registerPeerCashTools(
 ): void {
   const config = resolveConfig(options.config, options.globalOptions);
   const client = getSellClient(config);
-  const sourceClient = getSourceClient(config);
+  const cashOnlyClient = getCashOnlyClient(config);
 
   server.registerTool(
     PEER_CASH_TOOL_NAMES.capabilities,
@@ -281,7 +286,7 @@ export function registerPeerCashTools(
       inputSchema: {},
       annotations: { readOnlyHint: true, idempotentHint: true },
     },
-    () => handleTool(() => sourceClient.sourceCapabilities()),
+    () => handleTool(() => cashOnlyClient.sourceCapabilities()),
   );
 
   server.registerTool(
@@ -305,7 +310,7 @@ export function registerPeerCashTools(
     },
     ({ user, amount, sourceChainId, sourceCurrency, recipient, tradeType }) =>
       handleTool(() =>
-        sourceClient.quoteSource({
+        cashOnlyClient.quoteSource({
           user,
           amount: BigInt(amount),
           source: { chainId: sourceChainId, currency: sourceCurrency },
@@ -324,7 +329,7 @@ export function registerPeerCashTools(
       inputSchema: { requestId: z.string().min(1) },
       annotations: { readOnlyHint: true, idempotentHint: true },
     },
-    ({ requestId }) => handleTool(() => sourceClient.relayStatus(requestId)),
+    ({ requestId }) => handleTool(() => cashOnlyClient.relayStatus(requestId)),
   );
 
   server.registerTool(
@@ -447,6 +452,23 @@ export function registerPeerCashTools(
           receive: receiveInput as SellInput['receive'],
         }),
       ),
+  );
+
+  server.registerTool(
+    PEER_CASH_TOOL_NAMES.prepareAccessPolicy,
+    {
+      title: 'Prepare an order access policy',
+      description:
+        'Prepare one unsigned verified-buyer access-policy transaction after finalization for a payment method returned by accessPolicyPaymentMethods.',
+      inputSchema: { depositId, paymentMethod },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    ({ depositId: id, paymentMethod: method }) =>
+      handleTool(() => cashOnlyClient.prepareAccessPolicy(id, method as `0x${string}`)),
   );
 
   server.registerTool(

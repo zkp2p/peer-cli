@@ -301,15 +301,25 @@ export function registerPeerCashTools(
       annotations: { readOnlyHint: true, idempotentHint: false },
     },
     ({ user, amount, sourceChainId, sourceCurrency, recipient, tradeType }) =>
-      handleTool(() =>
-        client.quoteSource({
+      handleTool(() => {
+        // Relay's quote endpoint rejects keyless requests; say so once instead of
+        // returning a retryable failure an agent would repeat.
+        if (!options.config?.client && !config.relayApiKey) {
+          throw {
+            code: 'RELAY_API_KEY_REQUIRED',
+            retryable: false,
+            message: 'Relay quotes need an API key, and this server has none configured.',
+            remediation: 'Set PEER_CASH_RELAY_API_KEY for the peer MCP server, then retry. Do not retry before that.',
+          };
+        }
+        return client.quoteSource({
           user,
           amount: BigInt(amount),
           source: { chainId: sourceChainId, currency: sourceCurrency },
           ...(recipient ? { recipient } : {}),
           ...(tradeType ? { tradeType } : {}),
-        }),
-      ),
+        });
+      }),
   );
 
   server.registerTool(

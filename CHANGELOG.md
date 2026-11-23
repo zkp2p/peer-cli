@@ -9,6 +9,12 @@
 - `peer_cash_prepare_access_policy` stays registered but answers
   `accessPolicyRequired: false` with no transaction: the merchant group it
   configured was retired in `@zkp2p/sdk` 0.15.
+  Its result changes from an unsigned transaction to
+  `{ depositId, paymentMethod, accessPolicyRequired: false, transaction: null, reason }`.
+- `peer_cash_source_capabilities` reports `source: "relay"` (was `"relay-sdk"`).
+- `peer_cash_quote_source` without a Relay key returns `RELAY_API_KEY_REQUIRED`
+  (not retryable) naming `PEER_CASH_RELAY_API_KEY`. The hosted server's
+  runtime config accepts `PEER_CASH_RELAY_API_KEY` as an optional key.
 - Remove the `includeRelaySources` argument of `peer_cash_capabilities`; call
   `peer_cash_source_capabilities` instead. `PeerCashMcpConfig.client` is now a
   `PeerSell`.

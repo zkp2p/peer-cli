@@ -7,6 +7,8 @@ function fail(message) {
 }
 
 const expected = ['NODE_ENV'];
+// Optional: feeds Relay quotes for peer_cash_quote_source.
+const optional = ['PEER_CASH_RELAY_API_KEY'];
 let source = '/run/secrets/runtime.json';
 let config;
 try {
@@ -15,7 +17,7 @@ try {
   // JSON parser errors can include the input, so never print the original error.
   if (error.code !== 'ENOENT') fail('Cannot read or parse runtime configuration');
   source = 'container env (legacy)';
-  config = Object.fromEntries(expected
+  config = Object.fromEntries([...expected, ...optional]
     .filter((name) => Object.hasOwn(process.env, name))
     .map((name) => [name, process.env[name]]));
 }
@@ -23,11 +25,11 @@ if (config === null || typeof config !== 'object' || Array.isArray(config)) {
   fail('Runtime configuration must be an object');
 }
 const missing = expected.filter((name) => !Object.hasOwn(config, name));
-const extra = Object.keys(config).filter((name) => !expected.includes(name));
+const extra = Object.keys(config).filter((name) => !expected.includes(name) && !optional.includes(name));
 if (missing.length || extra.length) {
   fail(`Invalid runtime configuration keys (missing: ${missing.join(', ') || 'none'}; unexpected: ${extra.join(', ') || 'none'})`);
 }
-const nonStrings = expected.filter((name) => typeof config[name] !== 'string');
+const nonStrings = Object.keys(config).filter((name) => typeof config[name] !== 'string');
 if (nonStrings.length) fail(`Runtime configuration must contain strings: ${nonStrings.join(', ')}`);
 process.stderr.write(`runtime config from ${source}\n`);
 

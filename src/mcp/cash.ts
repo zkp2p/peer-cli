@@ -1,12 +1,14 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+// @zkp2p/sdk has no Relay source routing; only the source tools use Cash.
+import { createCashClient, type CashClient } from '@zkp2p/cash';
 import {
-  createCashClient,
-  type CashClient,
-  type CashClientOptions,
-  type CashoutInput,
+  createPeer,
   type CurrencyType,
-} from '@zkp2p/cash';
+  type PeerOptions,
+  type PeerSell,
+  type SellInput,
+} from '@zkp2p/sdk';
 import {
   createPublicClient,
   http,
@@ -23,10 +25,16 @@ export interface ReceiptClient {
   }): Promise<TransactionReceipt>;
 }
 
+export type PeerCashSourceClient = Pick<
+  CashClient,
+  'sourceCapabilities' | 'quoteSource' | 'relayStatus'
+>;
+
 export interface PeerCashMcpConfig {
-  client?: CashClient;
+  client?: PeerSell;
+  sourceClient?: PeerCashSourceClient;
   receiptClient?: ReceiptClient;
-  environment?: CashClientOptions['environment'];
+  environment?: PeerOptions['environment'];
   rpcUrl?: string;
   apiKey?: string;
   referralCode?: string;
@@ -51,7 +59,6 @@ export const PEER_CASH_TOOL_NAMES = {
   order: 'peer_cash_order',
   orders: 'peer_cash_orders',
   prepare: 'peer_cash_prepare',
-  prepareAccessPolicy: 'peer_cash_prepare_access_policy',
   prepareWithdraw: 'peer_cash_prepare_withdraw',
   prepareTopUp: 'peer_cash_prepare_top_up',
 } as const;
@@ -71,12 +78,11 @@ export const PEER_CASH_READ_TOOL_NAMES = [
 
 export const PEER_CASH_WRITE_TOOL_NAMES = [
   PEER_CASH_TOOL_NAMES.prepare,
-  PEER_CASH_TOOL_NAMES.prepareAccessPolicy,
   PEER_CASH_TOOL_NAMES.prepareWithdraw,
   PEER_CASH_TOOL_NAMES.prepareTopUp,
 ] as const;
 
-const environments = new Set<CashClientOptions['environment']>([
+const environments = new Set<PeerOptions['environment']>([
   'production',
   'preproduction',
   'staging',
@@ -85,7 +91,7 @@ const environments = new Set<CashClientOptions['environment']>([
 function resolveEnvironment(
   config: PeerCashMcpConfig,
   globalOptions: GlobalOptions,
-): CashClientOptions['environment'] {
+): PeerOptions['environment'] {
   const value =
     config.environment ??
     process.env.PEER_CASH_ENVIRONMENT ??
@@ -93,12 +99,12 @@ function resolveEnvironment(
     process.env.PEER_ENV ??
     'production';
 
-  if (!environments.has(value as CashClientOptions['environment'])) {
+  if (!environments.has(value as PeerOptions['environment'])) {
     throw new Error(
       `Peer Cash environment must be production, preproduction, or staging; received ${value}`,
     );
   }
-  return value as CashClientOptions['environment'];
+  return value as PeerOptions['environment'];
 }
 
 function resolveConfig(
@@ -124,16 +130,22 @@ function resolveConfig(
   };
 }
 
-function getCashClient(config: PeerCashMcpConfig): CashClient {
-  if (config.client) return config.client;
-
-  return createCashClient({
+function clientOptions(config: PeerCashMcpConfig): PeerOptions {
+  return {
     environment: config.environment ?? 'production',
     ...(config.rpcUrl ? { rpcUrl: config.rpcUrl } : {}),
     ...(config.apiKey ? { apiKey: config.apiKey } : {}),
     ...(config.referralCode ? { referralCode: config.referralCode } : {}),
     ...(config.referrer ? { referrer: config.referrer } : {}),
-  });
+  };
+}
+
+function getSellClient(config: PeerCashMcpConfig): PeerSell {
+  return config.client ?? createPeer(clientOptions(config)).sell;
+}
+
+function getSourceClient(config: PeerCashMcpConfig): PeerCashSourceClient {
+  return config.sourceClient ?? createCashClient(clientOptions(config));
 }
 
 function getReceiptClient(config: PeerCashMcpConfig): ReceiptClient {
@@ -207,9 +219,6 @@ const positiveInteger = z
   .regex(/^[1-9]\d*$/, 'Use a positive decimal integer in base units');
 const address = z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Use an EVM address');
 const hash = z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Use a transaction hash');
-const paymentMethod = z
-  .string()
-  .regex(/^0x[a-fA-F0-9]{64}$/, 'Use a payment method bytes32 hash');
 const depositId = z
   .string()
   .regex(/^0x[a-fA-F0-9]{40}_[0-9]+$/, 'Use a composite Peer deposit id');
@@ -236,28 +245,19 @@ export function registerPeerCashTools(
   options: RegisterPeerCashToolsOptions,
 ): void {
   const config = resolveConfig(options.config, options.globalOptions);
-  const client = getCashClient(config);
+  const client = getSellClient(config);
+  const sourceClient = getSourceClient(config);
 
   server.registerTool(
     PEER_CASH_TOOL_NAMES.capabilities,
     {
       title: 'Discover Peer Cash capabilities',
       description:
-        'Return live Base USDC destinations, payout platforms, fiat currencies, payee hints, amount bounds, and pricing. Call this before naming a rail or currency.',
-      inputSchema: {
-        includeRelaySources: z
-          .boolean()
-          .optional()
-          .describe('Include live Relay-supported EVM source chains and tokens'),
-      },
+        'Return Base USDC payout platforms, fiat currencies, payee hints, amount bounds, and pricing. Call this before naming a rail or currency. Use peer_cash_source_capabilities for non-Base source assets.',
+      inputSchema: {},
       annotations: { readOnlyHint: true, idempotentHint: true },
     },
-    ({ includeRelaySources }) =>
-      handleTool(() =>
-        includeRelaySources
-          ? client.capabilities({ includeRelaySources: true })
-          : client.capabilities(),
-      ),
+    () => handleTool(() => client.capabilities()),
   );
 
   server.registerTool(
@@ -281,7 +281,7 @@ export function registerPeerCashTools(
       inputSchema: {},
       annotations: { readOnlyHint: true, idempotentHint: true },
     },
-    () => handleTool(() => client.sourceCapabilities()),
+    () => handleTool(() => sourceClient.sourceCapabilities()),
   );
 
   server.registerTool(
@@ -305,7 +305,7 @@ export function registerPeerCashTools(
     },
     ({ user, amount, sourceChainId, sourceCurrency, recipient, tradeType }) =>
       handleTool(() =>
-        client.quoteSource({
+        sourceClient.quoteSource({
           user,
           amount: BigInt(amount),
           source: { chainId: sourceChainId, currency: sourceCurrency },
@@ -324,7 +324,7 @@ export function registerPeerCashTools(
       inputSchema: { requestId: z.string().min(1) },
       annotations: { readOnlyHint: true, idempotentHint: true },
     },
-    ({ requestId }) => handleTool(() => client.relayStatus(requestId)),
+    ({ requestId }) => handleTool(() => sourceClient.relayStatus(requestId)),
   );
 
   server.registerTool(
@@ -368,7 +368,7 @@ export function registerPeerCashTools(
         const receipt = await getReceiptClient(config).getTransactionReceipt({
           hash: transactionHash as Hash,
         });
-        return client.finalizePreparedCashout({
+        return client.finalizePrepared({
           transactionHash: receipt.transactionHash,
           status: receipt.status,
           logs: receipt.logs,
@@ -444,26 +444,9 @@ export function registerPeerCashTools(
       handleTool(() =>
         client.prepare({
           amount: BigInt(amount),
-          receive: receiveInput as CashoutInput['receive'],
+          receive: receiveInput as SellInput['receive'],
         }),
       ),
-  );
-
-  server.registerTool(
-    PEER_CASH_TOOL_NAMES.prepareAccessPolicy,
-    {
-      title: 'Prepare an order access policy',
-      description:
-        'Prepare one unsigned verified-buyer access-policy transaction after finalization for a payment method returned by accessPolicyPaymentMethods.',
-      inputSchema: { depositId, paymentMethod },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    ({ depositId: id, paymentMethod: method }) =>
-      handleTool(() => client.prepareAccessPolicy(id, method as `0x${string}`)),
   );
 
   server.registerTool(

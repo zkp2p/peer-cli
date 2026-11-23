@@ -135,7 +135,7 @@ describe('mcp server lifecycle', () => {
   it('registers only Peer Cash tools in the cash profile', () => {
     createPeerMcpServer({ profile: 'cash', version: '1.2.3' });
     const names = mocks.server.registerTool.mock.calls.map(([name]) => name);
-    expect(names).toHaveLength(14);
+    expect(names).toHaveLength(13);
     expect(names.every((name) => String(name).startsWith('peer_cash_'))).toBe(true);
   });
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Run the Peer Cash MCP tools on `peer.sell` from `@zkp2p/sdk` 0.16.0-rc.1.
+  Relay source tools (`peer_cash_source_capabilities`, `peer_cash_quote_source`,
+  `peer_cash_relay_status`) stay on `@zkp2p/cash`, which the SDK does not
+  replace for source routing.
+- Remove `peer_cash_prepare_access_policy` and the `includeRelaySources`
+  argument of `peer_cash_capabilities`. `PeerCashMcpConfig.client` is now a
+  `PeerSell`; inject Relay source routing through `sourceClient`.
+- Every Cash corridor binds the oracle rate when a buyer signals an intent.
+  Unknown payee handles fail with `PAYEE_NOT_FOUND` (not retryable).
+- Accept Monobank, which the SDK 0.16 payment-method catalog adds.
+
 ## 0.4.1
 
 - Adopt Peer Cash 0.6.1 and SDK 0.14.2, which ship optional Venmo receipt

@@ -3,25 +3,25 @@ import { registerPeerCashTools } from '../src/mcp/cash.js';
 
 const depositId = '0x1111111111111111111111111111111111111111_7';
 const transactionHash = `0x${'ab'.repeat(32)}` as `0x${string}`;
-const paymentMethod = `0x${'cd'.repeat(32)}` as `0x${string}`;
 
 function createHarness(includeWrites = false) {
   const registerTool = vi.fn();
   const client = {
-    capabilities: vi.fn(async () => ({ minimum: 1n })),
+    capabilities: vi.fn(() => ({ minimum: 1n })),
     fillStats: vi.fn(async () => ({ 'wise:USD': { fills: 12 } })),
-    sourceCapabilities: vi.fn(async () => ({ chains: [] })),
-    quoteSource: vi.fn(async () => ({ requestId: 'relay-1', txs: [] })),
-    relayStatus: vi.fn(async () => ({ requestId: 'relay-1', status: 'pending' })),
     estimate: vi.fn(async () => ({ amountFiat: '99.25' })),
     prepare: vi.fn(async () => ({ transactions: [{ value: 0n }] })),
-    finalizePreparedCashout: vi.fn(async () => ({ depositId })),
+    finalizePrepared: vi.fn(() => ({ depositId })),
     buyer: vi.fn(async () => ({ address: '0x1111111111111111111111111111111111111111' })),
-    prepareAccessPolicy: vi.fn(async () => ({ transactions: [] })),
     order: vi.fn(async () => ({ depositId, status: 'open' })),
     orders: vi.fn(async () => [{ depositId }]),
     prepareWithdraw: vi.fn(async () => ({ transactions: [] })),
     prepareTopUp: vi.fn(async () => ({ transactions: [] })),
+  };
+  const sourceClient = {
+    sourceCapabilities: vi.fn(async () => ({ chains: [] })),
+    quoteSource: vi.fn(async () => ({ requestId: 'relay-1', txs: [] })),
+    relayStatus: vi.fn(async () => ({ requestId: 'relay-1', status: 'pending' })),
   };
   const receiptClient = {
     getTransactionReceipt: vi.fn(async () => ({
@@ -32,14 +32,18 @@ function createHarness(includeWrites = false) {
   };
 
   registerPeerCashTools({ registerTool } as never, {
-    config: { client: client as never, receiptClient: receiptClient as never },
+    config: {
+      client: client as never,
+      sourceClient: sourceClient as never,
+      receiptClient: receiptClient as never,
+    },
     includeWrites,
   });
 
   const handlers = new Map(
     registerTool.mock.calls.map(([name, _config, handler]) => [name as string, handler]),
   );
-  return { client, handlers, receiptClient, registerTool };
+  return { client, handlers, receiptClient, registerTool, sourceClient };
 }
 
 beforeEach(() => {
@@ -77,7 +81,6 @@ describe('Peer Cash MCP tools', () => {
       'peer_cash_order',
       'peer_cash_orders',
       'peer_cash_prepare',
-      'peer_cash_prepare_access_policy',
       'peer_cash_prepare_withdraw',
       'peer_cash_prepare_top_up',
     ]);
@@ -85,9 +88,7 @@ describe('Peer Cash MCP tools', () => {
 
   it('serializes bigint responses and forwards validated inputs', async () => {
     const { client, handlers } = createHarness(true);
-    const capabilities = await handlers.get('peer_cash_capabilities')!({
-      includeRelaySources: true,
-    });
+    const capabilities = await handlers.get('peer_cash_capabilities')!({});
     const estimate = await handlers.get('peer_cash_estimate')!({
       amount: '100000000',
       currency: 'usd',
@@ -95,7 +96,7 @@ describe('Peer Cash MCP tools', () => {
     });
 
     expect(capabilities.content[0].text).toContain('"minimum": "1"');
-    expect(client.capabilities).toHaveBeenCalledWith({ includeRelaySources: true });
+    expect(client.capabilities).toHaveBeenCalledWith();
     expect(client.estimate).toHaveBeenCalledWith({
       amount: 100000000n,
       currency: 'USD',
@@ -105,7 +106,7 @@ describe('Peer Cash MCP tools', () => {
   });
 
   it('exposes live source routing and analytics inputs without signer authority', async () => {
-    const { client, handlers } = createHarness();
+    const { client, handlers, sourceClient } = createHarness();
     await handlers.get('peer_cash_fill_stats')!({});
     await handlers.get('peer_cash_source_capabilities')!({});
     await handlers.get('peer_cash_quote_source')!({
@@ -122,8 +123,8 @@ describe('Peer Cash MCP tools', () => {
     });
 
     expect(client.fillStats).toHaveBeenCalledOnce();
-    expect(client.sourceCapabilities).toHaveBeenCalledOnce();
-    expect(client.quoteSource).toHaveBeenCalledWith({
+    expect(sourceClient.sourceCapabilities).toHaveBeenCalledOnce();
+    expect(sourceClient.quoteSource).toHaveBeenCalledWith({
       user: '0x1111111111111111111111111111111111111111',
       amount: 2500000n,
       source: {
@@ -133,7 +134,7 @@ describe('Peer Cash MCP tools', () => {
       recipient: '0x3333333333333333333333333333333333333333',
       tradeType: 'EXACT_INPUT',
     });
-    expect(client.relayStatus).toHaveBeenCalledWith('relay-1');
+    expect(sourceClient.relayStatus).toHaveBeenCalledWith('relay-1');
     expect(client.buyer).toHaveBeenCalledWith(
       '0x1111111111111111111111111111111111111111',
     );
@@ -146,23 +147,11 @@ describe('Peer Cash MCP tools', () => {
     expect(receiptClient.getTransactionReceipt).toHaveBeenCalledWith({
       hash: transactionHash,
     });
-    expect(client.finalizePreparedCashout).toHaveBeenCalledWith({
+    expect(client.finalizePrepared).toHaveBeenCalledWith({
       transactionHash,
       status: 'success',
       logs: [],
     });
-  });
-
-  it('prepares the required method-scoped access policy', async () => {
-    const { client, handlers, registerTool } = createHarness(true);
-    await handlers.get('peer_cash_prepare_access_policy')!({ depositId, paymentMethod });
-
-    expect(client.prepareAccessPolicy).toHaveBeenCalledWith(depositId, paymentMethod);
-    const registration = registerTool.mock.calls.find(
-      ([name]) => name === 'peer_cash_prepare_access_policy',
-    );
-    expect(registration?.[1].description).toContain('accessPolicyPaymentMethods');
-    expect(registration?.[1].description).not.toContain('Cash App');
   });
 
   it('returns structured MCP errors without throwing transport failures', async () => {

@@ -23,14 +23,14 @@ The package is `peer-protocol-cli`; do not install the unrelated unscoped
 `peer-cli` package.
 
 ```bash
-npm install --global peer-protocol-cli@0.4.1
+npm install --global peer-protocol-cli@0.5.0
 peer --help
 ```
 
 Run without a global install:
 
 ```bash
-npx -y peer-protocol-cli@0.4.1 quote --from USD --amount 100 --platform wise
+npx -y peer-protocol-cli@0.5.0 quote --from USD --amount 100 --platform wise
 ```
 
 Successful output is JSON by default. Errors always use the canonical JSON
@@ -73,7 +73,7 @@ The current tool counts are generated in `agents/runtime-manifest.json`.
       "command": "npx",
       "args": [
         "-y",
-        "peer-protocol-cli@0.4.1",
+        "peer-protocol-cli@0.5.0",
         "mcp",
         "--profile",
         "read-only"
@@ -120,16 +120,16 @@ custody boundary are unchanged:
 7. `peer_cash_order` / `peer_cash_orders` — resume and inspect orders.
 8. `peer_cash_prepare_withdraw` and `peer_cash_prepare_top_up` — prepare a withdrawal or top-up.
 
-After 0.4.1, every one of these tools runs on `peer.sell` from `@zkp2p/sdk`
-`0.16.0-rc.2`, including the Relay source tools. `peer_cash_capabilities` no
+Every one of these tools runs on `peer.sell` from `@zkp2p/sdk`
+`0.16.0`, including the Relay source tools. `peer_cash_capabilities` no
 longer takes `includeRelaySources`; call `peer_cash_source_capabilities`
 instead. A payee handle that does not exist on its platform fails with
 `PAYEE_NOT_FOUND`, which is not retryable.
 
-`peer_cash_prepare_access_policy` is a retired step. After 0.4.1 it answers `accessPolicyRequired: false` with no transaction, because the merchant group it configured was retired in `@zkp2p/sdk` 0.15. Version 0.4.1 still returns a transaction from it: skip that step, finalize the confirmed create-deposit receipt and persist the deposit ID, even when the plan reports `accessPolicyRequired`.
+`peer_cash_prepare_access_policy` is a retired step. It answers `accessPolicyRequired: false` with no transaction, because the merchant group it configured was retired in `@zkp2p/sdk` 0.15. Version 0.4.1 still returns a transaction from it: skip that step, finalize the confirmed create-deposit receipt and persist the deposit ID, even when the plan reports `accessPolicyRequired`.
 
 Base USDC amounts are decimal strings in 6-decimal base units: 100 USDC is
-`100000000`. For pricing, read the corridor’s `pricing.kind` in `peer_cash_capabilities`. In the published CLI 0.4.1, Alipay/CNY and UPI/INR fix the rate at deposit creation. Other supported corridors bind the oracle rate when a buyer signals an intent. After 0.4.1, every corridor binds the oracle rate when a buyer signals an intent.
+`100000000`. For pricing, read the corridor’s `pricing.kind` in `peer_cash_capabilities`. Every corridor binds the oracle rate when a buyer signals an intent.
 
 Install the packaged portable skill from
 [`skills/peer-cash/SKILL.md`](skills/peer-cash/SKILL.md) when the agent host

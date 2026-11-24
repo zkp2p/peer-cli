@@ -14,7 +14,7 @@ broadcasts.
 Configure the host to run:
 
 ```bash
-npx -y peer-protocol-cli@0.4.1 mcp --profile cash
+npx -y peer-protocol-cli@0.5.0 mcp --profile cash
 ```
 
 Keep optional `PEER_CASH_*` values in the host's secret or MCP configuration,
@@ -38,7 +38,7 @@ without inspecting it and obtaining operator approval.
    `createDeposit` receipt.
 6. Call `peer_cash_finalize` with the confirmed create-deposit transaction hash.
    Skip the retired `peer_cash_prepare_access_policy` step, including when the plan
-   reports `accessPolicyRequired`. After 0.4.1 it answers that no policy is needed;
+   reports `accessPolicyRequired`. In 0.5.0 it answers that no policy is needed;
    in 0.4.1 its transaction adds a retired group.
 7. Persist the returned `depositId`; use `peer_cash_order` to resume.
 
@@ -54,7 +54,7 @@ approval and confirmation rules.
 - For `TRANSACTION_SUBMISSION_UNKNOWN` or `TRANSACTION_STATUS_UNKNOWN`, inspect
   the named hash, wallet activity, and existing orders before any resubmission.
 - For `ACCESS_POLICY_CONFIGURATION_FAILED`, resume from the existing deposit ID. Leave the retired policy unset.
-- For `PAYEE_NOT_FOUND` (after 0.4.1), the handle does not exist on that
+- For `PAYEE_NOT_FOUND`, the handle does not exist on that
   platform. Ask for a corrected payee; do not retry the same one.
 - Retry `INDEXER_UNAVAILABLE` and `ORACLE_READ_FAILED` only as reads.
 

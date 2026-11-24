@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+- Pin `@zkp2p/sdk` 0.16.0 for the stable CLI release. The Cash MCP tools
+  use `peer.sell` for deposits, tracking, withdrawals and Relay source routing.
+- Update the MCP launcher and packaged skill to use `peer-protocol-cli@0.5.0`.
+
 ## 0.5.0-rc.0
 
 Release candidate on the npm `rc` tag; `latest` stays 0.4.1 during the soak.

@@ -24,7 +24,7 @@ catalogs own enumerations; prose must not duplicate a command inventory.
 
 ## MCP
 
-Run `npx -y peer-protocol-cli@0.4.1 mcp --profile <profile>`.
+Run `npx -y peer-protocol-cli@0.5.0 mcp --profile <profile>`.
 
 - read-only: generic and Peer Cash reads; no signing or broadcasting
 - cash: complete peer_cash_* surface; prepares unsigned plans and never accepts
@@ -48,7 +48,7 @@ local stdio profiles.
 5. peer_cash_finalize after the confirmed createDeposit receipt
 6. persist depositId and resume with peer_cash_order. Skip the retired group policy even when the 0.4.1 plan reports accessPolicyRequired.
 
-After 0.4.1, every peer_cash_* tool runs on @zkp2p/sdk peer.sell, including the Relay source tools. peer_cash_prepare_access_policy answers accessPolicyRequired: false with no transaction (the merchant group it configured was retired in @zkp2p/sdk 0.15).
+Every peer_cash_* tool runs on @zkp2p/sdk peer.sell, including the Relay source tools. peer_cash_prepare_access_policy answers accessPolicyRequired: false with no transaction (the merchant group it configured was retired in @zkp2p/sdk 0.15).
 
 Base USDC uses 6 decimals. Treat estimates as approximate. Retry read failures
 as reads; never retry an uncertain transaction without hash, wallet, and order

@@ -121,7 +121,7 @@ custody boundary are unchanged:
 8. `peer_cash_prepare_withdraw` and `peer_cash_prepare_top_up` — prepare a withdrawal or top-up.
 
 Every one of these tools runs on `peer.sell` from `@zkp2p/sdk`
-`0.16.0`, including the Relay source tools. `peer_cash_capabilities` no
+`0.17.0`, including the Relay source tools. `peer_cash_capabilities` no
 longer takes `includeRelaySources`; call `peer_cash_source_capabilities`
 instead. A payee handle that does not exist on its platform fails with
 `PAYEE_NOT_FOUND`, which is not retryable.
